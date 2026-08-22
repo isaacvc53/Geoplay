@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 from models.country import Pais
-from data.countries import lista_paises
 from database.connection import SessionLocal
 from models.country_db import Country
+from models.pais_repuesta import PaisRespuesta
+from fastapi import HTTPException
 
 router = APIRouter()
 
-@router.get("/countries")
+@router.get("/countries", response_model=list[PaisRespuesta])
 def conseguir_paises():
     db = SessionLocal()
 
@@ -17,7 +18,7 @@ def conseguir_paises():
     return paises
 
 
-@router.get("/countries/{nombre_pais}")
+@router.get("/countries/{nombre_pais}", response_model=PaisRespuesta)
 def conseguir_pais(nombre_pais):
     db = SessionLocal()
 
@@ -27,7 +28,10 @@ def conseguir_pais(nombre_pais):
     if pais:
         return pais
 
-    return {"error": "País no encontrado"}
+    raise HTTPException(
+    status_code=404,
+    detail="País no encontrado"
+)   
 
 
 @router.post("/countries")
@@ -64,7 +68,10 @@ def eliminar_pais(nombre_pais):
 
     db.close()
 
-    return {"error": "País no encontrado"}
+    raise HTTPException(
+    status_code=404,
+    detail="País no encontrado"
+)
 
 @router.put("/countries/{nombre_pais}")
 def modificar_pais(nombre_pais, datos_nuevos : Pais):
@@ -82,4 +89,7 @@ def modificar_pais(nombre_pais, datos_nuevos : Pais):
 
         return pais
 
-    return {"error": "País no encontrado"}
+    raise HTTPException(
+    status_code=404,
+    detail="País no encontrado"
+)
