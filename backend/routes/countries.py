@@ -19,10 +19,13 @@ def conseguir_paises():
 
 @router.get("/countries/{nombre_pais}")
 def conseguir_pais(nombre_pais):
+    db = SessionLocal()
 
-    for pais in lista_paises:
-        if pais["nombre"].lower() == nombre_pais.lower():
-            return pais
+    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
+
+    db.close()
+    if pais:
+        return pais
 
     return {"error": "País no encontrado"}
 
@@ -48,22 +51,35 @@ def crear_pais(nuevo_pais: Pais):
 @router.delete("/countries/{nombre_pais}")
 def eliminar_pais(nombre_pais):
 
-    for pais in lista_paises:
-        if pais["nombre"].lower() == nombre_pais.lower():
-            lista_paises.remove(pais)
-            return {"mensaje": "País eliminado"}
-        
+    db = SessionLocal()
+
+    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
+
+    if pais:
+        db.delete(pais)
+        db.commit()
+        db.close()
+
+        return {"mensaje": "País eliminado"}
+
+    db.close()
+
     return {"error": "País no encontrado"}
 
 @router.put("/countries/{nombre_pais}")
 def modificar_pais(nombre_pais, datos_nuevos : Pais):
-    for pais in lista_paises:
-        if pais["nombre"].lower() == nombre_pais.lower():
-            pais["nombre"] = datos_nuevos.nombre
-            pais["capital"] = datos_nuevos.capital
-            pais["continente"] = datos_nuevos.continente
+    db = SessionLocal()
+    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
 
-            return pais
 
-    
+    if pais:
+        pais.nombre = datos_nuevos.nombre
+        pais.capital = datos_nuevos.capital
+        pais.continente = datos_nuevos.continente
+
+        db.commit()
+        db.close()
+
+        return pais
+
     return {"error": "País no encontrado"}
