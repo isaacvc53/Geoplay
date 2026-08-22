@@ -1,95 +1,73 @@
-from fastapi import APIRouter
-from models.country import Pais
-from database.connection import SessionLocal
-from models.country_db import Country
+from fastapi import APIRouter, HTTPException
 from models.pais_repuesta import PaisRespuesta
-from fastapi import HTTPException
+from models.country import Pais
+from services.countries import (
+    service_conseguir_paises,
+    service_conseguir_pais,
+    service_crear_pais,
+    service_modificar_pais,
+    service_eliminar_pais,
+)
+
 
 router = APIRouter()
 
+
+
 @router.get("/countries", response_model=list[PaisRespuesta])
-def conseguir_paises():
-    db = SessionLocal()
+def   conseguir_paises():
 
-    paises = db.query(Country).all()
-
-    db.close()
-
-    return paises
+    return service_conseguir_paises()
 
 
 @router.get("/countries/{nombre_pais}", response_model=PaisRespuesta)
 def conseguir_pais(nombre_pais):
-    db = SessionLocal()
 
-    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
+    pais = service_conseguir_pais(nombre_pais)
 
-    db.close()
     if pais:
         return pais
 
     raise HTTPException(
-    status_code=404,
-    detail="País no encontrado"
-)   
+        status_code=404,
+        detail="País no encontrado"
+    )
+
 
 
 @router.post("/countries")
 def crear_pais(nuevo_pais: Pais):
-    db = SessionLocal()
 
-    pais = Country(
-        nombre=nuevo_pais.nombre,
-        capital=nuevo_pais.capital,
-        continente=nuevo_pais.continente
-    )
+    return service_crear_pais(nuevo_pais)
 
-    db.add(pais)
-    db.commit()
-    db.refresh(pais)
 
-    db.close()
 
-    return pais
 
 @router.delete("/countries/{nombre_pais}")
 def eliminar_pais(nombre_pais):
 
-    db = SessionLocal()
+    resultado = service_eliminar_pais(nombre_pais)
 
-    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
-
-    if pais:
-        db.delete(pais)
-        db.commit()
-        db.close()
-
-        return {"mensaje": "País eliminado"}
-
-    db.close()
+    if resultado:
+        return resultado
 
     raise HTTPException(
-    status_code=404,
-    detail="País no encontrado"
+        status_code=404,
+        detail="País no encontrado"
 )
+
+
+
 
 @router.put("/countries/{nombre_pais}")
 def modificar_pais(nombre_pais, datos_nuevos : Pais):
-    db = SessionLocal()
-    pais = db.query(Country).filter(Country.nombre == nombre_pais).first()
 
+    resultado = service_modificar_pais(nombre_pais,datos_nuevos)
 
-    if pais:
-        pais.nombre = datos_nuevos.nombre
-        pais.capital = datos_nuevos.capital
-        pais.continente = datos_nuevos.continente
-
-        db.commit()
-        db.close()
-
-        return pais
-
+    if resultado:
+        return resultado
+    
     raise HTTPException(
-    status_code=404,
-    detail="País no encontrado"
+        status_code=404,
+        detail="País no encontrado"
 )
