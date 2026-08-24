@@ -10,17 +10,17 @@ from services.countries import (
 )
 
 
-router = APIRouter()
+country_router = APIRouter()
 
 
 
-@router.get("/countries", response_model=list[PaisRespuesta])
+@country_router.get("/countries", response_model=list[PaisRespuesta])
 def   conseguir_paises():
 
     return service_conseguir_paises()
 
 
-@router.get("/countries/{nombre_pais}", response_model=PaisRespuesta)
+@country_router.get("/countries/{nombre_pais}", response_model=PaisRespuesta)
 def conseguir_pais(nombre_pais):
 
     pais = service_conseguir_pais(nombre_pais)
@@ -28,14 +28,11 @@ def conseguir_pais(nombre_pais):
     if pais:
         return pais
 
-    raise HTTPException(
-        status_code=404,
-        detail="País no encontrado"
-    )
+    pais_no_encontrado()
 
 
 
-@router.post("/countries")
+@country_router.post("/countries")
 def crear_pais(nuevo_pais: Pais):
 
     return service_crear_pais(nuevo_pais)
@@ -43,7 +40,7 @@ def crear_pais(nuevo_pais: Pais):
 
 
 
-@router.delete("/countries/{nombre_pais}")
+@country_router.delete("/countries/{nombre_pais}")
 def eliminar_pais(nombre_pais):
 
     resultado = service_eliminar_pais(nombre_pais)
@@ -51,15 +48,12 @@ def eliminar_pais(nombre_pais):
     if resultado:
         return resultado
 
-    raise HTTPException(
-        status_code=404,
-        detail="País no encontrado"
-)
+    pais_no_encontrado()
 
 
 
 
-@router.put("/countries/{nombre_pais}")
+@country_router.put("/countries/{nombre_pais}")
 def modificar_pais(nombre_pais, datos_nuevos : Pais):
 
     resultado = service_modificar_pais(nombre_pais,datos_nuevos)
@@ -67,6 +61,11 @@ def modificar_pais(nombre_pais, datos_nuevos : Pais):
     if resultado:
         return resultado
     
+    pais_no_encontrado()
+
+
+
+def pais_no_encontrado():
     raise HTTPException(
         status_code=404,
         detail="País no encontrado"
