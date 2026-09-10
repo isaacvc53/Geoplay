@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoPlay — Países del mundo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#012138; --panel:#013253; --ink:#c4946c; --muted:#93a7b4; --line:#254a63;
+  --water:#012943; --land:#0a3550; --land-hover:#1c5578; --found:#5d3f26;
+  --found-stroke:#c4946c; --accent:#c4946c; --accent-soft:#4a3320;
+  --danger:#cfa272; --white:#f2ddc9;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(circle at 12% 8%,rgba(1,50,83,.35),transparent 40%),radial-gradient(circle at 92% 92%,rgba(196,148,108,.10),transparent 45%);color:var(--ink);font-family:Inter,sans-serif}
+.page{width:min(1320px,calc(100% - 28px));margin:24px auto 48px}
+header{text-align:left;margin-bottom:16px}
+.kicker{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:700;color:var(--accent);margin:0 0 7px}
+h1{font:700 42px/1.05 Fraunces,serif;margin:0 0 8px}
+.subtitle{margin:0;color:var(--muted);font-size:14px}
+.game{background:var(--panel);border:1px solid #0f4a6e;border-radius:10px;overflow:hidden;box-shadow:0 12px 34px rgba(0,0,0,.14)}
+.toolbar{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.progress{font:700 19px Fraunces,serif;min-width:150px}.progress span{color:var(--accent)}
+.input-wrap{display:flex;gap:8px;flex:1;min-width:260px}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:500 15px Inter,sans-serif}
+input::placeholder{color:#5f7383}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+button{border:0;border-radius:6px;padding:11px 14px;font:700 13px Inter,sans-serif;cursor:pointer;background:var(--accent);color:var(--bg)}
+button:hover{background:#d9b48c}
+button.secondary{background:transparent;color:var(--muted);border:1px solid var(--line)}
+button.secondary:hover{background:var(--panel);color:var(--ink);border-color:var(--unsolved-line)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;min-width:78px;text-align:center}
+.timer.paused{color:var(--danger)}
+.map-area{position:relative;background:var(--water);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#map{width:100%;height:min(68vh,700px);min-height:430px;display:block;cursor:grab;touch-action:none}
+#map:active{cursor:grabbing}
+.country{fill:var(--land);stroke:var(--unsolved-line);stroke-width:.55;vector-effect:non-scaling-stroke;transition:fill .15s ease,stroke .15s ease}
+.country:hover{fill:var(--land-hover);stroke:var(--accent)}
+.country.found{fill:var(--found);stroke:var(--found-stroke)}
+.country.revealed-missing{fill:var(--land-hover);stroke:var(--accent-2)}
+.country.unplayable{fill:#08283d;stroke:#123d57;opacity:.58}
+.small-marker{fill:var(--land);stroke:var(--unsolved-line);stroke-width:1.1;pointer-events:none}
+.small-marker.found{fill:var(--found);stroke:var(--found-stroke)}
+.small-marker.revealed-missing{fill:var(--land-hover);stroke:var(--accent-2)}
+.map-tools{position:absolute;left:12px;top:12px;display:flex;gap:6px}
+.map-tools button{padding:8px 10px;background:rgba(1,50,83,.94);color:var(--ink);border:1px solid var(--line)}
+.hint{position:absolute;right:12px;bottom:12px;background:rgba(1,23,38,.90);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--muted)}
+.feedback{min-height:20px;padding:9px 14px 0;font-size:13px;color:var(--muted)}
+.feedback.ok{color:var(--found-stroke);font-weight:700}.feedback.no{color:var(--danger);font-weight:700}
+.bottom{padding:11px 14px 15px;display:flex;gap:8px;justify-content:space-between;align-items:flex-start;border-top:1px solid var(--line);flex-wrap:wrap}
+.left-actions,.right-actions{display:flex;gap:8px;flex-wrap:wrap}
+.found-list-wrap{padding:0 14px 15px;display:none}.found-list-wrap.open{display:block;border-top:1px solid var(--line);padding-top:10px}.found-list{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:12px;font-weight:600;background:var(--accent-soft);border:1px solid transparent;padding:4px 10px;border-radius:999px;color:var(--found-stroke)}
+.toast{position:absolute;left:50%;top:18px;transform:translateX(-50%);background:rgba(1,23,38,.94);color:var(--ink);padding:8px 12px;border-radius:999px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s}
+.toast.show{opacity:1}
+@media(max-width:720px){h1{font-size:34px}.page{width:min(100% - 14px,1320px);margin-top:12px}.toolbar{padding:10px}.input-wrap{min-width:100%}.progress{min-width:unset}#map{height:58vh;min-height:360px}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="kicker">GeoPlay · Mundo</p>
+    <h1>¿Cuántos países puedes nombrar?</h1>
+    <p class="subtitle">Escribe países y el mapa se irá rellenando. Español o inglés · sin tildes · sin importar mayúsculas.</p>
+  </header>
+
+  <section class="game">
+    <div class="toolbar">
+      <div class="progress"><span id="count">0</span> / <span id="total">196</span></div>
+      <div class="input-wrap">
+        <input id="guess" type="text" placeholder="Escribe un país…" autocomplete="off" autofocus>
+        <button id="submit">Comprobar</button>
+      </div>
+      <div id="timer" class="timer">15:00</div>
+      <button id="pause" class="secondary" type="button">Pausa</button>
+    </div>
+
+    <div class="map-area" id="map-area">
+      <svg id="map" viewBox="0 0 1200 650" aria-label="Mapa mundial"></svg>
+      <div class="map-tools">
+        <button id="zoom-in" type="button">＋</button>
+        <button id="zoom-out" type="button">−</button>
+        <button id="reset-view" type="button">↺</button>
+      </div>
+      <div class="hint">Arrastra el mapa · rueda para ampliar</div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+    <div class="bottom">
+      <div class="left-actions">
+        <button id="missing" class="secondary" type="button">Mis países</button>
+        <button id="give-up" class="secondary" type="button">Rendirme</button>
+      </div>
+      <div class="right-actions">
+        <button id="reset" class="secondary" type="button">Reiniciar</button>
+      </div>
+    </div>
+    <div class="found-list-wrap" id="found-list-wrap"><div class="found-list" id="found-list"></div></div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+const WORLD_COUNTRY = "Mundo";
+const TOTAL = 196;
+const QUIZ_SECONDS = 15 * 60;
+
+const svg = d3.select('#map');
+const guessEl = document.getElementById('guess');
+const countEl = document.getElementById('count');
+const totalEl = document.getElementById('total');
+const timerEl = document.getElementById('timer');
+const feedbackEl = document.getElementById('feedback');
+const pauseBtn = document.getElementById('pause');
+const toastEl = document.getElementById('toast');
+const listWrap = document.getElementById('missing-list');
+const listGrid = document.getElementById('list-grid');
+
+totalEl.textContent = TOTAL;
+let regions = [];
+let features = [];
+let featureByRegion = new Map();
+let regionByGeoId = new Map();
+let solved = new Set();
+let localMode = false;
+let secondsLeft = QUIZ_SECONDS;
+let timerHandle = null;
+let paused = false;
+let quizEnded = false;
+
+
+
+function normalizar(text){
+  return (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’'.,()_/\-]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0');const s=String(sec%60).padStart(2,'0');return m+':'+s}
+function setFeedback(msg,type=''){feedbackEl.textContent=msg;feedbackEl.className='feedback '+type}
+function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),1200)}
+function updateCount(){countEl.textContent=solved.size; if(solved.size===regions.length && regions.length){endQuiz('¡Has completado los 196 países! 🌍','ok')}}
+function revealMissingOnMap(){regions.forEach(r=>{const el=featureByRegion.get(r.id);if(el)el.classed('revealed-missing',!solved.has(r.id));});document.querySelector('.hint').textContent='Pasa el ratón por un país para ver su nombre';}
+function startTimer(){
+  if(timerHandle || quizEnded) return;
+  timerHandle=setInterval(()=>{
+    if(paused) return;
+    secondsLeft--; timerEl.textContent=fmtTime(secondsLeft);
+    if(secondsLeft<=0){secondsLeft=0;timerEl.textContent='00:00';endQuiz('Se acabó el tiempo.','no')}
+  },1000)
+}
+function endQuiz(message,type){quizEnded=true;if(timerHandle)clearInterval(timerHandle);timerHandle=null;guessEl.disabled=true;document.getElementById('submit').disabled=true;setFeedback(message,type);revealMissingOnMap()}
+function resetQuiz(){
+  solved.clear(); secondsLeft=QUIZ_SECONDS; paused=false; quizEnded=false; timerEl.textContent='15:00';timerEl.classList.remove('paused');pauseBtn.textContent='Pausa';
+  if(timerHandle)clearInterval(timerHandle);timerHandle=null;guessEl.disabled=false;document.getElementById('submit').disabled=false;listWrap.classList.remove('open');setFeedback('');
+  svg.selectAll('.country,.small-marker').classed('found',false).classed('revealed-missing',false);document.querySelector('.hint').textContent='Rueda para ampliar · arrastra para mover';hideMapTooltip();updateFoundList();updateCount();guessEl.value='';guessEl.focus();
+}
+function startOnFirstInput(){startTimer()}
+function regionNames(region){return Array.isArray(region.names)?region.names:[]}
+function findLocalGuess(raw){
+  const q=normalizar(raw); if(!q) return null;
+  let exact=regions.filter(r=>regionNames(r).some(n=>normalizar(n)===q));
+  if(exact.length===1)return exact[0];
+  const qTokens=q.split(' ').filter(Boolean); if(qTokens.some(t=>t.length<3))return null;
+  const hits=regions.filter(r=>regionNames(r).some(name=>{
+    const tokens=normalizar(name).split(' ');
+    return qTokens.every(qt=>tokens.some(t=>t===qt||t.startsWith(qt)));
+  }));
+  return hits.length===1?hits[0]:null;
+}
+function atlasKey(name){
+  const n=normalizar(name);
+  const aliases={
+    'united states of america':'united states', 'united states':'united states',
+    'democratic republic of the congo':'democratic republic of the congo',
+    'democratic republic of congo':'democratic republic of the congo',
+    'dr congo':'democratic republic of the congo', 'drc':'democratic republic of the congo',
+    'dem rep congo':'democratic republic of the congo',
+    'central african republic':'central african rep.', 'dominican republic':'dominican rep.',
+    'solomon islands':'solomon is.', 'saint vincent and the grenadines':'st. vin. and gren.',
+    'saint kitts and nevis':'st. kitts and nevis', 'marshall islands':'marshall is.',
+    'federated states of micronesia':'micronesia', 'micronesia':'micronesia',
+    'cape verde':'cabo verde', 'bosnia and herzegovina':'bosnia and herz.',
+    'czech republic':'czechia', 'czechia':'czechia', 'eswatini':'eswatini', 'swaziland':'eswatini',
+    'viet nam':'vietnam', 'russian federation':'russia', 'brunei darussalam':'brunei',
+    "lao people's democratic republic":'laos', 'lao pdr':'laos', 'e swatini':'eswatini',
+    'south sudan':'s. sudan', 'republic of the congo':'congo', 'republic of congo':'congo',
+    'vatican city':'vatican', 'holy see':'vatican', 'taiwan':'taiwan', 'kosovo':'kosovo',
+    'north macedonia':'macedonia', 'macedonia':'macedonia'
+  };
+  return aliases[n]||n;
+}
+function regionKeySet(region){return new Set(regionNames(region).map(normalizar).map(atlasKey))}
+const GEO_ID_BY_NAME = {
+  "afghanistan": "004",
+  "albania": "008",
+  "germany": "276",
+  "andorra": "020",
+  "angola": "024",
+  "antigua and barbuda": "028",
+  "saudi arabia": "682",
+  "algeria": "012",
+  "argentina": "032",
+  "armenia": "051",
+  "australia": "036",
+  "austria": "040",
+  "azerbaijan": "031",
+  "bahamas": "044",
+  "bahrain": "048",
+  "bangladesh": "050",
+  "barbados": "052",
+  "belgium": "056",
+  "belize": "084",
+  "benin": "204",
+  "belarus": "112",
+  "bolivia": "068",
+  "bosnia and herzegovina": "070",
+  "botswana": "072",
+  "brazil": "076",
+  "brunei": "096",
+  "bulgaria": "100",
+  "burkina faso": "854",
+  "burundi": "108",
+  "bhutan": "064",
+  "cape verde": "132",
+  "cambodia": "116",
+  "cameroon": "120",
+  "canada": "124",
+  "qatar": "634",
+  "chad": "148",
+  "chile": "152",
+  "china": "156",
+  "cyprus": "196",
+  "colombia": "170",
+  "comoros": "174",
+  "congo": "178",
+  "north korea": "408",
+  "south korea": "410",
+  "côte d'ivoire": "384",
+  "costa rica": "188",
+  "croatia": "191",
+  "cuba": "192",
+  "denmark": "208",
+  "dominica": "212",
+  "ecuador": "218",
+  "egypt": "818",
+  "el salvador": "222",
+  "united arab emirates": "784",
+  "eritrea": "232",
+  "slovakia": "703",
+  "slovenia": "705",
+  "spain": "724",
+  "united states": "840",
+  "estonia": "233",
+  "eswatini": "748",
+  "ethiopia": "231",
+  "fiji": "242",
+  "philippines": "608",
+  "finland": "246",
+  "france": "250",
+  "gabon": "266",
+  "gambia": "270",
+  "georgia": "268",
+  "ghana": "288",
+  "grenada": "308",
+  "greece": "300",
+  "guatemala": "320",
+  "guinea": "324",
+  "guinea-bissau": "624",
+  "equatorial guinea": "226",
+  "guyana": "328",
+  "haiti": "332",
+  "honduras": "340",
+  "hungary": "348",
+  "india": "356",
+  "indonesia": "360",
+  "iraq": "368",
+  "iran": "364",
+  "ireland": "372",
+  "iceland": "352",
+  "marshall islands": "584",
+  "solomon islands": "090",
+  "israel": "376",
+  "italy": "380",
+  "jamaica": "388",
+  "japan": "392",
+  "jordan": "400",
+  "kazakhstan": "398",
+  "kenya": "404",
+  "kyrgyzstan": "417",
+  "kiribati": "296",
+  "kosovo": "383",
+  "kuwait": "414",
+  "laos": "418",
+  "lesotho": "426",
+  "latvia": "428",
+  "lebanon": "422",
+  "liberia": "430",
+  "libya": "434",
+  "liechtenstein": "438",
+  "lithuania": "440",
+  "luxembourg": "442",
+  "madagascar": "450",
+  "malaysia": "458",
+  "malawi": "454",
+  "maldives": "462",
+  "mali": "466",
+  "malta": "470",
+  "morocco": "504",
+  "mauritius": "480",
+  "mauritania": "478",
+  "mexico": "484",
+  "micronesia": "583",
+  "moldova": "498",
+  "monaco": "492",
+  "mongolia": "496",
+  "montenegro": "499",
+  "mozambique": "508",
+  "myanmar": "104",
+  "namibia": "516",
+  "nauru": "520",
+  "nepal": "524",
+  "nicaragua": "558",
+  "niger": "562",
+  "nigeria": "566",
+  "norway": "578",
+  "new zealand": "554",
+  "oman": "512",
+  "netherlands": "528",
+  "pakistan": "586",
+  "palau": "585",
+  "panama": "591",
+  "papua new guinea": "598",
+  "paraguay": "600",
+  "peru": "604",
+  "poland": "616",
+  "portugal": "620",
+  "united kingdom": "826",
+  "central african republic": "140",
+  "czechia": "203",
+  "democratic republic of the congo": "180",
+  "dominican republic": "214",
+  "north macedonia": "807",
+  "rwanda": "646",
+  "romania": "642",
+  "russia": "643",
+  "samoa": "882",
+  "saint kitts and nevis": "659",
+  "san marino": "674",
+  "saint vincent and the grenadines": "670",
+  "saint lucia": "662",
+  "sao tome and principe": "678",
+  "senegal": "686",
+  "serbia": "688",
+  "seychelles": "690",
+  "sierra leone": "694",
+  "singapore": "702",
+  "syria": "760",
+  "somalia": "706",
+  "sri lanka": "144",
+  "south africa": "710",
+  "sudan": "729",
+  "south sudan": "728",
+  "sweden": "752",
+  "switzerland": "756",
+  "suriname": "740",
+  "thailand": "764",
+  "taiwan": "158",
+  "tanzania": "834",
+  "tajikistan": "762",
+  "timor-leste": "626",
+  "togo": "768",
+  "tonga": "776",
+  "trinidad and tobago": "780",
+  "tunisia": "788",
+  "turkmenistan": "795",
+  "turkey": "792",
+  "tuvalu": "798",
+  "ukraine": "804",
+  "uganda": "800",
+  "uruguay": "858",
+  "uzbekistan": "860",
+  "vanuatu": "548",
+  "vatican city": "336",
+  "venezuela": "862",
+  "vietnam": "704",
+  "yemen": "887",
+  "djibouti": "262",
+  "zambia": "894",
+  "zimbabwe": "716",
+  "united states of america": "840",
+  "s. sudan": "728",
+  "bosnia and herz.": "070",
+  "dominican rep.": "214",
+  "central african rep.": "140",
+  "solomon is.": "090",
+  "marshall is.": "584",
+  "st. vin. and gren.": "670",
+  "st. kitts and nevis": "659",
+  "macedonia": "807",
+  "czech republic": "203",
+  "e swatini": "748",
+  "vatican": "336",
+  "cabo verde": "132",
+  "brunei darussalam": "096",
+  "viet nam": "704",
+  "russian federation": "643",
+  "turkiye": "792",
+  "são tomé and principe": "678",
+  "são tomé and príncipe": "678",
+  "federated states of micronesia": "583",
+  "palestine": "275"
+};
+function numericGeoKey(v){
+  const raw=String(v ?? '').trim();
+  return raw ? raw.padStart(3,'0') : '';
+}
+function rebuildGeoIndex(){
+  regionByGeoId.clear();
+  regions.forEach(r=>regionNames(r).forEach(n=>{const id=GEO_ID_BY_NAME[normalizar(n)]; if(id) regionByGeoId.set(id,r);}));
+}
+function featureRegion(d,index){
+  const id=numericGeoKey(d?.id);
+  return (id && regionByGeoId.get(id)) || index.get(atlasKey(d?.properties?.name||'')) || null;
+}
+function buildFeatureIndex(){
+  featureByRegion.clear();
+  const index=new Map();
+  regions.forEach(r=>regionKeySet(r).forEach(k=>index.set(k,r)));
+  svg.selectAll('.country').each(function(d){
+    const region=featureRegion(d,index);
+    if(region){
+      featureByRegion.set(region.id,d3.select(this));
+      d3.select(this).classed('unplayable',false).attr('data-region-id',region.id);
+    }
+  });
+}
+function renderMap(){
+  const width=1200,height=650;
+  svg.attr('viewBox',`0 0 ${width} ${height}`);svg.selectAll('*').remove();
+  projection=d3.geoNaturalEarth1().fitExtent([[8,8],[width-8,height-8]],{type:'FeatureCollection',features});
+  path=d3.geoPath(projection);
+  svg.append('path').datum({type:'Sphere'}).attr('fill','var(--water)').attr('d',path);
+  const index=new Map();regions.forEach(r=>regionKeySet(r).forEach(k=>index.set(k,r)));
+  const countries=svg.append('g').attr('class','countries');
+  countries.selectAll('path').data(features).join('path')
+    .attr('class','country').attr('d',path)
+    .each(function(d){const r=featureRegion(d,index);if(!r){d3.select(this).classed('unplayable',true);return;}featureByRegion.set(r.id,d3.select(this));d3.select(this).attr('data-region-id',r.id).classed('found',solved.has(r.id));})
+    .on('click',()=>{})
+    .on('mouseenter',function(e,d){if(!quizEnded)return;const r=featureRegion(d,index);if(r)showMapTooltip(r,e);})
+    .on('mousemove',function(e){if(quizEnded)moveMapTooltip(e);})
+    .on('mouseleave',hideMapTooltip);
+  buildFeatureIndex();
+  const zoom=d3.zoom().scaleExtent([1,5]).translateExtent([[0,0],[width,height]]).extent([[0,0],[width,height]])
+    .on('zoom',e=>svg.selectAll('.countries').attr('transform',e.transform));
+  svg.call(zoom);window.currentZoom=zoom;
+  document.getElementById('zoom-in').onclick=()=>svg.transition().duration(180).call(zoom.scaleBy,1.45);
+  document.getElementById('zoom-out').onclick=()=>svg.transition().duration(180).call(zoom.scaleBy,1/1.45);
+  document.getElementById('reset-view').onclick=()=>svg.transition().duration(220).call(zoom.transform,d3.zoomIdentity);
+}
+function showMapTooltip(region,e){ensureMapTooltip();tooltipEl.textContent=region.displayName||region.names?.[0]||'';tooltipEl.style.display='block';moveMapTooltip(e)}
+function moveMapTooltip(e){ensureMapTooltip();const rect=document.getElementById('map-area').getBoundingClientRect();tooltipEl.style.left=(e.clientX-rect.left+12)+'px';tooltipEl.style.top=(e.clientY-rect.top-12)+'px'}
+function hideMapTooltip(){if(tooltipEl)tooltipEl.style.display='none'}
+function ensureMapTooltip(){if(tooltipEl)return;tooltipEl=document.createElement('div');tooltipEl.style.cssText='position:absolute;pointer-events:none;display:none;z-index:20;background:#011726;color:var(--ink);border:1px solid var(--accent);padding:6px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 5px 16px rgba(0,0,0,.2)';document.getElementById('map-area').appendChild(tooltipEl)}
+let projection,path,tooltipEl;
+function addSolved(region){
+  if(!region || solved.has(region.id))return;
+  solved.add(region.id);const el=featureByRegion.get(region.id);if(el)el.classed('found',true).classed('revealed-missing',false);updateFoundList();updateCount();showToast('✓ '+(region.names?.[0]||'Correcto'));setFeedback('¡Correcto! '+(region.names?.[0]||''),'ok');guessEl.value='';guessEl.focus();
+}
+async function loadRegions(){
+  try{
+    const res=await fetch(`${API_BASE}/countries/${encodeURIComponent(WORLD_COUNTRY)}/regions/names`);if(!res.ok)throw new Error('HTTP '+res.status);
+    const data=await res.json();regions=data.map((r,i)=>({id:r.region_id,names:r.names||[],displayName:(r.names||[])[0]||`País ${i+1}`}));localMode=false;
+  }catch(err){console.warn('Backend no disponible, usando lista local',err);localMode=true;regions=getLocalRegions();}
+}
+function getLocalRegions(){
+  const data=[["Afganistán","Afghanistan"],["Albania","Albania"],["Alemania","Germany"],["Andorra","Andorra"],["Angola","Angola"],["Antigua y Barbuda","Antigua and Barbuda"],["Arabia Saudita","Saudi Arabia"],["Argelia","Algeria"],["Argentina","Argentina"],["Armenia","Armenia"],["Australia","Australia"],["Austria","Austria"],["Azerbaiyán","Azerbaijan"],["Bahamas","Bahamas"],["Baréin","Bahrain"],["Bangladés","Bangladesh"],["Barbados","Barbados"],["Bélgica","Belgium"],["Belice","Belize"],["Benín","Benin"],["Bielorrusia","Belarus"],["Bolivia","Bolivia"],["Bosnia y Herzegovina","Bosnia and Herzegovina"],["Botsuana","Botswana"],["Brasil","Brazil"],["Brunéi","Brunei"],["Bulgaria","Bulgaria"],["Burkina Faso","Burkina Faso"],["Burundi","Burundi"],["Bután","Bhutan"],["Cabo Verde","Cape Verde"],["Camboya","Cambodia"],["Camerún","Cameroon"],["Canadá","Canada"],["Catar","Qatar"],["Chad","Chad"],["Chile","Chile"],["China","China"],["Chipre","Cyprus"],["Colombia","Colombia"],["Comoras","Comoros"],["Congo","Congo"],["Corea del Norte","North Korea"],["Corea del Sur","South Korea"],["Costa de Marfil","Côte d'Ivoire"],["Costa Rica","Costa Rica"],["Croacia","Croatia"],["Cuba","Cuba"],["Dinamarca","Denmark"],["Dominica","Dominica"],["Ecuador","Ecuador"],["Egipto","Egypt"],["El Salvador","El Salvador"],["Emiratos Árabes Unidos","United Arab Emirates"],["Eritrea","Eritrea"],["Eslovaquia","Slovakia"],["Eslovenia","Slovenia"],["España","Spain"],["Estados Unidos","United States"],["Estonia","Estonia"],["Esuatini","Eswatini"],["Etiopía","Ethiopia"],["Fiji","Fiji"],["Filipinas","Philippines"],["Finlandia","Finland"],["Francia","France"],["Gabón","Gabon"],["Gambia","Gambia"],["Georgia","Georgia"],["Ghana","Ghana"],["Granada","Grenada"],["Grecia","Greece"],["Guatemala","Guatemala"],["Guinea","Guinea"],["Guinea-Bisáu","Guinea-Bissau"],["Guinea Ecuatorial","Equatorial Guinea"],["Guyana","Guyana"],["Haití","Haiti"],["Honduras","Honduras"],["Hungría","Hungary"],["India","India"],["Indonesia","Indonesia"],["Irak","Iraq"],["Irán","Iran"],["Irlanda","Ireland"],["Islandia","Iceland"],["Islas Marshall","Marshall Islands"],["Islas Salomón","Solomon Islands"],["Israel","Israel"],["Italia","Italy"],["Jamaica","Jamaica"],["Japón","Japan"],["Jordania","Jordan"],["Kazajistán","Kazakhstan"],["Kenia","Kenya"],["Kirguistán","Kyrgyzstan"],["Kiribati","Kiribati"],["Kosovo","Kosovo"],["Kuwait","Kuwait"],["Laos","Laos"],["Lesoto","Lesotho"],["Letonia","Latvia"],["Líbano","Lebanon"],["Liberia","Liberia"],["Libia","Libya"],["Liechtenstein","Liechtenstein"],["Lituania","Lithuania"],["Luxemburgo","Luxembourg"],["Madagascar","Madagascar"],["Malasia","Malaysia"],["Malaui","Malawi"],["Maldivas","Maldives"],["Malí","Mali"],["Malta","Malta"],["Marruecos","Morocco"],["Mauricio","Mauritius"],["Mauritania","Mauritania"],["México","Mexico"],["Micronesia","Micronesia"],["Moldavia","Moldova"],["Mónaco","Monaco"],["Mongolia","Mongolia"],["Montenegro","Montenegro"],["Mozambique","Mozambique"],["Myanmar","Myanmar"],["Namibia","Namibia"],["Nauru","Nauru"],["Nepal","Nepal"],["Nicaragua","Nicaragua"],["Níger","Niger"],["Nigeria","Nigeria"],["Noruega","Norway"],["Nueva Zelanda","New Zealand"],["Omán","Oman"],["Países Bajos","Netherlands"],["Pakistán","Pakistan"],["Palaos","Palau"],["Panamá","Panama"],["Papúa Nueva Guinea","Papua New Guinea"],["Paraguay","Paraguay"],["Perú","Peru"],["Polonia","Poland"],["Portugal","Portugal"],["Reino Unido","United Kingdom"],["República Centroafricana","Central African Republic"],["República Checa","Czechia"],["República Democrática del Congo","Democratic Republic of the Congo"],["República Dominicana","Dominican Republic"],["Macedonia del Norte","North Macedonia"],["Ruanda","Rwanda"],["Rumanía","Romania"],["Rusia","Russia"],["Samoa","Samoa"],["San Cristóbal y Nieves","Saint Kitts and Nevis"],["San Marino","San Marino"],["San Vicente y las Granadinas","Saint Vincent and the Grenadines"],["Santa Lucía","Saint Lucia"],["Santo Tomé y Príncipe","Sao Tome and Principe"],["Senegal","Senegal"],["Serbia","Serbia"],["Seychelles","Seychelles"],["Sierra Leona","Sierra Leone"],["Singapur","Singapore"],["Siria","Syria"],["Somalia","Somalia"],["Sri Lanka","Sri Lanka"],["Sudáfrica","South Africa"],["Sudán","Sudan"],["Sudán del Sur","South Sudan"],["Suecia","Sweden"],["Suiza","Switzerland"],["Surinam","Suriname"],["Tailandia","Thailand"],["Taiwán","Taiwan"],["Tanzania","Tanzania"],["Tayikistán","Tajikistan"],["Timor-Leste","Timor-Leste"],["Togo","Togo"],["Tonga","Tonga"],["Trinidad y Tobago","Trinidad and Tobago"],["Túnez","Tunisia"],["Turkmenistán","Turkmenistan"],["Turquía","Turkey"],["Tuvalu","Tuvalu"],["Ucrania","Ukraine"],["Uganda","Uganda"],["Uruguay","Uruguay"],["Uzbekistán","Uzbekistan"],["Vanuatu","Vanuatu"],["Vaticano","Vatican City"],["Venezuela","Venezuela"],["Vietnam","Vietnam"],["Yemen","Yemen"],["Yibuti","Djibouti"],["Zambia","Zambia"],["Zimbabue","Zimbabwe"]];
+  return data.map((x,i)=>({id:'local-'+i,names:x,displayName:x[0]}));
+}
+async function submitGuess(){
+  if(quizEnded || paused)return;
+  const raw=guessEl.value.trim();if(!raw)return;startOnFirstInput();let region=null;
+  if(localMode) region=findLocalGuess(raw);
+  else {
+    try{const res=await fetch(`${API_BASE}/regions/check?country=${encodeURIComponent(WORLD_COUNTRY)}&name=${encodeURIComponent(raw)}`);if(!res.ok)throw new Error('HTTP '+res.status);const data=await res.json();if(data.encontrado)region=regions.find(r=>r.id===data.region_id)||null}
+    catch(err){localMode=true;region=findLocalGuess(raw)}
+  }
+  if(!region){setFeedback('No encontrado o nombre ambiguo.','no');guessEl.select();return}
+  if(solved.has(region.id)){setFeedback('Ese país ya está descubierto.');guessEl.select();return}
+  addSolved(region);
+}
+function updateFoundList(){
+  const wrap=document.getElementById('found-list-wrap');const list=document.getElementById('found-list');
+  if(!wrap||!list)return;
+  const found=regions.filter(r=>solved.has(r.id)).sort((a,b)=>a.displayName.localeCompare(b.displayName,'es'));
+  list.innerHTML=found.map(r=>`<span class="chip">${r.displayName}</span>`).join('');
+}
+function toggleFoundList(){
+  const wrap=document.getElementById('found-list-wrap');
+  if(!solved.size){setFeedback('Todavía no has acertado ningún país.');return;}
+  updateFoundList();wrap.classList.toggle('open');
+}
+pauseBtn.onclick=()=>{if(quizEnded)return;paused=!paused;timerEl.classList.toggle('paused',paused);pauseBtn.textContent=paused?'Reanudar':'Pausa';setFeedback(paused?'El quiz está pausado.':'');if(paused)guessEl.blur();else guessEl.focus()};
+document.getElementById('submit').onclick=submitGuess;
+document.getElementById('missing').onclick=toggleFoundList;
+document.getElementById('give-up').onclick=()=>{if(quizEnded)return;endQuiz(`Quiz terminado: ${solved.size}/${regions.length}. Los países que faltaban están resaltados; pasa el ratón para ver sus nombres.`, 'no')};
+document.getElementById('reset').onclick=resetQuiz;
+guessEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitGuess()}});
+
+async function bootstrap(){
+  const topo=await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-50m.json');
+  features=topojson.feature(topo,topo.objects.countries).features.filter(f=>f.properties?.name);
+  await loadRegions();
+  // Si la carga del backend falla, la lista local tiene 196 entradas jugables.
+  if(regions.length!==TOTAL){console.warn('Se esperaban 196 regiones, se recibieron',regions.length)}
+  rebuildGeoIndex(); renderMap(); updateCount(); startTimer();
+  setFeedback(localMode?'Mapa listo en modo local.':'Mapa listo.');
+}
+bootstrap().catch(err=>{console.error(err);setFeedback('No se pudo cargar el mapa mundial. Comprueba la conexión.','no')});
+</script>
+</body>
+</html>

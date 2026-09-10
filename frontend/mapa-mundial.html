@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas — Explorador de países</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ocean-deep:#0e2233;
+    --ocean-mid:#123049;
+    --land:#e7ddc6;
+    --land-hover:#f3c667;
+    --land-active:#d97b3f;
+    --ink:#0e2233;
+    --paper:#f6f1e4;
+    --brass:#c9a24b;
+    --brass-dim:#7d6a3c;
+    --panel-bg:#f6f1e4;
+    --shadow:rgba(5,14,22,0.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:var(--ocean-deep);
+    font-family:'Space Mono',monospace;
+    color:var(--paper);
+    overflow:hidden;
+  }
+  .stage{
+    position:relative; width:100vw; height:100vh;
+    background:radial-gradient(ellipse at 30% 20%, var(--ocean-mid) 0%, var(--ocean-deep) 65%);
+  }
+  header{
+    position:absolute; top:0; left:0; right:0;
+    padding:26px 40px 0 40px;
+    z-index:20;
+    pointer-events:none;
+  }
+  header .eyebrow-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    border-bottom:1px solid rgba(201,162,75,0.35);
+    padding-bottom:14px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:clamp(26px,3.2vw,42px);
+    margin:0;
+    color:var(--paper);
+  }
+  h1 em{ font-style:italic; color:var(--brass); }
+  .coords{
+    font-size:11px; letter-spacing:0.08em; color:var(--brass-dim);
+    text-align:right; line-height:1.5;
+  }
+  #map-wrap{ width:100%; height:100%; }
+  svg#worldmap{ width:100%; height:100%; display:block; cursor:grab; }
+  svg#worldmap.grabbing{ cursor:grabbing; }
+
+  .sphere{ fill:url(#oceanGlow); }
+  .graticule{ fill:none; stroke:#1c4363; stroke-width:0.5; }
+
+  .country{
+    fill:var(--land);
+    fill-opacity:0.85;
+    stroke:var(--ocean-deep);
+    stroke-width:0.5;
+    transition:fill 0.15s ease, fill-opacity 0.15s ease;
+    cursor:pointer;
+  }
+  .country:hover{ fill:var(--land-hover); fill-opacity:1; }
+  .country.active{ fill:var(--land-active); fill-opacity:1; }
+
+  .loading{
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+    font-size:12px; letter-spacing:0.1em; color:var(--brass-dim); z-index:5;
+  }
+
+  .tooltip{
+    position:fixed;
+    pointer-events:none;
+    background:var(--panel-bg);
+    color:var(--ink);
+    font-family:'Space Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.04em;
+    padding:6px 10px;
+    border:1px solid var(--brass);
+    opacity:0;
+    transform:translate(-50%,-130%);
+    transition:opacity 0.12s ease;
+    z-index:60;
+    white-space:nowrap;
+  }
+  .tooltip.show{ opacity:1; }
+
+  .zoom-controls{
+    position:absolute;
+    bottom:26px; left:40px;
+    z-index:20;
+    display:flex;
+    gap:8px;
+  }
+  .zoom-controls button{
+    width:32px; height:32px;
+    border:1px solid var(--brass-dim);
+    background:transparent;
+    color:var(--paper);
+    font-family:'Space Mono',monospace;
+    font-size:15px;
+    cursor:pointer;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .zoom-controls button:hover{ border-color:var(--brass); color:var(--brass); }
+
+  .scale{
+    position:absolute; bottom:26px; right:40px; z-index:20;
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; color:var(--brass-dim); letter-spacing:0.06em;
+  }
+  .scale .bar{ width:90px; height:1px; background:var(--brass-dim); position:relative; }
+  .scale .bar::before,.scale .bar::after{
+    content:''; position:absolute; top:-3px; width:1px; height:7px; background:var(--brass-dim);
+  }
+  .scale .bar::before{ left:0; } .scale .bar::after{ right:0; }
+
+  .panel{
+    position:fixed;
+    top:50%; left:50%;
+    width:min(720px, calc(100vw - 32px));
+    max-height:min(86vh, 760px);
+    overflow:auto;
+    background:var(--panel-bg); color:var(--ink);
+    transform:translate(-50%,-50%) scale(0.96);
+    opacity:0;
+    pointer-events:none;
+    transition:transform 0.32s cubic-bezier(.16,.84,.32,1), opacity 0.28s ease;
+    z-index:50;
+    box-shadow:0 28px 80px var(--shadow);
+    display:flex; flex-direction:column;
+    padding:34px 34px 28px;
+    border:1px solid rgba(201,162,75,0.35);
+  }
+  .panel.open{
+    transform:translate(-50%,-50%) scale(1);
+    opacity:1;
+    pointer-events:auto;
+  }
+  .panel-close{
+    position:absolute; top:20px; right:20px; width:32px; height:32px;
+    border:1px solid var(--ink); background:none; border-radius:50%;
+    cursor:pointer; font-family:'Space Mono',monospace; font-size:14px; color:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    opacity:0.7; transition:opacity 0.2s ease, transform 0.2s ease;
+  }
+  .panel-close:hover{ opacity:1; transform:rotate(90deg); }
+  .panel-kicker{ font-size:11px; letter-spacing:0.12em; color:var(--brass-dim); margin:0 0 4px 0; }
+  .panel-title{
+    font-family:'Fraunces',serif; font-weight:600; font-size:34px;
+    margin:0; line-height:1.05; padding-right:48px;
+  }
+  .panel-sub{
+    font-size:12px; color:#6b6250; margin:8px 0 22px 0;
+    border-bottom:1px solid rgba(14,34,51,0.12); padding-bottom:18px;
+  }
+
+  .country-identity{
+    display:grid;
+    grid-template-columns:150px 1fr;
+    gap:22px;
+    align-items:center;
+    padding:18px;
+    margin-bottom:22px;
+    border:1px solid rgba(14,34,51,0.14);
+    background:rgba(255,255,255,0.28);
+  }
+  .country-map{
+    height:110px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .country-map svg{ width:100%; height:100%; display:block; }
+  .country-map path{
+    fill:var(--land-active);
+    stroke:var(--ocean-deep);
+    stroke-width:0.7;
+  }
+  .country-meta{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    min-width:0;
+  }
+  .country-flag{
+    width:76px; height:50px; object-fit:cover;
+    border:1px solid rgba(14,34,51,0.16);
+    background:#ece6d6;
+    flex-shrink:0;
+  }
+  .country-copy{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .country-label{ font-size:10px; letter-spacing:0.1em; color:var(--brass-dim); }
+  .country-name{ font-family:'Fraunces',serif; font-size:25px; line-height:1.05; }
+  .country-code{ font-size:10px; color:#847a63; }
+
+  .panel-cards{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:12px;
+  }
+  .card{
+    min-height:108px;
+    display:flex; align-items:flex-end; justify-content:space-between; gap:14px;
+    padding:17px 18px; border:1px solid rgba(14,34,51,0.15);
+    background:transparent; cursor:pointer; text-align:left;
+    transition:border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    font-family:'Space Mono',monospace;
+  }
+  .card:hover{ border-color:var(--brass); background:rgba(201,162,75,0.09); transform:translateY(-2px); }
+  .card .card-text{ display:flex; flex-direction:column; gap:5px; }
+  .card .card-title{ font-family:'Fraunces',serif; font-size:17px; color:var(--ink); font-weight:500; }
+  .card .card-desc{ font-size:10.5px; color:#847a63; letter-spacing:0.02em; line-height:1.45; }
+  .card .arrow{ font-size:16px; color:var(--brass); flex-shrink:0; }
+  .card.extra{
+    border-style:dashed;
+    cursor:default;
+    opacity:0.68;
+  }
+  .card.extra:hover{ transform:none; background:transparent; border-color:rgba(14,34,51,0.15); }
+  .future-badge{
+    display:inline-block;
+    margin-top:4px;
+    font-size:9px;
+    letter-spacing:0.08em;
+    color:var(--brass-dim);
+  }
+  .panel-footer{ margin-top:18px; font-size:10px; color:#a79d84; letter-spacing:0.05em; }
+
+  .overlay{
+    position:fixed; inset:0; background:rgba(5,14,22,0.52);
+    backdrop-filter:blur(2px);
+    opacity:0; pointer-events:none; transition:opacity 0.28s ease; z-index:40;
+  }
+  .overlay.open{ opacity:1; pointer-events:auto; }
+
+  @media (max-width:640px){
+    header{ padding:18px 18px 0 18px; }
+    .coords{ display:none; }
+    .scale{ display:none; }
+    .panel{
+      width:calc(100vw - 20px);
+      max-height:90vh;
+      padding:26px 18px 20px;
+    }
+    .panel-title{ font-size:28px; }
+    .country-identity{
+      grid-template-columns:1fr;
+      gap:14px;
+    }
+    .country-map{ height:95px; }
+    .panel-cards{ grid-template-columns:1fr; }
+    .card{ min-height:94px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <header>
+    <div class="eyebrow-row">
+      <h1>Atlas <em>Mundial</em></h1>
+      <div class="coords">proyección Natural Earth<br>seleccione un país</div>
+    </div>
+  </header>
+
+  <div id="map-wrap">
+    <div class="loading" id="loading">cargando fronteras del mundo…</div>
+    <svg id="worldmap"></svg>
+  </div>
+
+  <div class="zoom-controls">
+    <button id="zoomIn">+</button>
+    <button id="zoomOut">–</button>
+    <button id="zoomReset">⟲</button>
+  </div>
+  <div class="scale"><span>0</span><span class="bar"></span><span>2000 km</span></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+<div class="overlay" id="overlay"></div>
+
+<div class="panel" id="panel">
+  <button class="panel-close" id="panelClose" aria-label="Cerrar">✕</button>
+  <p class="panel-kicker">PAÍS SELECCIONADO</p>
+  <h2 class="panel-title" id="panelTitle">—</h2>
+  <p class="panel-sub">Selecciona el nivel administrativo que quieres explorar.</p>
+
+  <div class="country-identity">
+    <div class="country-map" id="countryMap" aria-label="Silueta del país seleccionado"></div>
+    <div class="country-meta">
+      <img class="country-flag" id="countryFlag" src="" alt="" loading="lazy">
+      <div class="country-copy">
+        <span class="country-label">REFERENCIA VISUAL</span>
+        <span class="country-name" id="countryVisualName">—</span>
+        <span class="country-code" id="countryCode">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel-cards">
+    <button class="card" data-level="first">
+      <span class="card-text">
+        <span class="card-title">Primera subdivisión</span>
+        <span class="card-desc">Estados, provincias, regiones o equivalente.</span>
+      </span>
+      <span class="arrow">→</span>
+    </button>
+
+    <button class="card" data-level="second">
+      <span class="card-text">
+        <span class="card-title">Segunda subdivisión</span>
+        <span class="card-desc">Municipios, distritos, condados o equivalente.</span>
+      </span>
+      <span class="arrow">→</span>
+    </button>
+
+    <button class="card extra" data-level="future" aria-disabled="true">
+      <span class="card-text">
+        <span class="card-title">Más niveles</span>
+        <span class="card-desc">Nueva capa administrativa preparada para futuras versiones.</span>
+        <span class="future-badge">PRÓXIMAMENTE</span>
+      </span>
+      <span class="arrow">+</span>
+    </button>
+  </div>
+
+  <p class="panel-footer">Las divisiones se muestran como vistas de exploración del país seleccionado.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+(function(){
+  const svg = d3.select('#worldmap');
+  const wrap = document.getElementById('map-wrap');
+  const tooltip = document.getElementById('tooltip');
+  const panel = document.getElementById('panel');
+  const overlay = document.getElementById('overlay');
+  const panelTitle = document.getElementById('panelTitle');
+  const countryMapEl = document.getElementById('countryMap');
+  const countryFlagEl = document.getElementById('countryFlag');
+  const countryVisualNameEl = document.getElementById('countryVisualName');
+  const countryCodeEl = document.getElementById('countryCode');
+  const loadingEl = document.getElementById('loading');
+
+  const numericToIso = {"533":"aw","004":"af","024":"ao","660":"ai","248":"ax","008":"al","020":"ad","784":"ae","032":"ar","051":"am","016":"as","010":"aq","260":"tf","028":"ag","036":"au","040":"at","031":"az","108":"bi","056":"be","204":"bj","535":"bq","854":"bf","050":"bd","100":"bg","048":"bh","044":"bs","070":"ba","652":"bl","112":"by","084":"bz","060":"bm","068":"bo","076":"br","052":"bb","096":"bn","064":"bt","074":"bv","072":"bw","140":"cf","124":"ca","166":"cc","756":"ch","152":"cl","156":"cn","384":"ci","120":"cm","180":"cd","178":"cg","184":"ck","170":"co","174":"km","132":"cv","188":"cr","192":"cu","531":"cw","162":"cx","136":"ky","196":"cy","203":"cz","276":"de","262":"dj","212":"dm","208":"dk","214":"do","012":"dz","218":"ec","818":"eg","232":"er","732":"eh","724":"es","233":"ee","231":"et","246":"fi","242":"fj","238":"fk","250":"fr","234":"fo","583":"fm","266":"ga","826":"gb","268":"ge","831":"gg","288":"gh","292":"gi","324":"gn","312":"gp","270":"gm","624":"gw","226":"gq","300":"gr","308":"gd","304":"gl","320":"gt","254":"gf","316":"gu","328":"gy","344":"hk","334":"hm","340":"hn","191":"hr","332":"ht","348":"hu","360":"id","833":"im","356":"in","086":"io","372":"ie","364":"ir","368":"iq","352":"is","376":"il","380":"it","388":"jm","832":"je","400":"jo","392":"jp","398":"kz","404":"ke","417":"kg","116":"kh","296":"ki","659":"kn","410":"kr","414":"kw","418":"la","422":"lb","430":"lr","434":"ly","662":"lc","438":"li","144":"lk","426":"ls","440":"lt","442":"lu","428":"lv","446":"mo","663":"mf","504":"ma","492":"mc","498":"md","450":"mg","462":"mv","484":"mx","584":"mh","807":"mk","466":"ml","470":"mt","104":"mm","499":"me","496":"mn","580":"mp","508":"mz","478":"mr","500":"ms","474":"mq","480":"mu","454":"mw","458":"my","175":"yt","516":"na","540":"nc","562":"ne","574":"nf","566":"ng","558":"ni","570":"nu","528":"nl","578":"no","524":"np","520":"nr","554":"nz","512":"om","586":"pk","591":"pa","612":"pn","604":"pe","608":"ph","585":"pw","598":"pg","616":"pl","630":"pr","408":"kp","620":"pt","600":"py","275":"ps","258":"pf","634":"qa","638":"re","642":"ro","643":"ru","646":"rw","682":"sa","729":"sd","686":"sn","702":"sg","239":"gs","654":"sh","744":"sj","090":"sb","694":"sl","222":"sv","674":"sm","706":"so","666":"pm","688":"rs","728":"ss","678":"st","740":"sr","703":"sk","705":"si","752":"se","748":"sz","534":"sx","690":"sc","760":"sy","796":"tc","148":"td","768":"tg","764":"th","762":"tj","772":"tk","795":"tm","626":"tl","776":"to","780":"tt","788":"tn","792":"tr","798":"tv","158":"tw","834":"tz","800":"ug","804":"ua","581":"um","858":"uy","840":"us","860":"uz","336":"va","670":"vc","862":"ve","092":"vg","850":"vi","704":"vn","548":"vu","876":"wf","882":"ws","887":"ye","710":"za","894":"zm","716":"zw"};
+
+  let width = wrap.clientWidth, height = wrap.clientHeight;
+  svg.attr('viewBox', [0,0,width,height]);
+
+  const g = svg.append('g');
+
+  // ocean gradient
+  const defs = svg.append('defs');
+  const grad = defs.append('radialGradient')
+    .attr('id','oceanGlow').attr('cx','30%').attr('cy','25%').attr('r','85%');
+  grad.append('stop').attr('offset','0%').attr('stop-color','#16405f');
+  grad.append('stop').attr('offset','100%').attr('stop-color','#0e2233');
+
+  const projection = d3.geoNaturalEarth1();
+  const path = d3.geoPath(projection);
+
+  const sphere = g.append('path').attr('class','sphere');
+  const graticuleG = g.append('path').attr('class','graticule');
+  const countriesG = g.append('g').attr('class','countries-group');
+
+  const zoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .on('zoom', (event)=>{ g.attr('transform', event.transform); });
+  svg.call(zoom);
+  svg.on('mousedown.cursor', ()=> svg.classed('grabbing', true));
+  svg.on('mouseup.cursor', ()=> svg.classed('grabbing', false));
+
+  document.getElementById('zoomIn').addEventListener('click', ()=> svg.transition().duration(300).call(zoom.scaleBy, 1.5));
+  document.getElementById('zoomOut').addEventListener('click', ()=> svg.transition().duration(300).call(zoom.scaleBy, 0.67));
+  document.getElementById('zoomReset').addEventListener('click', ()=> svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity));
+
+  function resize(){
+    width = wrap.clientWidth; height = wrap.clientHeight;
+    svg.attr('viewBox', [0,0,width,height]);
+    projection.fitSize([width*0.92, height*0.88], {type:'Sphere'});
+    const [[x0,y0],[x1,y1]] = path.bounds({type:'Sphere'});
+    const dx = width - (x1 - x0), dy = height - (y1 - y0);
+    projection.translate([projection.translate()[0] + dx/2 - x0, projection.translate()[1] + dy/2 - y0 + height*0.03]);
+    sphere.attr('d', path({type:'Sphere'}));
+    graticuleG.attr('d', path(d3.geoGraticule10()));
+    countriesG.selectAll('path').attr('d', path);
+
+    // Bloquea el paneo del mapa cuando no hay zoom (scale=1): al fijar la
+    // extensión de traslación igual a la del viewport, no queda margen para
+    // arrastrar el mapa hasta que el usuario haga zoom.
+    zoom.extent([[0,0],[width,height]])
+        .translateExtent([[0,0],[width,height]]);
+  }
+
+  let activeNode = null;
+
+  // Para la silueta en miniatura del panel, cuando un país es un MultiPolygon
+  // (p. ej. Rusia con el exclave de Kaliningrado), nos quedamos solo con el
+  // polígono de mayor área para que la silueta muestre únicamente el
+  // territorio principal.
+  function mainlandOnly(feature){
+    if(feature?.geometry?.type !== 'MultiPolygon') return feature;
+    const coords = feature.geometry.coordinates;
+    let maxArea = -1, maxIdx = 0;
+    coords.forEach((poly, i) => {
+      const area = Math.abs(d3.geoArea({type:'Polygon', coordinates: poly}));
+      if(area > maxArea){ maxArea = area; maxIdx = i; }
+    });
+    return {
+      ...feature,
+      geometry: { type:'Polygon', coordinates: coords[maxIdx] }
+    };
+  }
+
+  function renderCountryPreview(feature){
+    const name = feature?.properties?.name || 'País';
+    const numericId = String(feature?.id || '').padStart(3, '0');
+    const iso2 = numericToIso[numericId] || '';
+    const previewFeature = mainlandOnly(feature);
+
+    countryMapEl.innerHTML = '';
+    const miniSvg = d3.select(countryMapEl)
+      .append('svg')
+      .attr('viewBox', '0 0 180 110')
+      .attr('role', 'img')
+      .attr('aria-label', 'Silueta de ' + name);
+
+    const miniProjection = d3.geoNaturalEarth1().fitSize([160, 92], previewFeature);
+    const miniPath = d3.geoPath(miniProjection);
+
+    miniSvg.append('path').datum(previewFeature).attr('d', miniPath);
+
+    countryVisualNameEl.textContent = name;
+    countryCodeEl.textContent = iso2 ? ('ISO · ' + iso2.toUpperCase()) : 'Código ISO no disponible';
+
+    countryFlagEl.alt = 'Bandera de ' + name;
+    if(iso2){
+      countryFlagEl.src = 'https://flagcdn.com/w160/' + iso2 + '.png';
+      countryFlagEl.style.display = 'block';
+    }else{
+      countryFlagEl.removeAttribute('src');
+      countryFlagEl.style.display = 'none';
+    }
+  }
+
+  function openPanel(feature){
+    if(activeNode) activeNode.classList.remove('active');
+    panelTitle.textContent = feature?.properties?.name || 'País';
+    renderCountryPreview(feature);
+    panel.classList.add('open');
+    overlay.classList.add('open');
+  }
+  function closePanel(){
+    panel.classList.remove('open');
+    overlay.classList.remove('open');
+    if(activeNode){ activeNode.classList.remove('active'); activeNode = null; }
+  }
+  document.getElementById('panelClose').addEventListener('click', closePanel);
+  overlay.addEventListener('click', closePanel);
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closePanel(); });
+
+  document.querySelectorAll('.panel-cards .card').forEach(card => {
+    card.addEventListener('click', () => {
+      if(card.dataset.level === 'future') return;
+      closePanel();
+      // La navegación real de cada nivel puede conectarse aquí más adelante.
+    });
+  });
+
+  const dataUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+  d3.json(dataUrl).then(worldData => {
+    loadingEl.style.display = 'none';
+    const countries = topojson.feature(worldData, worldData.objects.countries);
+
+    countriesG.selectAll('path')
+      .data(countries.features)
+      .join('path')
+      .attr('class','country')
+      .attr('d', path)
+      .on('mouseenter', function(event, d){
+        const name = d.properties.name || 'País';
+        tooltip.textContent = name;
+        tooltip.classList.add('show');
+      })
+      .on('mousemove', function(event){
+        tooltip.style.left = event.clientX + 'px';
+        tooltip.style.top = event.clientY + 'px';
+      })
+      .on('mouseleave', function(){
+        tooltip.classList.remove('show');
+      })
+      .on('click', function(event, d){
+        if(activeNode) activeNode.classList.remove('active');
+        this.classList.add('active');
+        activeNode = this;
+        openPanel(d);
+      });
+
+    resize();
+  }).catch(err => {
+    loadingEl.textContent = 'no se pudieron cargar los datos del mapa (revisa tu conexión).';
+    console.error(err);
+  });
+
+  window.addEventListener('resize', resize);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoPlay — Estados de Brasil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0e2233; --panel:#123049; --ink:#f6f1e4; --muted:#7d6a3c; --line:#1c4363;
+  --water:#0e2233; --land:#ece6d7; --land-hover:#d9bd82; --found:#c68b5c;
+  --found-stroke:#c9a24b; --accent:#c9a24b; --accent-soft:#3a2e14;
+  --danger:#e0895a; --white:#f6f1e4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);background-image:radial-gradient(circle at 12% 8%,rgba(18,48,73,.45),transparent 40%),radial-gradient(circle at 92% 92%,rgba(201,162,75,.12),transparent 45%);color:var(--ink);font-family:Inter,sans-serif}
+.page{width:min(1320px,calc(100% - 28px));margin:24px auto 48px}
+header{text-align:left;margin-bottom:16px}
+.kicker{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:700;color:var(--accent);margin:0 0 7px}
+h1{font:700 42px/1.05 Fraunces,serif;margin:0 0 8px}
+.subtitle{margin:0;color:var(--muted);font-size:14px}
+.game{background:var(--panel);border:1px solid #1c4363;border-radius:10px;overflow:hidden;box-shadow:0 12px 34px rgba(0,0,0,.14)}
+.toolbar{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.progress{font:700 19px Fraunces,serif;min-width:150px}.progress span{color:var(--accent)}
+.input-wrap{display:flex;gap:8px;flex:1;min-width:260px}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:500 15px Inter,sans-serif}
+input::placeholder{color:#6b7f92}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input:disabled{opacity:.5}
+button{border:0;border-radius:6px;padding:11px 14px;font:700 13px Inter,sans-serif;cursor:pointer;background:var(--accent);color:var(--bg)}
+button:hover{background:#e0bb7e}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:transparent;color:var(--muted);border:1px solid var(--line)}
+button.secondary:hover{background:var(--panel);color:var(--ink);border-color:var(--land-hover)}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;min-width:78px;text-align:center}
+.timer.paused{color:var(--danger)}
+.map-area{position:relative;background:var(--water);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#map{width:100%;height:min(68vh,700px);min-height:430px;display:block;cursor:grab;touch-action:none}
+#map:active{cursor:grabbing}
+.country{fill:var(--land);stroke:var(--land-hover);stroke-width:.6;vector-effect:non-scaling-stroke;transition:fill .15s ease,stroke .15s ease}
+.country:hover{fill:var(--land-hover);stroke:var(--accent)}
+.country.found{fill:var(--found);stroke:var(--found-stroke)}
+.country.revealed-missing{fill:var(--land-hover);stroke:var(--accent-2,var(--accent))}
+.map-tools{position:absolute;left:12px;top:12px;display:flex;gap:6px}
+.map-tools button{padding:8px 10px;background:rgba(18,48,73,.94);color:var(--ink);border:1px solid var(--line)}
+.hint{position:absolute;right:12px;bottom:12px;background:rgba(14,34,51,.90);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--muted)}
+.loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,34,51,.55);color:var(--muted);font-size:13px;letter-spacing:.04em;pointer-events:none;opacity:1;transition:opacity .25s ease}
+.loading-overlay.hidden{opacity:0}
+.feedback{min-height:20px;padding:9px 14px 0;font-size:13px;color:var(--muted)}
+.feedback.ok{color:var(--found-stroke);font-weight:700}.feedback.no{color:var(--danger);font-weight:700}
+.bottom{padding:11px 14px 15px;display:flex;gap:8px;justify-content:space-between;align-items:flex-start;border-top:1px solid var(--line);flex-wrap:wrap}
+.left-actions,.right-actions{display:flex;gap:8px;flex-wrap:wrap}
+.found-list-wrap{padding:0 14px 15px;display:none}.found-list-wrap.open{display:block;border-top:1px solid var(--line);padding-top:10px}.found-list{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:12px;font-weight:600;background:var(--accent-soft);border:1px solid transparent;padding:4px 10px;border-radius:999px;color:var(--found-stroke)}
+.toast{position:absolute;left:50%;top:18px;transform:translateX(-50%);background:rgba(14,34,51,.94);color:var(--ink);padding:8px 12px;border-radius:999px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s}
+.toast.show{opacity:1}
+.credit{padding:0 14px 14px;font-size:10.5px;color:var(--muted);opacity:.75}
+@media(max-width:720px){h1{font-size:34px}.page{width:min(100% - 14px,1320px);margin-top:12px}.toolbar{padding:10px}.input-wrap{min-width:100%}.progress{min-width:unset}#map{height:58vh;min-height:360px}.hint{display:none}}
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="kicker">GeoPlay · Brasil</p>
+    <h1>¿Cuántos estados de Brasil puedes nombrar?</h1>
+    <p class="subtitle">Escribe un estado (o el Distrito Federal) y el mapa se irá rellenando. Español o portugués · sin tildes · sin importar mayúsculas.</p>
+  </header>
+
+  <section class="game">
+    <div class="toolbar">
+      <div class="progress"><span id="count">0</span> / <span id="total">…</span></div>
+      <div class="input-wrap">
+        <input id="guess" type="text" placeholder="Escribe un estado…" autocomplete="off" autofocus disabled>
+        <button id="submit" disabled>Comprobar</button>
+      </div>
+      <div id="timer" class="timer">25:00</div>
+      <button id="pause" class="secondary" type="button">Pausa</button>
+    </div>
+
+    <div class="map-area" id="map-area">
+      <svg id="map" viewBox="0 0 960 620" aria-label="Mapa de Brasil">
+        <g class="regions"></g>
+      </svg>
+      <div class="map-tools">
+        <button id="zoom-in" type="button" title="Acercar">+</button>
+        <button id="zoom-out" type="button" title="Alejar">−</button>
+        <button id="reset-view" type="button" title="Restablecer vista">⤢</button>
+      </div>
+      <div class="hint">Rueda para ampliar · arrastra solo con zoom activado</div>
+      <div class="loading-overlay" id="loading-overlay">Cargando el mapa de Brasil…</div>
+      <div class="toast" id="toast"></div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <div class="bottom">
+      <div class="left-actions">
+        <button id="missing" class="secondary" type="button">Mis estados</button>
+        <button id="give-up" class="secondary" type="button">Rendirme</button>
+      </div>
+      <div class="right-actions">
+        <button id="reset" class="secondary" type="button">Reiniciar</button>
+      </div>
+    </div>
+    <div class="found-list-wrap" id="found-list-wrap"><div class="found-list" id="found-list"></div></div>
+    <p class="credit">Datos geográficos: Highcharts Maps (Natural Earth). Los límites administrativos siguen ese conjunto de datos público.</p>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+const GEO_URL = "https://code.highcharts.com/mapdata/countries/br/br-all.geo.json";
+const QUIZ_SECONDS = 25 * 60;
+const WIDTH = 960, HEIGHT = 620;
+
+const svg = d3.select('#map');
+const guessEl = document.getElementById('guess');
+const countEl = document.getElementById('count');
+const totalEl = document.getElementById('total');
+const timerEl = document.getElementById('timer');
+const feedbackEl = document.getElementById('feedback');
+const pauseBtn = document.getElementById('pause');
+const toastEl = document.getElementById('toast');
+const loadingOverlay = document.getElementById('loading-overlay');
+
+let regions = [];
+let featureCollection = null;
+let featureByRegion = new Map();
+let solved = new Set();
+let secondsLeft = QUIZ_SECONDS;
+let timerHandle = null;
+let paused = false;
+let quizEnded = false;
+let mapReady = false;
+
+function normalizar(text){
+  return (text || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[’']/g,'')
+    .replace(/[.,()_/\-]+/g,' ').replace(/\s+/g,' ').trim();
+}
+
+// --- alias en español para los estados cuyo nombre se traduce del
+// portugués; el resto siempre se puede adivinar con el nombre portugués
+// que trae el propio dato (basta con quitar tildes) ---
+const SPANISH_ALIASES = {};
+function addAlias(en, es, extra){
+  SPANISH_ALIASES[normalizar(en)] = { es, aliases: extra || [] };
+}
+addAlias('Espirito Santo', 'Espíritu Santo', ['espirito santo','espiritu santo']);
+addAlias('Rio Grande do Sul', 'Río Grande del Sur', ['rio grande do sul','rio grande del sur']);
+addAlias('Rio Grande do Norte', 'Río Grande del Norte', ['rio grande do norte','rio grande del norte']);
+addAlias('Sao Paulo', 'São Paulo', ['sao paulo','san pablo']);
+addAlias('Mato Grosso do Sul', 'Mato Grosso do Sul', ['mato grosso do sul','mato grosso del sur']);
+
+function fmtTime(sec){const m=String(Math.floor(sec/60)).padStart(2,'0');const s=String(sec%60).padStart(2,'0');return m+':'+s}
+function setFeedback(msg,type=''){feedbackEl.textContent=msg;feedbackEl.className='feedback '+type}
+function showToast(msg){toastEl.textContent=msg;toastEl.classList.add('show');setTimeout(()=>toastEl.classList.remove('show'),1200)}
+function updateCount(){
+  countEl.textContent=solved.size;
+  if(mapReady && solved.size===regions.length && regions.length){endQuiz(`¡Has completado los ${regions.length} estados de Brasil! 🇧🇷`,'ok')}
+}
+function revealMissingOnMap(){regions.forEach(r=>{const el=featureByRegion.get(r.id);if(el)el.classed('revealed-missing',!solved.has(r.id));});document.querySelector('.hint').textContent='Pasa el ratón por un estado para ver su nombre';}
+function startTimer(){
+  if(timerHandle || quizEnded) return;
+  timerHandle=setInterval(()=>{
+    if(paused) return;
+    secondsLeft--; timerEl.textContent=fmtTime(secondsLeft);
+    if(secondsLeft<=0){secondsLeft=0;timerEl.textContent='00:00';endQuiz('Se acabó el tiempo.','no')}
+  },1000)
+}
+function endQuiz(message,type){quizEnded=true;if(timerHandle)clearInterval(timerHandle);timerHandle=null;guessEl.disabled=true;document.getElementById('submit').disabled=true;setFeedback(message,type);revealMissingOnMap()}
+function resetQuiz(){
+  if(!mapReady) return;
+  solved.clear(); secondsLeft=QUIZ_SECONDS; paused=false; quizEnded=false; timerEl.textContent=fmtTime(QUIZ_SECONDS);timerEl.classList.remove('paused');pauseBtn.textContent='Pausa';
+  if(timerHandle)clearInterval(timerHandle);timerHandle=null;guessEl.disabled=false;document.getElementById('submit').disabled=false;document.getElementById('found-list-wrap').classList.remove('open');setFeedback('');
+  svg.selectAll('.country').classed('found',false).classed('revealed-missing',false);document.querySelector('.hint').textContent='Rueda para ampliar · arrastra solo con zoom activado';hideMapTooltip();updateFoundList();updateCount();guessEl.value='';guessEl.focus();
+}
+function startOnFirstInput(){startTimer()}
+function regionNames(region){return Array.isArray(region.names)?region.names:[]}
+function findLocalGuess(raw){
+  const q=normalizar(raw); if(!q) return null;
+  let exact=regions.filter(r=>regionNames(r).some(n=>normalizar(n)===q));
+  if(exact.length===1)return exact[0];
+  const qTokens=q.split(' ').filter(Boolean); if(qTokens.some(t=>t.length<3))return null;
+  const hits=regions.filter(r=>regionNames(r).some(name=>{
+    const tokens=normalizar(name).split(' ');
+    return qTokens.every(qt=>tokens.some(t=>t===qt||t.startsWith(qt)));
+  }));
+  return hits.length===1?hits[0]:null;
+}
+
+function buildFeatureIndex(){
+  featureByRegion.clear();
+  regions.forEach(r=>{
+    const el=document.getElementById('hex-'+r.id);
+    if(el){ featureByRegion.set(r.id, d3.select(el)); el.setAttribute('data-region-id', r.id); }
+  });
+}
+
+function addSolved(region){
+  if(!region || solved.has(region.id))return;
+  solved.add(region.id);const el=featureByRegion.get(region.id);if(el)el.classed('found',true).classed('revealed-missing',false);updateFoundList();updateCount();showToast('✓ '+(region.display||'Correcto'));setFeedback('¡Correcto! '+(region.display||''),'ok');guessEl.value='';guessEl.focus();
+}
+
+async function submitGuess(){
+  if(!mapReady || quizEnded || paused)return;
+  const raw=guessEl.value.trim();if(!raw)return;startOnFirstInput();
+  const region=findLocalGuess(raw);
+  if(!region){setFeedback('No encontrado o nombre ambiguo.','no');guessEl.select();return}
+  if(solved.has(region.id)){setFeedback('Ese estado ya está descubierto.');guessEl.select();return}
+  addSolved(region);
+}
+function updateFoundList(){
+  const wrap=document.getElementById('found-list-wrap');const list=document.getElementById('found-list');
+  if(!wrap||!list)return;
+  const found=regions.filter(r=>solved.has(r.id)).sort((a,b)=>a.display.localeCompare(b.display,'es'));
+  list.innerHTML=found.map(r=>`<span class="chip">${r.display}</span>`).join('');
+}
+function toggleFoundList(){
+  const wrap=document.getElementById('found-list-wrap');
+  if(!solved.size){setFeedback('Todavía no has acertado ningún estado.');return;}
+  updateFoundList();wrap.classList.toggle('open');
+}
+pauseBtn.onclick=()=>{if(!mapReady||quizEnded)return;paused=!paused;timerEl.classList.toggle('paused',paused);pauseBtn.textContent=paused?'Reanudar':'Pausa';setFeedback(paused?'El quiz está pausado.':'');if(paused)guessEl.blur();else guessEl.focus()};
+document.getElementById('submit').onclick=submitGuess;
+document.getElementById('missing').onclick=toggleFoundList;
+document.getElementById('give-up').onclick=()=>{if(!mapReady||quizEnded)return;endQuiz(`Quiz terminado: ${solved.size}/${regions.length}. Los estados que faltaban están resaltados; pasa el ratón para ver sus nombres.`, 'no')};
+document.getElementById('reset').onclick=resetQuiz;
+guessEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitGuess()}});
+
+let tooltipEl;
+function showMapTooltip(name,e){ensureMapTooltip();tooltipEl.textContent=name||'';tooltipEl.style.display='block';moveMapTooltip(e)}
+function moveMapTooltip(e){ensureMapTooltip();const rect=document.getElementById('map-area').getBoundingClientRect();tooltipEl.style.left=(e.clientX-rect.left+12)+'px';tooltipEl.style.top=(e.clientY-rect.top-12)+'px'}
+function hideMapTooltip(){if(tooltipEl)tooltipEl.style.display='none'}
+function ensureMapTooltip(){if(tooltipEl)return;tooltipEl=document.createElement('div');tooltipEl.style.cssText='position:absolute;pointer-events:none;display:none;z-index:20;background:#0e2233;color:var(--ink);border:1px solid var(--accent);padding:6px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 5px 16px rgba(0,0,0,.2)';document.getElementById('map-area').appendChild(tooltipEl)}
+
+function initZoomPan(){
+  // scaleExtent limita el zoom entre 1x y 8x.
+  // extent/translateExtent fijan el área de contenido al tamaño del propio
+  // SVG: a escala 1 (sin zoom) esto obliga al desplazamiento a quedarse en
+  // (0,0), es decir, el mapa no se puede arrastrar y no se puede "salir" del
+  // marco. En cuanto se hace zoom, el arrastre queda igualmente acotado para
+  // que el mapa nunca se separe de los bordes del recuadro.
+  const zoom=d3.zoom()
+    .scaleExtent([1,8])
+    .extent([[0,0],[WIDTH,HEIGHT]])
+    .translateExtent([[0,0],[WIDTH,HEIGHT]])
+    .on('zoom',e=>svg.select('.regions').attr('transform',e.transform));
+  svg.call(zoom);window.currentZoom=zoom;
+  document.getElementById('zoom-in').onclick=()=>svg.transition().duration(180).call(zoom.scaleBy,1.45);
+  document.getElementById('zoom-out').onclick=()=>svg.transition().duration(180).call(zoom.scaleBy,1/1.45);
+  document.getElementById('reset-view').onclick=()=>svg.transition().duration(220).call(zoom.transform,d3.zoomIdentity);
+}
+
+function buildRegion(feature){
+  const p = feature.properties || {};
+  const key = p['hc-key'];
+  const altNames = (p['alt-name']||'').split('|').map(s=>s.trim()).filter(Boolean);
+  const names = [p.name, ...altNames];
+  if(p['woe-name']) names.push(p['woe-name']);
+  const spanish = SPANISH_ALIASES[normalizar(p.name)];
+  let display = p.name;
+  if(spanish){ display = spanish.es; names.push(spanish.es); if(spanish.aliases) names.push(...spanish.aliases); }
+  return { id:key, display, names:[...new Set(names.filter(Boolean))], feature };
+}
+
+async function loadRegions(){
+  const res = await fetch(GEO_URL);
+  if(!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  const feats = (data.features||[]).filter(f=>f.properties && f.properties.name && f.properties['hc-key']);
+  regions = feats.map(buildRegion);
+  featureCollection = { type:'FeatureCollection', features: feats };
+}
+
+function renderMap(){
+  svg.attr('viewBox', `0 0 ${WIDTH} ${HEIGHT}`);
+  const projection = d3.geoIdentity().reflectY(true);
+  projection.fitExtent([[14,14],[WIDTH-14,HEIGHT-14]], featureCollection);
+  const path = d3.geoPath(projection);
+  svg.select('.regions').selectAll('path')
+    .data(regions, d=>d.id)
+    .join('path')
+    .attr('class','country')
+    .attr('id', d=>'hex-'+d.id)
+    .attr('d', d=>path(d.feature))
+    .on('click',()=>{})
+    .on('mouseenter',function(e,d){if(!quizEnded)return;showMapTooltip(d.display,e);})
+    .on('mousemove',function(e){if(quizEnded)moveMapTooltip(e);})
+    .on('mouseleave',hideMapTooltip);
+  buildFeatureIndex();
+  initZoomPan();
+}
+
+async function bootstrap(){
+  try{
+    setFeedback('Cargando el mapa de Brasil…');
+    await loadRegions();
+    totalEl.textContent = regions.length;
+    renderMap();
+    updateCount();
+    timerEl.textContent = fmtTime(QUIZ_SECONDS);
+    mapReady = true;
+    guessEl.disabled = false; document.getElementById('submit').disabled = false;
+    loadingOverlay.classList.add('hidden');
+    setFeedback('Mapa listo — ¡empieza a escribir!');
+    guessEl.focus();
+  }catch(err){
+    console.error(err);
+    loadingOverlay.textContent = 'No se pudo cargar el mapa de Brasil. Comprueba tu conexión.';
+    setFeedback('No se pudo cargar el mapa de Brasil. Comprueba tu conexión.','no');
+  }
+}
+bootstrap();
+</script>
+</body>
+</html>
