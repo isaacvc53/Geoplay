@@ -1,6 +1,6 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from models.region_db import region
+from models.region_db import Region
 from models.base import Base
 
 
@@ -12,4 +12,4 @@ class Country(Base):
     capital: Mapped[str] = mapped_column(String(100))
     continente: Mapped[str] = mapped_column(String(100))
 
-    regiones: Mapped[list["region"]] = relationship()
+    regiones: Mapped[list["Region"]] = relationship()

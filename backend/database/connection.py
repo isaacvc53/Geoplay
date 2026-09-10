@@ -18,7 +18,10 @@ DATABASE_URL = (
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
-
+# Importamos TODOS los modelos antes de create_all,
+# para que Base.metadata los conozca y cree sus tablas.
 from models.country_db import Base, Country
-Base.metadata.create_all(engine)
+from models.region_db import Region
+from models.region_name_db import RegionName
 
+Base.metadata.create_all(engine)
