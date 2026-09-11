@@ -1,0 +1,46 @@
+/* css/game.css
+   Estilos específicos del juego de "adivina la región".
+   Usado por pages/country.html para CUALQUIER país. */
+
+.game{background:var(--panel);border:1px solid #1c4363;border-radius:10px;overflow:hidden;box-shadow:0 12px 34px rgba(0,0,0,.14)}
+.toolbar{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.progress{font:700 19px Fraunces,serif;min-width:150px}.progress span{color:var(--accent)}
+.input-wrap{display:flex;gap:8px;flex:1;min-width:260px}
+input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);font:500 15px Inter,sans-serif}
+input::placeholder{color:#6b7f92}
+input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input:disabled{opacity:.5}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;min-width:78px;text-align:center}
+.timer.paused{color:var(--danger)}
+
+.map-area{position:relative;background:var(--water);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+#map{width:100%;height:min(68vh,700px);min-height:430px;display:block;cursor:grab;touch-action:none}
+#map:active{cursor:grabbing}
+.country{fill:var(--land);stroke:var(--land-hover);stroke-width:.8;vector-effect:non-scaling-stroke;transition:fill .15s ease,stroke .15s ease}
+.country:hover{fill:var(--land-hover);stroke:var(--accent)}
+.country.found{fill:var(--found);stroke:var(--found-stroke)}
+.country.revealed-missing{fill:var(--land-hover);stroke:var(--accent-2,var(--accent))}
+.map-tools{position:absolute;left:12px;top:12px;display:flex;gap:6px}
+.map-tools button{padding:8px 10px;background:rgba(18,48,73,.94);color:var(--ink);border:1px solid var(--line)}
+.hint{position:absolute;right:12px;bottom:12px;background:rgba(14,34,51,.90);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:11px;color:var(--muted)}
+.loading-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(14,34,51,.55);color:var(--muted);font-size:13px;letter-spacing:.04em;pointer-events:none;opacity:1;transition:opacity .25s ease}
+.loading-overlay.hidden{opacity:0}
+
+.feedback{min-height:20px;padding:9px 14px 0;font-size:13px;color:var(--muted)}
+.feedback.ok{color:var(--found-stroke);font-weight:700}.feedback.no{color:var(--danger);font-weight:700}
+.bottom{padding:11px 14px 15px;display:flex;gap:8px;justify-content:space-between;align-items:flex-start;border-top:1px solid var(--line);flex-wrap:wrap}
+.left-actions,.right-actions{display:flex;gap:8px;flex-wrap:wrap}
+.found-list-wrap{padding:0 14px 15px;display:none}.found-list-wrap.open{display:block;border-top:1px solid var(--line);padding-top:10px}
+.found-list{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;font-weight:600;background:var(--accent-soft);border:1px solid transparent;padding:4px 10px;border-radius:999px;color:var(--found-stroke)}
+.toast{position:absolute;left:50%;top:18px;transform:translateX(-50%);background:rgba(14,34,51,.94);color:var(--ink);padding:8px 12px;border-radius:999px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s}
+.toast.show{opacity:1}
+.credit{padding:0 14px 14px;font-size:10.5px;color:var(--muted);opacity:.75}
+
+@media(max-width:720px){
+  .toolbar{padding:10px}
+  .input-wrap{min-width:100%}
+  .progress{min-width:unset}
+  #map{height:58vh;min-height:360px}
+  .hint{display:none}
+}

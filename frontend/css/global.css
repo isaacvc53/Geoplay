@@ -1,0 +1,39 @@
+/* css/global.css
+   Variables y estilos base compartidos por TODAS las páginas de GeoPlay.
+   Si cambias --accent aquí, cambia en toda la web. */
+
+:root{
+  --bg:#0e2233; --panel:#123049; --ink:#f6f1e4; --muted:#7d6a3c; --line:#1c4363;
+  --water:#0e2233; --land:#ece6d7; --land-hover:#d9bd82; --found:#c68b5c;
+  --found-stroke:#c9a24b; --accent:#c9a24b; --accent-soft:#3a2e14;
+  --danger:#e0895a; --white:#f6f1e4;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(18,48,73,.45), transparent 40%),
+    radial-gradient(circle at 92% 92%, rgba(201,162,75,.12), transparent 45%);
+  color:var(--ink);
+  font-family:Inter,sans-serif;
+}
+
+.page{width:min(1320px,calc(100% - 28px));margin:24px auto 48px}
+header{text-align:left;margin-bottom:16px}
+.kicker{text-transform:uppercase;letter-spacing:.16em;font-size:11px;font-weight:700;color:var(--accent);margin:0 0 7px}
+h1{font:700 42px/1.05 Fraunces,serif;margin:0 0 8px}
+.subtitle{margin:0;color:var(--muted);font-size:14px}
+
+button{border:0;border-radius:6px;padding:11px 14px;font:700 13px Inter,sans-serif;cursor:pointer;background:var(--accent);color:var(--bg)}
+button:hover{background:#e0bb7e}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:transparent;color:var(--muted);border:1px solid var(--line)}
+button.secondary:hover{background:var(--panel);color:var(--ink);border-color:var(--land-hover)}
+
+@media(max-width:720px){
+  h1{font-size:34px}
+  .page{width:min(100% - 14px,1320px);margin-top:12px}
+}
