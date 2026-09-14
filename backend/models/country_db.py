@@ -9,6 +9,7 @@ class Country(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     nombre: Mapped[str] = mapped_column(String(100))
+    slug: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     capital: Mapped[str] = mapped_column(String(100))
     continente: Mapped[str] = mapped_column(String(100))
 

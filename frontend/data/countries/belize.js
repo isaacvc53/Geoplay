@@ -1,5 +1,6 @@
 window.GEOPLAY_COUNTRY = {
   slug: "belize",
+  id: 31,
   lang: "en",
   kicker: "GeoPlay · Belize",
   title: "How many Belizean districts can you name?",
@@ -42,7 +43,7 @@ window.GEOPLAY_COUNTRY = {
         "Belize",
         "Belize District"
       ],
-      region_id: null
+      region_id: 665
     },
     {
       id: "BZCY",
@@ -51,7 +52,7 @@ window.GEOPLAY_COUNTRY = {
         "Cayo",
         "Cayo District"
       ],
-      region_id: null
+      region_id: 666
     },
     {
       id: "BZCZL",
@@ -60,7 +61,7 @@ window.GEOPLAY_COUNTRY = {
         "Corozal",
         "Corozal District"
       ],
-      region_id: null
+      region_id: 667
     },
     {
       id: "BZOW",
@@ -69,7 +70,7 @@ window.GEOPLAY_COUNTRY = {
         "Orange Walk",
         "Orange Walk District"
       ],
-      region_id: null
+      region_id: 668
     },
     {
       id: "BZSC",
@@ -78,7 +79,7 @@ window.GEOPLAY_COUNTRY = {
         "Stann Creek",
         "Stann Creek District"
       ],
-      region_id: null
+      region_id: 669
     },
     {
       id: "BZTOL",
@@ -87,7 +88,7 @@ window.GEOPLAY_COUNTRY = {
         "Toledo",
         "Toledo District"
       ],
-      region_id: null
+      region_id: 670
     }
   ]
 };

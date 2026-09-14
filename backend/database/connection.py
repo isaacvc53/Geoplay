@@ -23,5 +23,7 @@ SessionLocal = sessionmaker(bind=engine)
 from models.country_db import Base, Country
 from models.region_db import Region
 from models.region_name_db import RegionName
+from models.user_db import User
+from models.progress_db import GameSession, GameSessionAnswer  # NUEVO
 
 Base.metadata.create_all(engine)

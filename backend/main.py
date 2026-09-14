@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from routes.countries import country_router
 from routes.regiones import region_router
+from routes.auth import auth_router
+from routes.progress import progress_router  # NUEVO
 
 
 app = FastAPI()
@@ -22,3 +24,5 @@ def inicio():
 
 app.include_router(country_router)
 app.include_router(region_router)
+app.include_router(auth_router)
+app.include_router(progress_router)  # NUEVO

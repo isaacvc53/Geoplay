@@ -1,5 +1,6 @@
 window.GEOPLAY_COUNTRY = {
   slug: "bolivia",
+  id: 23,
   lang: "en",
   kicker: "GeoPlay · Bolivia",
   title: "How many Bolivian departments can you name?",
@@ -43,7 +44,7 @@ window.GEOPLAY_COUNTRY = {
         "Beni",
         "Beni Department"
       ],
-      region_id: null
+      region_id: 534
     },
     {
       id: "BOC",
@@ -52,7 +53,7 @@ window.GEOPLAY_COUNTRY = {
         "Cochabamba",
         "Cochabamba Department"
       ],
-      region_id: null
+      region_id: 529
     },
     {
       id: "BOH",
@@ -61,7 +62,7 @@ window.GEOPLAY_COUNTRY = {
         "Chuquisaca",
         "Chuquisaca Department"
       ],
-      region_id: null
+      region_id: 531
     },
     {
       id: "BOL",
@@ -70,7 +71,7 @@ window.GEOPLAY_COUNTRY = {
         "La Paz",
         "La Paz Department"
       ],
-      region_id: null
+      region_id: 527
     },
     {
       id: "BON",
@@ -79,7 +80,7 @@ window.GEOPLAY_COUNTRY = {
         "Pando",
         "Pando Department"
       ],
-      region_id: null
+      region_id: 535
     },
     {
       id: "BOO",
@@ -88,7 +89,7 @@ window.GEOPLAY_COUNTRY = {
         "Oruro",
         "Oruro Department"
       ],
-      region_id: null
+      region_id: 532
     },
     {
       id: "BOP",
@@ -99,7 +100,7 @@ window.GEOPLAY_COUNTRY = {
         "Potosí Department",
         "Potosi Department"
       ],
-      region_id: null
+      region_id: 530
     },
     {
       id: "BOS",
@@ -108,7 +109,7 @@ window.GEOPLAY_COUNTRY = {
         "Santa Cruz",
         "Santa Cruz Department"
       ],
-      region_id: null
+      region_id: 528
     },
     {
       id: "BOT",
@@ -117,7 +118,7 @@ window.GEOPLAY_COUNTRY = {
         "Tarija",
         "Tarija Department"
       ],
-      region_id: null
+      region_id: 533
     }
   ]
 };

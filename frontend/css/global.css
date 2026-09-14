@@ -4,8 +4,8 @@
 
 :root{
   --bg:#0e2233; --panel:#123049; --ink:#f6f1e4; --muted:#7d6a3c; --line:#1c4363;
-  --water:#0e2233; --land:#ece6d7; --land-hover:#d9bd82; --found:#c68b5c;
-  --found-stroke:#c9a24b; --accent:#c9a24b; --accent-soft:#3a2e14;
+  --water:#0e2233; --land:#ece6d7; --land-hover:#d9bd82; --found:#c9a24b;
+  --found-stroke:#d4a94c; --accent:#c9a24b; --accent-soft:#3a2e14;
   --danger:#e0895a; --white:#f6f1e4;
 }
 

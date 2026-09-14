@@ -76,6 +76,9 @@
   const resetBtn =
     document.getElementById("reset");
 
+  const backBtn =
+    document.getElementById("back-to-world");
+
   const QUIZ_SECONDS =
     country.quizSeconds || 8 * 60;
 
@@ -110,6 +113,12 @@
     null;
 
   let initialViewBox =
+    null;
+
+  let previousBest =
+    null;
+
+  let toastTimeoutHandle =
     null;
 
 
@@ -160,11 +169,59 @@
       "show"
     );
 
-    setTimeout(() => {
-      toastEl.classList.remove(
-        "show"
+    if (toastTimeoutHandle) {
+      clearTimeout(
+        toastTimeoutHandle
       );
-    }, 1200);
+    }
+
+    toastTimeoutHandle =
+      setTimeout(() => {
+        toastEl.classList.remove(
+          "show"
+        );
+      }, 1200);
+  }
+
+
+  // ============================================================
+  // TOAST DE RÉCORD PERSONAL
+  // ============================================================
+  // Variante más llamativa y con más duración que showToast(), para
+  // celebrar una mejor puntuación o un mejor tiempo en este país.
+
+  function showRecordToast(msg) {
+    toastEl.textContent =
+      "🏆 " + msg;
+
+    toastEl.style.borderColor =
+      "#e0bd7d";
+
+    toastEl.style.boxShadow =
+      "0 0 18px rgba(224,189,125,.55)";
+
+    toastEl.classList.add(
+      "show"
+    );
+
+    if (toastTimeoutHandle) {
+      clearTimeout(
+        toastTimeoutHandle
+      );
+    }
+
+    toastTimeoutHandle =
+      setTimeout(() => {
+        toastEl.classList.remove(
+          "show"
+        );
+
+        toastEl.style.borderColor =
+          "";
+
+        toastEl.style.boxShadow =
+          "";
+      }, 2600);
   }
 
 
@@ -175,6 +232,13 @@
   function updateCount() {
     countEl.textContent =
       solved.size;
+
+    if (totalEl) {
+      totalEl.textContent =
+        Number.isFinite(Number(country.total))
+          ? Number(country.total)
+          : regions.length;
+    }
 
     if (
       solved.size ===
@@ -293,6 +357,193 @@
     );
 
     revealMissingOnMap();
+
+    maybeCelebrateRecord();
+
+    saveGameSession();
+  }
+
+
+  // ============================================================
+  // MEJOR RESULTADO PREVIO (para poder celebrar récords)
+  // ============================================================
+
+  async function loadPreviousBest() {
+    previousBest =
+      null;
+
+    if (
+      typeof api === "undefined" ||
+      !api.isLoggedIn ||
+      !api.isLoggedIn() ||
+      !country.id
+    ) {
+      return;
+    }
+
+    try {
+      const progreso =
+        await api.getCountryProgress(
+          country.id
+        );
+
+      previousBest =
+        progreso.best_score ||
+        null;
+    } catch (err) {
+      console.warn(
+        "No se pudo cargar el mejor resultado previo de este país",
+        err
+      );
+    }
+  }
+
+
+  // ============================================================
+  // CELEBRAR RÉCORD PERSONAL
+  // ============================================================
+  // Se compara el resultado de la partida que acaba de terminar contra
+  // previousBest (cargado al empezar la partida, ANTES de jugar, así que
+  // nunca se compara contra sí misma). Solo tiene sentido si el usuario ha
+  // iniciado sesión y la partida cuenta para el backend (mismas condiciones
+  // que saveGameSession).
+
+  function maybeCelebrateRecord() {
+    if (
+      typeof api === "undefined" ||
+      !api.isLoggedIn ||
+      !api.isLoggedIn() ||
+      !country.id ||
+      localMode ||
+      !regions.length ||
+      !solved.size
+    ) {
+      return;
+    }
+
+    const total =
+      regions.length;
+
+    const pctNow =
+      Math.round(
+        (solved.size / total) * 1000
+      ) / 10;
+
+    const elapsedNow =
+      QUIZ_SECONDS - secondsLeft;
+
+    if (!previousBest) {
+      showRecordToast(
+        country.firstCompletionMessage ||
+          "First expedition logged for this country!"
+      );
+
+      return;
+    }
+
+    const prevPct =
+      previousBest.percentage;
+
+    const prevTime =
+      previousBest.time_seconds;
+
+    if (pctNow > prevPct) {
+      const gain =
+        Math.round(
+          (pctNow - prevPct) * 10
+        ) / 10;
+
+      showRecordToast(
+        (
+          country.newBestScoreMessage ||
+          "New best score! +{gain} pts"
+        ).replace(
+          "{gain}",
+          gain
+        )
+      );
+
+      return;
+    }
+
+    if (
+      pctNow === prevPct &&
+      prevTime != null &&
+      elapsedNow < prevTime
+    ) {
+      const saved =
+        prevTime - elapsedNow;
+
+      showRecordToast(
+        (
+          country.newBestTimeMessage ||
+          "New best time! -{saved}s"
+        ).replace(
+          "{saved}",
+          saved
+        )
+      );
+    }
+  }
+
+
+  // ============================================================
+  // GUARDAR PARTIDA (progreso)
+  // ============================================================
+
+  function saveGameSession() {
+    console.log("saveGameSession: comprobando condiciones...", {
+      apiDefined: typeof api !== "undefined",
+      isLoggedIn: typeof api !== "undefined" && api.isLoggedIn && api.isLoggedIn(),
+      countryId: country.id,
+      localMode: localMode,
+      regionsLength: regions.length,
+    });
+
+    if (
+      typeof api === "undefined" ||
+      !api.isLoggedIn ||
+      !api.isLoggedIn() ||
+      !country.id ||
+      localMode ||
+      !regions.length
+    ) {
+      console.warn("saveGameSession: cancelado por alguna condición de arriba");
+      return;
+    }
+
+    const elapsed =
+      QUIZ_SECONDS - secondsLeft;
+
+    // Solo mandamos regiones que se emparejaron con un region_id real
+    // del backend (loadRegions se lo asigna). Las que no casaron no
+    // tienen un id válido para la tabla `regiones` y romperían el guardado.
+    const answers = regions
+      .filter((r) => r.region_id != null)
+      .map((r) => ({
+        region_id: r.region_id,
+        correct: solved.has(r.id),
+      }));
+
+    if (!answers.length) {
+      console.warn(
+        "No hay regiones con region_id del backend; no se guarda la partida"
+      );
+      return;
+    }
+
+    api
+      .saveGameSession(
+        country.id,
+        elapsed,
+        answers
+      )
+      .catch((err) => {
+        console.error(
+          "No se pudo guardar el progreso de la partida",
+          err
+        );
+      });
   }
 
 
@@ -996,10 +1247,6 @@
     // ZOOM
     // ----------------------------------------------------------
     //
-    // ANTES:
-    // translateExtent era bastante más grande que el país.
-    //
-    // AHORA:
     // translateExtent coincide exactamente con el viewBox.
     //
     // Esto hace que el movimiento sea simétrico.
@@ -1209,7 +1456,6 @@
         hideMapTooltip
       );
   }
-
 
   // ============================================================
   // REGIÓN ACERTADA
@@ -1495,6 +1741,61 @@
 
 
   // ============================================================
+  // VOLVER AL MAPA MUNDIAL
+  // ============================================================
+
+  function setupBackToWorldButton() {
+    let button =
+      document.getElementById(
+        "back-to-world"
+      );
+
+    if (!button) {
+      button =
+        document.createElement(
+          "button"
+        );
+
+      button.id =
+        "back-to-world";
+
+      button.type =
+        "button";
+
+      button.textContent =
+        "← Volver al mapa mundial";
+
+      button.style.cssText =
+        [
+          "position:fixed",
+          "top:16px",
+          "left:16px",
+          "z-index:1000",
+          "padding:9px 14px",
+          "border:1px solid var(--accent, #7dd3fc)",
+          "border-radius:8px",
+          "background:var(--panel, #0e2233)",
+          "color:var(--ink, #fff)",
+          "font:inherit",
+          "font-weight:600",
+          "cursor:pointer",
+          "box-shadow:0 4px 12px rgba(0,0,0,.18)"
+        ].join(";");
+
+      document.body.appendChild(
+        button
+      );
+    }
+
+    button.onclick =
+      () => {
+        window.location.href =
+          "mapa-mundial.html";
+      };
+  }
+
+
+  // ============================================================
   // CONTROLES
   // ============================================================
 
@@ -1719,10 +2020,21 @@
   // ============================================================
 
   async function bootstrap() {
+    setupBackToWorldButton();
+
+    if (totalEl) {
+      totalEl.textContent =
+        Number.isFinite(Number(country.total))
+          ? Number(country.total)
+          : regions.length;
+    }
+
     try {
       await loadGeometry();
 
       await loadRegions();
+
+      await loadPreviousBest();
 
       renderMap();
 

@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeoPlay — Profile</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0a1720;
+    --ink-panel:#0f2233;
+    --ink-panel-2:#132a3d;
+    --parchment:#f2ecda;
+    --parchment-dim:#a89b81;
+    --brass:#c6a05b;
+    --brass-dim:#7d6d48;
+    --brass-bright:#e0bd7d;
+    --seal:#b1483a;
+    --moss:#5a9a86;
+    --line:rgba(198,160,91,0.22);
+    --line-soft:rgba(198,160,91,0.12);
+    --shadow:rgba(3,9,15,0.6);
+    --radius:2px;
+    --ease:.2s ease;
+    --map-empty:#152a3c;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    min-height:100vh;
+    background:var(--ink);
+    font-family:'Space Mono','SF Mono',Consolas,monospace;
+    color:var(--parchment);
+    -webkit-font-smoothing:antialiased;
+    display:flex; align-items:flex-start; justify-content:center;
+    padding:48px 24px;
+  }
+  .chart-ground{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(ellipse 900px 600px at 8% -8%, #14314a 0%, transparent 55%),
+      radial-gradient(ellipse 1000px 760px at 98% 108%, #0f2233 0%, transparent 55%),
+      var(--ink);
+  }
+  a{ color:var(--brass-bright); }
+
+  @keyframes riseIn{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:translateY(0);} }
+
+  .card{
+    position:relative; z-index:1;
+    width:100%; max-width:460px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg, rgba(243,238,224,0.03), rgba(243,238,224,0.015));
+    box-shadow:0 28px 64px var(--shadow);
+    padding:34px 32px 30px;
+    transition:max-width .25s ease;
+    animation:riseIn .5s ease both;
+  }
+  .card.wide{ max-width:900px; }
+
+  .brand{ display:flex; align-items:center; justify-content:space-between; gap:10px; text-decoration:none; margin-bottom:30px; }
+  .brand-id{ display:flex; align-items:center; gap:10px; text-decoration:none; }
+  .brand .mark{
+    width:26px; height:26px; border-radius:50%;
+    border:1px solid var(--brass);
+    display:grid; place-items:center;
+    font-family:'Fraunces',Georgia,serif; font-style:italic;
+    color:var(--brass); font-size:12px;
+  }
+  .brand .word{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:16px; color:var(--parchment); }
+  .brand .word i{ font-style:italic; color:var(--brass-bright); }
+  .brand-tag{ font-size:9.5px; color:var(--brass-dim); letter-spacing:.03em; }
+
+  /* --- Identidad / sello de rango --- */
+  .identity{ display:flex; gap:16px; align-items:flex-start; margin-bottom:8px; }
+  .avatar-wrap{ position:relative; flex:none; }
+  .avatar{
+    width:60px; height:60px; border-radius:50%;
+    border:1px solid var(--brass);
+    display:grid; place-items:center;
+    font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px;
+    color:var(--brass-bright);
+    background:rgba(198,160,91,0.06);
+  }
+  .rank-seal{ position:absolute; right:-5px; bottom:-5px; width:24px; height:24px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+  .identity-main{ flex:1; min-width:0; padding-top:2px; }
+  h1{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; margin:0 0 3px; line-height:1.2; }
+  .rank-title{ margin:0 0 12px; font-size:12px; color:var(--brass-bright); font-style:italic; font-family:'Fraunces',Georgia,serif; }
+  .rank-progress{ margin:0 0 12px; }
+  .rank-progress-bar{ height:4px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .rank-progress-fill{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--brass-dim), var(--brass-bright)); }
+  .rank-progress-label{ margin-top:4px; font-size:9.5px; color:var(--brass-dim); }
+  .identity-meta{ margin:0; display:flex; flex-direction:column; gap:4px; }
+  .identity-meta div{ display:flex; gap:8px; font-size:11px; }
+  .identity-meta dt{ color:var(--brass-dim); }
+  .identity-meta dd{ margin:0; color:var(--parchment-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+  /* --- Ficha de estadísticas (libro mayor) --- */
+  .ledger-grid{
+    margin-top:26px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr));
+    border-top:1px solid var(--line); border-bottom:1px solid var(--line-soft);
+  }
+  .ledger-tile{
+    padding:16px 14px; border-left:1px solid var(--line-soft);
+    display:flex; flex-direction:column; gap:3px;
+  }
+  .ledger-tile:first-child{ border-left:none; }
+  .t-num{ font-family:'Fraunces',Georgia,serif; font-style:italic; font-weight:600; font-size:clamp(22px,4vw,30px); color:var(--brass-bright); line-height:1; }
+  .t-num-sub{ font-size:14px; color:var(--parchment-dim); font-style:normal; }
+  .t-label{ font-size:10.5px; color:var(--parchment-dim); line-height:1.3; }
+  .t-sub{ font-size:10px; color:var(--brass-dim); }
+
+  .empty-log{
+    margin-top:24px; padding:18px 18px; text-align:center;
+    border:1px dashed var(--line); border-radius:var(--radius);
+    font-size:12px; color:var(--parchment-dim); line-height:1.7;
+  }
+  .empty-log .btn{ margin-top:14px; }
+
+  /* --- Paneles genéricos --- */
+  .panel{ margin-top:26px; }
+  .panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; gap:10px; }
+  .panel-head h2{ font-family:'Fraunces',Georgia,serif; font-style:italic; font-weight:500; font-size:15px; margin:0; color:var(--parchment); }
+  .panel-sub{ font-size:10px; color:var(--brass-dim); white-space:nowrap; }
+  .panel-head-right{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+  .split-row{ display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:26px; }
+
+  /* --- Tendencia --- */
+  .trend-wrap{ position:relative; }
+  .trend-svg{ width:100%; height:64px; display:block; overflow:visible; }
+  .trend-delta{ margin-top:8px; font-size:11px; }
+  .trend-empty, .log-empty{ font-size:11px; color:var(--parchment-dim); padding:10px 0; }
+  .trend-point{ cursor:pointer; }
+  .trend-point:hover{ r:4; }
+
+  /* --- Buscador de país (tendencia y puntos débiles) --- */
+  .country-picker{ position:relative; }
+  .country-picker-input{
+    width:150px; max-width:150px;
+    background:transparent; border:1px solid var(--line); border-radius:var(--radius);
+    color:var(--brass-dim); font-family:'Space Mono',monospace; font-size:9.5px;
+    padding:4px 6px; cursor:text;
+  }
+  .country-picker-input::placeholder{ color:var(--brass-dim); opacity:.8; }
+  .country-picker-input:hover, .country-picker-input:focus{ border-color:var(--brass); color:var(--brass-bright); outline:none; }
+  .country-picker-list{
+    position:absolute; z-index:10; top:calc(100% + 4px); right:0;
+    min-width:170px; max-height:220px; overflow-y:auto;
+    background:var(--ink-panel); border:1px solid var(--brass); border-radius:var(--radius);
+    box-shadow:0 12px 28px var(--shadow);
+  }
+  .country-picker-option{ padding:6px 10px; font-size:11px; color:var(--parchment-dim); cursor:pointer; white-space:nowrap; }
+  .country-picker-option:hover, .country-picker-option.active{ background:rgba(198,160,91,0.12); color:var(--brass-bright); }
+  .country-picker-empty{ padding:6px 10px; font-size:11px; color:var(--parchment-dim); }
+
+  /* --- Puntos débiles --- */
+  .weak-list{ display:flex; flex-direction:column; }
+  .weak-row{
+    display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center;
+    padding:9px 0; border-top:1px solid var(--line-soft);
+    text-decoration:none; font-size:11px;
+  }
+  .weak-row:first-child{ border-top:none; }
+  .weak-row:hover .weak-region{ color:var(--brass-bright); }
+  .weak-region{ color:var(--parchment); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:color var(--ease); }
+  .weak-country{ color:var(--brass-dim); font-size:10px; white-space:nowrap; }
+  .weak-acc{ font-weight:700; text-align:right; }
+  .weak-row.single-country{ grid-template-columns:1fr auto; }
+
+  /* --- Racha / heatmap de actividad --- */
+  .heat-wrap{ display:flex; gap:3px; overflow-x:auto; padding-bottom:2px; }
+  .heat-col{ display:flex; flex-direction:column; gap:3px; flex:none; }
+  .heat-cell{ width:10px; height:10px; border-radius:2px; display:block; }
+  .heat-footer{ margin-top:10px; font-size:11px; color:var(--brass-bright); }
+
+  /* --- Registro reciente --- */
+  .log-list{ display:flex; flex-direction:column; }
+  .log-row{
+    display:grid; grid-template-columns:64px 1fr auto; gap:10px; align-items:center;
+    padding:9px 0; border-top:1px solid var(--line-soft);
+    text-decoration:none; font-size:11px;
+  }
+  .log-row:first-child{ border-top:none; }
+  .log-date{ color:var(--brass-dim); font-size:10px; }
+  .log-country{ color:var(--parchment); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .log-right{ display:flex; align-items:center; gap:10px; }
+  .log-pct{ font-weight:700; }
+  .log-time{ color:var(--parchment-dim); font-size:10px; }
+
+  /* --- Mapa mundial --- */
+  .world-map-wrap{
+    position:relative;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:rgba(0,0,0,0.18);
+    overflow:hidden;
+  }
+  .world-map-wrap svg{ display:block; width:100%; height:auto; }
+  .world-map-wrap path.country{
+    stroke:var(--ink); stroke-width:.4; fill:var(--map-empty);
+    cursor:default; transition:fill .15s ease, stroke-width .15s ease;
+  }
+  .world-map-wrap path.country.played{ cursor:pointer; }
+  .world-map-wrap path.country:hover{ stroke:var(--brass-bright); stroke-width:1; }
+
+  .map-legend{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:9.5px; color:var(--parchment-dim); }
+  .map-legend .swatch{ width:80px; height:8px; border-radius:2px; background:linear-gradient(90deg, rgb(70,62,44) 0%, var(--brass-bright) 100%); }
+
+  .map-tooltip{
+    position:absolute; pointer-events:none;
+    background:var(--ink); border:1px solid var(--brass);
+    color:var(--parchment); font-size:11px; padding:6px 10px;
+    border-radius:2px; opacity:0; transform:translate(-50%,-120%);
+    white-space:nowrap; transition:opacity .1s ease; z-index:5;
+  }
+  .map-tooltip .t-pct{ color:var(--brass-bright); font-weight:700; margin-left:6px; }
+
+  /* --- Libro mayor de países --- */
+  .ledger-header, .ledger-row{
+    display:grid;
+    grid-template-columns:minmax(90px,1.3fr) 64px 40px 32px 54px 60px;
+    gap:10px; align-items:center;
+  }
+  .ledger-header{ padding-bottom:8px; border-bottom:1px solid var(--line); }
+  .ledger-header span{ font-size:9.5px; color:var(--brass-dim); }
+  .ledger-header span:not(:first-child){ text-align:right; }
+  .ledger-row{
+    padding:10px 0; border-bottom:1px solid var(--line-soft);
+    text-decoration:none; font-size:11px;
+  }
+  .ledger-row:hover .lr-name{ color:var(--brass-bright); }
+  .lr-name{ color:var(--parchment); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; transition:color var(--ease); }
+  .lr-bar{ display:block; height:5px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .lr-bar-fill{ display:block; height:100%; border-radius:3px; }
+  .lr-pct{ text-align:right; font-weight:700; }
+  .lr-games{ text-align:right; color:var(--parchment-dim); }
+  .lr-time{ text-align:right; color:var(--parchment-dim); }
+  .lr-last{ text-align:right; color:var(--brass-dim); }
+  .ledger-note{ margin-top:14px; font-size:11px; color:var(--parchment-dim); line-height:1.6; }
+
+  @media (max-width:560px){
+    .ledger-header span:nth-child(5), .ledger-row .lr-time{ display:none; }
+    .ledger-header, .ledger-row{ grid-template-columns:minmax(70px,1.2fr) 46px 34px 30px 54px; }
+  }
+
+  button, .btn{
+    display:inline-block; width:100%; text-align:center;
+    background:transparent; color:var(--parchment-dim);
+    border:1px solid var(--line); border-radius:var(--radius);
+    padding:11px; font-family:'Space Mono',monospace;
+    font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    cursor:pointer; text-decoration:none; margin-top:30px;
+    transition:border-color var(--ease), color var(--ease);
+  }
+  button:hover, .btn:hover{ border-color:var(--brass); color:var(--brass-bright); }
+
+  @media (max-width:720px){
+    .split-row{ grid-template-columns:1fr; gap:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="chart-ground" aria-hidden="true"></div>
+
+<div class="card" id="profileCard">
+  <div class="brand">
+    <a class="brand-id" href="index.html">
+      <div class="mark">G</div>
+      <span class="word">Geo<i>Play</i></span>
+    </a>
+    <span class="brand-tag">Expedition dossier</span>
+  </div>
+
+  <div id="content">Loading…</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script>
+  if (!api.isLoggedIn()) {
+    window.location.href = 'login.html';
+  }
+
+  // Single source of truth per country, keyed by the normalized Spanish
+  // name as stored in the backend (Country.nombre). The whole game reads
+  // in English for now, so everything shown to the player goes through
+  // `en` here instead of the raw value from the API.
+  //   - en:   English display name shown to the player
+  //   - slug: real Country.slug used to build links to country.html
+  //   - topo: name used by the world topojson (for map country matching)
+  // TODO: once a language switcher exists, `en` becomes one of several
+  // locales and this table (or /countries/progress) should carry all of
+  // them. TODO: ideally /countries/progress returns `slug` and an English
+  // name directly from the backend, making this table unnecessary.
+  // Keep this in sync with the seed_*.py scripts whenever a country is added.
+  const COUNTRY_INFO = {
+    "espana":          { en: "Spain",          slug: "espana",        topo: "spain" },
+    "francia":         { en: "France",         slug: "francia",       topo: "france" },
+    "alemania":        { en: "Germany",        slug: "alemania",      topo: "germany" },
+    "italia":          { en: "Italy",          slug: "italia",        topo: "italy" },
+    "portugal":        { en: "Portugal",       slug: "portugal",      topo: "portugal" },
+    "reino unido":     { en: "United Kingdom", slug: "reino-unido",   topo: "united kingdom" },
+    "paises bajos":    { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands" },
+    "holanda":         { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands" },
+    "belgica":         { en: "Belgium",        slug: "belgica",       topo: "belgium" },
+    "suiza":           { en: "Switzerland",    slug: "suiza",         topo: "switzerland" },
+    "austria":         { en: "Austria",        slug: "austria",       topo: "austria" },
+    "polonia":         { en: "Poland",         slug: "polonia",       topo: "poland" },
+    "grecia":          { en: "Greece",         slug: "grecia",        topo: "greece" },
+    "turquia":         { en: "Turkey",         slug: "turquia",       topo: "turkey" },
+    "rusia":           { en: "Russia",         slug: "rusia",         topo: "russia" },
+    "china":           { en: "China",          slug: "china",         topo: "china" },
+    "japon":           { en: "Japan",          slug: "japon",         topo: "japan" },
+    "india":           { en: "India",          slug: "india",         topo: "india" },
+    "australia":       { en: "Australia",      slug: "australia",     topo: "australia" },
+    "marruecos":       { en: "Morocco",        slug: "marruecos",     topo: "morocco" },
+    "egipto":          { en: "Egypt",          slug: "egipto",        topo: "egypt" },
+    "sudafrica":       { en: "South Africa",   slug: "sudafrica",     topo: "south africa" },
+
+    "argentina":       { en: "Argentina",      slug: "argentina",     topo: "argentina" },
+    "chile":           { en: "Chile",          slug: "chile",         topo: "chile" },
+    "colombia":        { en: "Colombia",       slug: "colombia",      topo: "colombia" },
+    "brasil":          { en: "Brazil",         slug: "brazil",        topo: "brazil" },
+    "peru":            { en: "Peru",           slug: "peru",          topo: "peru" },
+    "bolivia":         { en: "Bolivia",        slug: "bolivia",       topo: "bolivia" },
+    "ecuador":         { en: "Ecuador",        slug: "ecuador",       topo: "ecuador" },
+    "paraguay":        { en: "Paraguay",       slug: "paraguay",      topo: "paraguay" },
+    "uruguay":         { en: "Uruguay",        slug: "uruguay",       topo: "uruguay" },
+    "venezuela":       { en: "Venezuela",      slug: "venezuela",     topo: "venezuela" },
+    "guyana":          { en: "Guyana",         slug: "guyana",        topo: "guyana" },
+    "surinam":         { en: "Suriname",       slug: "suriname",      topo: "suriname" },
+
+    "guatemala":       { en: "Guatemala",      slug: "guatemala",     topo: "guatemala" },
+    "belice":          { en: "Belize",         slug: "belize",        topo: "belize" },
+    "honduras":        { en: "Honduras",       slug: "honduras",      topo: "honduras" },
+    "el salvador":     { en: "El Salvador",    slug: "el-salvador",   topo: "el salvador" },
+    "nicaragua":       { en: "Nicaragua",      slug: "nicaragua",     topo: "nicaragua" },
+    "costa rica":      { en: "Costa Rica",     slug: "costa-rica",    topo: "costa rica" },
+    "panama":          { en: "Panama",         slug: "panama",        topo: "panama" },
+
+    "mexico":          { en: "Mexico",         slug: "mexico",        topo: "mexico" },
+    "estados unidos":  { en: "United States",  slug: "united-states", topo: "united states of america" },
+    "canada":          { en: "Canada",         slug: "canada",        topo: "canada" },
+  };
+
+  function normalizeName(str) {
+    return String(str || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function getCountryInfo(countryName) {
+    const norm = normalizeName(countryName);
+    return COUNTRY_INFO[norm] || { en: countryName, slug: norm, topo: norm };
+  }
+
+  function resolveSlug(countryName) {
+    return getCountryInfo(countryName).slug;
+  }
+
+  function resolveDisplayName(countryName) {
+    return getCountryInfo(countryName).en;
+  }
+
+  function resolveTopoName(countryName) {
+    return getCountryInfo(countryName).topo;
+  }
+
+  function formatTime(totalSeconds) {
+    if (totalSeconds == null) return '—';
+    const m = Math.floor(totalSeconds / 60);
+    const s = totalSeconds % 60;
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  // Fecha relativa estilo "entrada de bitácora": hoy / ayer / hace N días...
+  function formatRelative(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    const diffDays = Math.floor((Date.now() - d.getTime()) / 86400000);
+    if (diffDays <= 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
+  // Color de 0 a 100: un único tono (el dorado/brass de la paleta),
+  // de apagado a intenso según el % de dominio. Nunca cambia de color,
+  // solo de "fuerza".
+  function colorForPercentage(pct) {
+    if (pct == null) return null;
+    const start = [70, 62, 44];    // brass apagado (mínimo visible, jugado pero bajo %)
+    const end   = [224, 189, 125]; // brass-bright (100% dominado)
+    const t = Math.max(0, Math.min(100, pct)) / 100;
+    const mix = (i) => Math.round(start[i] + (end[i] - start[i]) * t);
+    return `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
+  }
+
+  // --- Rango de explorador, según territorios distintos jugados ---
+  const RANKS = [
+    { min: 0,  title: "Uncharted" },
+    { min: 1,  title: "Apprentice Surveyor" },
+    { min: 3,  title: "Field Cartographer" },
+    { min: 6,  title: "Regional Navigator" },
+    { min: 10, title: "Continental Explorer" },
+    { min: 15, title: "Master Globetrotter" },
+    { min: 20, title: "Legendary Navigator" },
+  ];
+  function computeRank(playedCount) {
+    let current = RANKS[0];
+    for (const r of RANKS) if (playedCount >= r.min) current = r;
+    return current.title;
+  }
+
+  // Cuánto falta para el siguiente rango, para la barra de progreso bajo
+  // el título de rango. Devuelve next=null cuando ya se alcanzó el máximo.
+  function computeRankProgress(playedCount) {
+    let current = RANKS[0];
+    let next = null;
+    for (let i = 0; i < RANKS.length; i++) {
+      if (playedCount >= RANKS[i].min) {
+        current = RANKS[i];
+        next = RANKS[i + 1] || null;
+      }
+    }
+    if (!next) return { current, next: null, pct: 100 };
+    const span = next.min - current.min;
+    const progress = playedCount - current.min;
+    const pct = span > 0 ? Math.min(100, Math.round((progress / span) * 100)) : 100;
+    return { current, next, pct };
+  }
+
+  function renderRankProgress(playedCount) {
+    const { next, pct } = computeRankProgress(playedCount);
+    if (!next) {
+      return `
+        <div class="rank-progress">
+          <div class="rank-progress-bar"><div class="rank-progress-fill" style="width:100%"></div></div>
+          <div class="rank-progress-label">Highest rank reached</div>
+        </div>
+      `;
+    }
+    const remaining = next.min - playedCount;
+    return `
+      <div class="rank-progress">
+        <div class="rank-progress-bar"><div class="rank-progress-fill" style="width:${pct}%"></div></div>
+        <div class="rank-progress-label">${remaining} more territor${remaining === 1 ? 'y' : 'ies'} to ${next.title}</div>
+      </div>
+    `;
+  }
+
+  function rankSealSvg() {
+    return `
+      <svg class="rank-seal" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" fill="#170c0a" stroke="#c6a05b" stroke-width="1"/>
+        <path d="M16 4 L19 16 L16 28 L13 16 Z" fill="#e0bd7d"/>
+        <path d="M4 16 L16 13 L28 16 L16 19 Z" fill="#b1483a"/>
+        <circle cx="16" cy="16" r="2" fill="#f2ecda"/>
+      </svg>
+    `;
+  }
+
+  // --- Estadísticas agregadas, calculadas a partir de /progress/countries ---
+
+  // Precisión global real: de todos los intentos de acierto de región
+  // registrados en todas las partidas, qué % se acertó. Distinto del
+  // "percentage" por país, que es tu MEJOR partida, no tu media histórica.
+  function computeOverallAccuracy(countries) {
+    let attempts = 0, correct = 0;
+    countries.forEach((c) => (c.regions || []).forEach((r) => {
+      attempts += r.attempts;
+      correct += r.correct;
+    }));
+    return attempts > 0 ? Math.round((correct / attempts) * 1000) / 10 : null;
+  }
+
+  function findFastest(playedCountries) {
+    let best = null;
+    playedCountries.forEach((c) => {
+      const bs = c.best_score;
+      if (bs && bs.time_seconds != null && (!best || bs.time_seconds < best.time)) {
+        best = { time: bs.time_seconds, country: resolveDisplayName(c.country_name) };
+      }
+    });
+    return best;
+  }
+
+  function findBestCountry(playedCountries) {
+    let best = null;
+    playedCountries.forEach((c) => {
+      if (!best || c.percentage > best.percentage) best = c;
+    });
+    return best;
+  }
+
+  // --- Puntos débiles: regiones con peor % de acierto acumulado, cruzando
+  // todos los países. Solo cuentan regiones con al menos 2 intentos, para
+  // no destacar un fallo puntual como si fuera un patrón. ---
+  // `countryId` es null/undefined para el cruce entre todos los países
+  // (comportamiento original) o el country_id de un único país para ver
+  // solo sus regiones más flojas. Con un solo país de por medio hay muchas
+  // menos regiones candidatas, así que relajamos el mínimo de intentos a 1
+  // y subimos el límite, para que el filtro por país no se quede vacío.
+  function computeWeakSpots(countries, { countryId = null, limit = 5 } = {}) {
+    const rows = [];
+    countries.forEach((c) => {
+      if (countryId && String(c.country_id) !== String(countryId)) return;
+      const minAttempts = countryId ? 1 : 2;
+      (c.regions || []).forEach((r) => {
+        if (r.attempts >= minAttempts && r.accuracy < 100) {
+          rows.push({
+            region_name: r.region_name,
+            accuracy: r.accuracy,
+            attempts: r.attempts,
+            country_name: c.country_name,
+            country_slug: c.country_slug || resolveSlug(c.country_name),
+          });
+        }
+      });
+    });
+    rows.sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts);
+    return rows.slice(0, countryId ? 12 : limit);
+  }
+
+  function renderWeakSpots(countries, countryId) {
+    const weak = computeWeakSpots(countries, { countryId });
+    if (!weak.length) {
+      const scope = countryId ? ' for this territory' : '';
+      return `<div class="log-empty">No weak spots${scope} yet — keep playing to surface patterns.</div>`;
+    }
+    const rows = weak.map((r) => `
+      <a class="weak-row${countryId ? ' single-country' : ''}" href="pages/country.html?pais=${encodeURIComponent(r.country_slug)}">
+        <span class="weak-region">${r.region_name}</span>
+        ${countryId ? '' : `<span class="weak-country">${resolveDisplayName(r.country_name)}</span>`}
+        <span class="weak-acc" style="color:${colorForPercentage(r.accuracy)}">${r.accuracy}%</span>
+      </a>
+    `).join('');
+    return `<div class="weak-list">${rows}</div>`;
+  }
+
+  // --- Racha y heatmap de actividad, a partir de las partidas recientes ---
+
+  function dateKey(dateLike) {
+    const d = new Date(dateLike);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+
+  // Días consecutivos jugando hasta hoy. Si hoy todavía no se ha jugado,
+  // no se rompe la racha por eso: se cuenta desde ayer hacia atrás.
+  function computeStreak(sessions) {
+    if (!sessions || !sessions.length) return 0;
+    const daysPlayed = new Set(sessions.map((s) => dateKey(s.played_at)));
+    const cursor = new Date();
+    if (!daysPlayed.has(dateKey(cursor))) {
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    let streak = 0;
+    while (daysPlayed.has(dateKey(cursor))) {
+      streak++;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return streak;
+  }
+
+  function renderStreakHeatmap(sessions) {
+    const countByDay = {};
+    (sessions || []).forEach((s) => {
+      const key = dateKey(s.played_at);
+      countByDay[key] = (countByDay[key] || 0) + 1;
+    });
+
+    const weeks = 10;
+    const totalDays = weeks * 7;
+    const today = new Date();
+    const cells = [];
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = dateKey(d);
+      cells.push({ date: d, count: countByDay[key] || 0 });
+    }
+
+    const maxCount = Math.max(1, ...cells.map((c) => c.count));
+    const columns = [];
+    for (let i = 0; i < cells.length; i += 7) columns.push(cells.slice(i, i + 7));
+
+    const columnsHtml = columns.map((col) => `
+      <div class="heat-col">
+        ${col.map((c) => {
+          const intensity = c.count === 0 ? 0 : Math.min(1, c.count / maxCount);
+          const bg = c.count === 0 ? 'rgba(255,255,255,0.06)' : colorForPercentage(20 + intensity * 80);
+          const label = `${c.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} — ${c.count} game${c.count === 1 ? '' : 's'}`;
+          return `<span class="heat-cell" style="background:${bg}" title="${label}"></span>`;
+        }).join('')}
+      </div>
+    `).join('');
+
+    const streak = computeStreak(sessions);
+    const streakLabel = streak > 0
+      ? `${streak} day${streak === 1 ? '' : 's'} streak`
+      : `Play today to start a streak`;
+
+    return `
+      <div class="heat-wrap">${columnsHtml}</div>
+      <div class="heat-footer">🔥 ${streakLabel}</div>
+    `;
+  }
+
+  // --- Tendencia: precisión de las últimas partidas, de más antigua a más reciente ---
+  // `scopeLabel` es null para "todos los países" o el nombre a mostrar del
+  // país filtrado, solo para el texto del estado vacío.
+  function renderTrend(sessions, scopeLabel) {
+    if (!sessions || sessions.length < 2) {
+      const who = scopeLabel ? ` in ${scopeLabel}` : '';
+      return `<div class="trend-empty">One more game${who} and your trend line starts here.</div>`;
+    }
+    const chron = sessions.slice().reverse(); // más antigua -> más reciente
+    const n = chron.length;
+    const w = 300, h = 60, pad = 6;
+    const xStep = n > 1 ? (w - pad * 2) / (n - 1) : 0;
+    const points = chron.map((s, i) => [
+      pad + i * xStep,
+      pad + (1 - Math.max(0, Math.min(100, s.percentage)) / 100) * (h - pad * 2),
+    ]);
+    const delta = Math.round((chron[n - 1].percentage - chron[0].percentage) * 10) / 10;
+    const color = delta > 0 ? '#5a9a86' : (delta < 0 ? '#b1483a' : '#a89b81');
+    const arrow = delta > 0 ? '▲' : (delta < 0 ? '▼' : '—');
+    const linePath = points.map((p, i) => (i === 0 ? 'M' : 'L') + p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const areaPath = `${linePath} L${points[n - 1][0].toFixed(1)},${h - pad} L${points[0][0].toFixed(1)},${h - pad} Z`;
+
+    // Puntos intermedios con tooltip propio (fecha + %), enganchado desde
+    // wireTrendTooltip() vía data-date/data-pct — así se puede leer el
+    // avance partida a partida, no solo el extremo final, pasando el ratón.
+    const dots = points.map((p, i) => {
+      const s = chron[i];
+      const isLast = i === n - 1;
+      const r = isLast ? 2.6 : 2;
+      const fill = isLast ? color : '#e0bd7d';
+      const opacity = isLast ? 1 : 0.55;
+      const dateLabel = formatRelative(s.played_at);
+      return `<circle class="trend-point" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${r}" fill="${fill}" opacity="${opacity}" data-date="${dateLabel}" data-pct="${s.percentage}"></circle>`;
+    }).join('');
+
+    const who = scopeLabel ? ` in ${scopeLabel}` : '';
+
+    return `
+      <div class="trend-wrap">
+        <svg class="trend-svg" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#e0bd7d" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#e0bd7d" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="${areaPath}" fill="url(#trendFill)" stroke="none"></path>
+          <path d="${linePath}" fill="none" stroke="#e0bd7d" stroke-width="1.6"></path>
+          ${dots}
+        </svg>
+      </div>
+      <div class="trend-delta" style="color:${color}">${arrow} ${Math.abs(delta)} pts over last ${n} games${who}</div>
+    `;
+  }
+
+  // Engancha el tooltip flotante (mismo estilo que el del mapa mundial) a
+  // los puntos de la tendencia. Hay que llamarla cada vez que se reinyecta
+  // el HTML de #trendContainer: en la carga inicial y en cada cambio de país.
+  function wireTrendTooltip(trendContainer) {
+    const wrap = trendContainer.querySelector('.trend-wrap');
+    if (!wrap) return;
+    let tooltip = wrap.querySelector('.map-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.className = 'map-tooltip';
+      wrap.appendChild(tooltip);
+    }
+    wrap.querySelectorAll('.trend-point').forEach((dot) => {
+      dot.addEventListener('mousemove', (event) => {
+        const rect = wrap.getBoundingClientRect();
+        tooltip.style.left = (event.clientX - rect.left) + 'px';
+        tooltip.style.top = (event.clientY - rect.top) + 'px';
+        tooltip.style.opacity = '1';
+        tooltip.innerHTML = `${dot.dataset.date}<span class="t-pct">${dot.dataset.pct}%</span>`;
+      });
+      dot.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+    });
+  }
+
+  // Lista de países ya jugados (con al menos 1 partida), ordenados por
+  // nombre, para alimentar los buscadores de país (tendencia y puntos
+  // débiles). Sustituye al antiguo <select> por esta forma más ligera:
+  // { id, label }.
+  function playedCountryOptions(playedCountries) {
+    return playedCountries
+      .slice()
+      .sort((a, b) => resolveDisplayName(a.country_name).localeCompare(resolveDisplayName(b.country_name)))
+      .map((c) => ({ id: String(c.country_id), label: resolveDisplayName(c.country_name) }));
+  }
+
+  // Buscador de país reutilizable: un input de texto que filtra una lista
+  // desplegable al escribir, en vez de un <select> nativo (con muchos
+  // países jugados, desplazarse por un <select> es incómodo). `root` debe
+  // contener un .country-picker-input y un .country-picker-list vacíos.
+  function wireCountryPicker(root, { options, onSelect, allLabel = 'All countries' }) {
+    const input = root.querySelector('.country-picker-input');
+    const list = root.querySelector('.country-picker-list');
+    let activeIndex = -1;
+
+    input.placeholder = allLabel;
+
+    function currentOptionEls() {
+      return Array.from(list.querySelectorAll('.country-picker-option'));
+    }
+
+    function highlight(i) {
+      currentOptionEls().forEach((el, idx) => el.classList.toggle('active', idx === i));
+      activeIndex = i;
+    }
+
+    function renderList(filterText) {
+      const q = normalizeName(filterText);
+      const filtered = !q ? options : options.filter((o) => normalizeName(o.label).includes(q));
+      const allMatches = !q || normalizeName(allLabel).includes(q);
+      const rows = [];
+      if (allMatches) rows.push(`<div class="country-picker-option" data-id="">${allLabel}</div>`);
+      if (filtered.length) {
+        rows.push(...filtered.map((o) => `<div class="country-picker-option" data-id="${o.id}">${o.label}</div>`));
+      } else if (!allMatches) {
+        rows.push(`<div class="country-picker-empty">No matches</div>`);
+      }
+      list.innerHTML = rows.join('');
+      list.hidden = false;
+      activeIndex = -1;
+    }
+
+    function select(id, label) {
+      input.value = id ? label : '';
+      list.hidden = true;
+      onSelect(id);
+    }
+
+    input.addEventListener('focus', () => renderList(input.value));
+    input.addEventListener('input', () => renderList(input.value));
+    input.addEventListener('blur', () => {
+      // Retraso para que el click en una opción registre antes de ocultar la lista.
+      setTimeout(() => { list.hidden = true; }, 120);
+    });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (list.hidden) renderList(input.value);
+        highlight(Math.min(activeIndex + 1, currentOptionEls().length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlight(Math.max(activeIndex - 1, 0));
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const els = currentOptionEls();
+        const el = activeIndex >= 0 ? els[activeIndex] : els[0];
+        if (el) select(el.dataset.id, el.textContent);
+      } else if (e.key === 'Escape') {
+        list.hidden = true;
+        input.blur();
+      }
+    });
+    list.addEventListener('mousedown', (e) => {
+      const opt = e.target.closest('.country-picker-option');
+      if (!opt) return;
+      select(opt.dataset.id || '', opt.textContent);
+    });
+  }
+
+  function renderRecentLog(recentSessions) {
+    if (!recentSessions || recentSessions.length === 0) {
+      return `<div class="log-empty">No entries yet.</div>`;
+    }
+    const rows = recentSessions.slice(0, 6).map((s) => {
+      const color = colorForPercentage(s.percentage);
+      const slug = s.country_slug || resolveSlug(s.country_name);
+      return `
+        <a class="log-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
+          <span class="log-date">${formatRelative(s.played_at)}</span>
+          <span class="log-country">${resolveDisplayName(s.country_name)}</span>
+          <span class="log-right">
+            <span class="log-pct" style="color:${color}">${s.percentage}%</span>
+            <span class="log-time">${formatTime(s.time_seconds)}</span>
+          </span>
+        </a>
+      `;
+    }).join('');
+    return `<div class="log-list">${rows}</div>`;
+  }
+
+  function renderCountryLedger(playedCountries, totalCountries) {
+    const rows = playedCountries
+      .slice()
+      .sort((a, b) => b.percentage - a.percentage)
+      .map((c) => {
+        const color = colorForPercentage(c.percentage);
+        const slug = c.country_slug || resolveSlug(c.country_name);
+        const bestTime = c.best_score ? formatTime(c.best_score.time_seconds) : '—';
+        const lastPlayed = formatRelative(c.last_played_at);
+        return `
+          <a class="ledger-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
+            <span class="lr-name">${resolveDisplayName(c.country_name)}</span>
+            <span class="lr-bar"><span class="lr-bar-fill" style="width:${c.percentage}%;background:${color}"></span></span>
+            <span class="lr-pct" style="color:${color}">${c.percentage}%</span>
+            <span class="lr-games">${c.games_played}×</span>
+            <span class="lr-time">${bestTime}</span>
+            <span class="lr-last">${lastPlayed}</span>
+          </a>
+        `;
+      })
+      .join('');
+
+    const remaining = totalCountries - playedCountries.length;
+    const note = remaining > 0
+      ? `<div class="ledger-note">${remaining} territor${remaining === 1 ? 'y' : 'ies'} still uncharted. <a href="index.html">Pick one to play</a>.</div>`
+      : `<div class="ledger-note">Every territory on the map has been charted.</div>`;
+
+    return `
+      <div class="ledger-header">
+        <span>Territory</span><span>Mastery</span><span></span><span>Games</span><span>Best</span><span>Last</span>
+      </div>
+      ${rows}
+      ${note}
+    `;
+  }
+
+  async function loadWorldTopology() {
+    // Reutilizamos el mismo topojson embebido en mapa-mundial.html en
+    // lugar de duplicar el archivo: lo pedimos y extraemos el JSON del
+    // <script id="world-data">.
+    const res = await fetch('pages/mapa-mundial.html');
+    if (!res.ok) throw new Error('No se pudo cargar mapa-mundial.html');
+    const html = await res.text();
+    const match = html.match(
+      /<script[^>]*id=["']world-data["'][^>]*>([\s\S]*?)<\/script>/
+    );
+    if (!match) throw new Error('No se encontró #world-data en mapa-mundial.html');
+    return JSON.parse(match[1]);
+  }
+
+  function renderWorldMap(container, topology, progressByCountry) {
+    const geo = topojson.feature(topology, topology.objects.countries);
+
+    const width = 820;
+    const height = 420;
+
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const projection = d3.geoNaturalEarth1().fitSize([width, height], geo);
+    const path = d3.geoPath(projection);
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'map-tooltip';
+    container.appendChild(tooltip);
+
+    svg.append('g')
+      .selectAll('path')
+      .data(geo.features)
+      .join('path')
+      .attr('class', (d) => {
+        const key = normalizeName(d.properties.name);
+        return 'country' + (progressByCountry[key] ? ' played' : '');
+      })
+      .attr('d', path)
+      .style('fill', (d) => {
+        const key = normalizeName(d.properties.name);
+        const entry = progressByCountry[key];
+        return entry ? colorForPercentage(entry.percentage) : null;
+      })
+      .on('mousemove', (event, d) => {
+        const key = normalizeName(d.properties.name);
+        const entry = progressByCountry[key];
+        const rect = container.getBoundingClientRect();
+        tooltip.style.left = (event.clientX - rect.left) + 'px';
+        tooltip.style.top = (event.clientY - rect.top) + 'px';
+        tooltip.style.opacity = '1';
+        tooltip.innerHTML = entry
+          ? `${d.properties.name}<span class="t-pct">${entry.percentage}%</span>`
+          : `${d.properties.name}<span class="t-pct" style="color:var(--parchment-dim)">not played</span>`;
+      })
+      .on('mouseleave', () => { tooltip.style.opacity = '0'; })
+      .on('click', (event, d) => {
+        const key = normalizeName(d.properties.name);
+        const entry = progressByCountry[key];
+        if (entry && entry.slug) {
+          window.location.href = `pages/country.html?pais=${encodeURIComponent(entry.slug)}`;
+        }
+      });
+  }
+
+  // --- Mapa de un país concreto (sus provincias/regiones), mismo patrón
+  // visual que el mapa mundial: relleno según % de acierto y tooltip al
+  // pasar el ratón. Empareja por NOMBRE normalizado entre las features del
+  // topojson y `region_name` de /progress/countries (igual que
+  // renderWorldMap empareja países por nombre), así que no hace falta que
+  // los id coincidan con los region_id del backend.
+  function renderCountryProvinceMap(container, topology, objectKey, regionsProgress) {
+    container.innerHTML = '';
+    const geo = topojson.feature(topology, topology.objects[objectKey]);
+
+    const width = 620, height = 420;
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMidYMid meet');
+
+    const projection = d3.geoMercator().fitSize([width, height], geo);
+    const path = d3.geoPath(projection);
+
+    const progressByRegion = {};
+    (regionsProgress || []).forEach((r) => {
+      progressByRegion[normalizeName(r.region_name)] = r;
+    });
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'map-tooltip';
+    container.appendChild(tooltip);
+
+    svg.append('g')
+      .selectAll('path')
+      .data(geo.features)
+      .join('path')
+      .attr('class', (d) => {
+        const key = normalizeName(d.properties.name);
+        return 'country' + (progressByRegion[key] ? ' played' : '');
+      })
+      .attr('d', path)
+      .style('fill', (d) => {
+        const key = normalizeName(d.properties.name);
+        const entry = progressByRegion[key];
+        return entry ? colorForPercentage(entry.accuracy) : null;
+      })
+      .on('mousemove', (event, d) => {
+        const key = normalizeName(d.properties.name);
+        const entry = progressByRegion[key];
+        const rect = container.getBoundingClientRect();
+        tooltip.style.left = (event.clientX - rect.left) + 'px';
+        tooltip.style.top = (event.clientY - rect.top) + 'px';
+        tooltip.style.opacity = '1';
+        tooltip.innerHTML = entry
+          ? `${d.properties.name}<span class="t-pct">${entry.accuracy}%</span>`
+          : `${d.properties.name}<span class="t-pct" style="color:var(--parchment-dim)">not played</span>`;
+      })
+      .on('mouseleave', () => { tooltip.style.opacity = '0'; });
+  }
+
+  // PENDIENTE: falta enganchar con la fuente real de la geometría de
+  // provincias de cada país (el topojson/GeoJSON con sus nombres). El juego
+  // ya debe tener esto en algún sitio, porque es lo que dibuja el mapa
+  // jugable de pages/country.html — en cuanto se sepa dónde vive (¿un
+  // <script id="..."> embebido en country.html, igual que
+  // pages/mapa-mundial.html para el mundo? ¿un archivo estático por país?)
+  // esta función se rellena igual que loadWorldTopology(), y debe devolver
+  // { topology, objectKey } (objectKey = la clave dentro de topology.objects,
+  // p.ej. "provinces").
+  async function loadCountryTopology(country) {
+    throw new Error('loadCountryTopology: falta conectar con la geometría real de provincias');
+  }
+
+  Promise.all([
+    api.getCurrentUser(),
+    api.getCountriesProgress(),
+    // Si el backend todavía no tiene /progress/sessions/recent desplegado,
+    // no queremos que se rompa todo el perfil: degradamos a lista vacía.
+    api.getRecentSessions(100).catch(() => []),
+  ]).then(async ([user, countries, recentSessions]) => {
+    const created = new Date(user.created_at).toLocaleDateString(undefined, {
+      year: 'numeric', month: 'long', day: 'numeric',
+    });
+
+    const played = countries.filter((c) => c.games_played > 0);
+    const totalGames = countries.reduce((sum, c) => sum + c.games_played, 0);
+    const overallAccuracy = computeOverallAccuracy(countries);
+    const fastest = findFastest(played);
+    const bestCountry = findBestCountry(played);
+    const rankTitle = computeRank(played.length);
+
+    let bodyHtml;
+
+    if (totalGames === 0) {
+      bodyHtml = `
+        <div class="empty-log">
+          Your expedition log is empty. Play your first country to open it.
+          <a class="btn" href="index.html">Start exploring</a>
+        </div>
+      `;
+    } else {
+      document.getElementById('profileCard').classList.add('wide');
+      bodyHtml = `
+        <div class="ledger-grid">
+          <div class="ledger-tile">
+            <span class="t-num">${played.length}<span class="t-num-sub">/${countries.length}</span></span>
+            <span class="t-label">Territories charted</span>
+          </div>
+          <div class="ledger-tile">
+            <span class="t-num">${totalGames}</span>
+            <span class="t-label">Expeditions logged</span>
+          </div>
+          <div class="ledger-tile">
+            <span class="t-num">${overallAccuracy != null ? overallAccuracy + '%' : '—'}</span>
+            <span class="t-label">Guess accuracy</span>
+          </div>
+          <div class="ledger-tile">
+            <span class="t-num">${bestCountry ? bestCountry.percentage + '%' : '—'}</span>
+            <span class="t-label">Best territory</span>
+            ${bestCountry ? `<span class="t-sub">${resolveDisplayName(bestCountry.country_name)}</span>` : ''}
+          </div>
+          <div class="ledger-tile">
+            <span class="t-num">${fastest ? formatTime(fastest.time) : '—'}</span>
+            <span class="t-label">Fastest expedition</span>
+            ${fastest ? `<span class="t-sub">${fastest.country}</span>` : ''}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Activity streak</h2></div>
+          ${renderStreakHeatmap(recentSessions)}
+        </div>
+
+        <div class="split-row">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Accuracy trend</h2>
+              ${played.length > 1 ? `<div class="country-picker" id="trendCountryPicker"><input type="text" class="country-picker-input" autocomplete="off"><div class="country-picker-list" hidden></div></div>` : ''}
+            </div>
+            <div id="trendContainer">${renderTrend(recentSessions, null)}</div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2>Recent log</h2></div>
+            ${renderRecentLog(recentSessions)}
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Weak spots</h2>
+            <div class="panel-head-right">
+              <span class="panel-sub" id="weakSpotsSub">Regions worth another look</span>
+              ${played.length > 1 ? `<div class="country-picker" id="weakCountryPicker"><input type="text" class="country-picker-input" autocomplete="off"><div class="country-picker-list" hidden></div></div>` : ''}
+            </div>
+          </div>
+          <div id="weakSpotsContainer">${renderWeakSpots(countries, null)}</div>
+          <div class="world-map-wrap" id="weakCountryMapWrap" style="display:none;margin-top:14px;"></div>
+          <div class="map-legend" id="weakCountryMapLegend" style="display:none;"><span>0%</span><span class="swatch"></span><span>100%</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Charted territory</h2><span class="panel-sub">${played.length} of ${countries.length}</span></div>
+          <div class="world-map-wrap" id="worldMapWrap"></div>
+          <div class="map-legend"><span>0%</span><span class="swatch"></span><span>100%</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Country ledger</h2></div>
+          ${renderCountryLedger(played, countries.length)}
+        </div>
+      `;
+    }
+
+    document.getElementById('content').innerHTML = `
+      <div class="identity">
+        <div class="avatar-wrap">
+          <div class="avatar">${user.username.charAt(0).toUpperCase()}</div>
+          ${rankSealSvg()}
+        </div>
+        <div class="identity-main">
+          <h1>${user.username}</h1>
+          <p class="rank-title">${rankTitle}</p>
+          ${renderRankProgress(played.length)}
+          <dl class="identity-meta">
+            <div><dt>Member since</dt><dd>${created}</dd></div>
+            <div><dt>Email</dt><dd>${user.email}</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      ${bodyHtml}
+
+      <button id="logoutBtn">Log out</button>
+    `;
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      api.logout();
+      window.location.href = 'index.html';
+    });
+
+    // Tendencia: engancha el tooltip del gráfico inicial (todos los países)
+    // y, si hay más de un país jugado, el buscador que filtra por país.
+    wireTrendTooltip(document.getElementById('trendContainer'));
+
+    const trendPickerEl = document.getElementById('trendCountryPicker');
+    if (trendPickerEl) {
+      wireCountryPicker(trendPickerEl, {
+        options: playedCountryOptions(played),
+        allLabel: 'All countries',
+        onSelect: (countryId) => {
+          const trendContainer = document.getElementById('trendContainer');
+          if (!countryId) {
+            trendContainer.innerHTML = renderTrend(recentSessions, null);
+          } else {
+            const filtered = recentSessions.filter((s) => String(s.country_id) === countryId);
+            const label = resolveDisplayName(
+              (played.find((c) => String(c.country_id) === countryId) || {}).country_name || ''
+            );
+            trendContainer.innerHTML = renderTrend(filtered, label);
+          }
+          wireTrendTooltip(trendContainer);
+        },
+      });
+    }
+
+    // Puntos débiles: el mismo tipo de buscador, pero que además dispara el
+    // mapa de provincias del país elegido (ver loadCountryTopology más arriba,
+    // todavía pendiente de conectar a la geometría real).
+    const weakPickerEl = document.getElementById('weakCountryPicker');
+    if (weakPickerEl) {
+      wireCountryPicker(weakPickerEl, {
+        options: playedCountryOptions(played),
+        allLabel: 'All territories',
+        onSelect: (countryId) => {
+          document.getElementById('weakSpotsContainer').innerHTML = renderWeakSpots(countries, countryId);
+
+          const sub = document.getElementById('weakSpotsSub');
+          const mapWrap = document.getElementById('weakCountryMapWrap');
+          const legend = document.getElementById('weakCountryMapLegend');
+
+          if (!countryId) {
+            sub.textContent = 'Regions worth another look';
+            mapWrap.style.display = 'none';
+            legend.style.display = 'none';
+            mapWrap.innerHTML = '';
+            return;
+          }
+
+          const country = countries.find((c) => String(c.country_id) === countryId);
+          sub.textContent = country ? `Weakest regions in ${resolveDisplayName(country.country_name)}` : 'Regions worth another look';
+          mapWrap.style.display = 'block';
+          legend.style.display = 'flex';
+          mapWrap.innerHTML = '<div class="log-empty">Loading province map…</div>';
+
+          loadCountryTopology(country)
+            .then(({ topology, objectKey }) => {
+              renderCountryProvinceMap(mapWrap, topology, objectKey, country.regions);
+            })
+            .catch((err) => {
+              console.error(err);
+              mapWrap.innerHTML = '<div class="log-empty">Province map for this territory isn\'t wired up yet.</div>';
+            });
+        },
+      });
+    }
+
+    if (played.length > 0) {
+      const progressByCountry = {};
+      countries.forEach((c) => {
+        if (c.games_played > 0) {
+          progressByCountry[normalizeName(resolveTopoName(c.country_name))] = {
+            percentage: c.percentage,
+            slug: resolveSlug(c.country_name),
+          };
+        }
+      });
+
+      try {
+        const topology = await loadWorldTopology();
+        renderWorldMap(document.getElementById('worldMapWrap'), topology, progressByCountry);
+      } catch (err) {
+        console.error(err);
+        document.getElementById('worldMapWrap').innerHTML =
+          '<div class="log-empty">No se pudo cargar el mapa mundial.</div>';
+      }
+    }
+  }).catch((err) => {
+    // Fallo real de carga del perfil (getCurrentUser o getCountriesProgress):
+    // sin esto la página se quedaba en "Loading…" para siempre.
+    console.error('No se pudo cargar el perfil', err);
+    document.getElementById('content').innerHTML = `
+      <div class="empty-log">
+        Couldn't load your expedition log. Check your connection and try again.
+        <button id="retryProfileBtn" class="btn" type="button">Retry</button>
+      </div>
+    `;
+    document.getElementById('retryProfileBtn').addEventListener('click', () => {
+      window.location.reload();
+    });
+  });
+</script>
+
+</body>
+</html>

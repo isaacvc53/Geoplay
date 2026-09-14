@@ -10,7 +10,7 @@ def service_conseguir_regions(nombre_pais):
     regions = (
         db.query(Region)
         .join(Country)
-        .filter(Country.nombre == nombre_pais)
+        .filter(Country.slug == nombre_pais)
         .all()
     )
     db.close()
@@ -21,7 +21,7 @@ def service_crear_region(nueva_region):
     db = SessionLocal()
     country_id = (
         db.query(Country.id)
-        .filter(Country.nombre == nueva_region.pais)
+        .filter(Country.slug == nueva_region.pais)
         .scalar()
     )
 
@@ -44,7 +44,7 @@ def service_eliminar_region(nombre_pais, nombre_region):
         .join(Country)
         .join(Region.names)
         .filter(
-            Country.nombre == nombre_pais,
+            Country.slug == nombre_pais,
             RegionName.name == nombre_region,
         )
         .first()
@@ -66,7 +66,7 @@ def service_modificar_region(nombre_pais, nombre_region, datos_nuevos):
         .join(Country)
         .join(Region.names)
         .filter(
-            Country.nombre == nombre_pais,
+            Country.slug == nombre_pais,
             RegionName.name == nombre_region,
         )
         .first()
@@ -117,7 +117,7 @@ def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
         db.query(RegionName, Region)
         .join(Region, RegionName.region_id == Region.id)
         .join(Country, Region.country_id == Country.id)
-        .filter(Country.nombre == nombre_pais)
+        .filter(Country.slug == nombre_pais)
         .all()
     )
 
@@ -155,7 +155,7 @@ def service_listar_regiones_con_nombres(nombre_pais: str):
     regiones = (
         db.query(Region)
         .join(Country, Region.country_id == Country.id)
-        .filter(Country.nombre == nombre_pais)
+        .filter(Country.slug == nombre_pais)
         .all()
     )
 
