@@ -1,7 +1,7 @@
 // data/countries/colombia.js
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Colombia",
+  slug: "colombia",
   id: 20,
   lang: "en",
 

@@ -25,7 +25,7 @@
 // decide to seed Country="France" in the database.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "France",
+  slug: "france",
   lang: "en",
   kicker: "GeoPlay · France",
   title: "How many French regions can you name?",

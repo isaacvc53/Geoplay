@@ -1,8 +1,4 @@
+venv/
 .venv/
 __pycache__/
 .env
-.env
-*.dump
-
-.env
-*.dump

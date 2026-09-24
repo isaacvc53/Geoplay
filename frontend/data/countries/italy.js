@@ -25,7 +25,7 @@
 // Country="Italy" in the database.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Italy",
+  slug: "italy",
   lang: "en",
   kicker: "GeoPlay · Italy",
   title: "How many Italian regions can you name?",

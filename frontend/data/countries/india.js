@@ -27,7 +27,7 @@
 // explicitly here.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "India",
+  slug: "india",
   lang: "en",
   kicker: "GeoPlay · India",
   title: "How many Indian states and union territories can you name?",

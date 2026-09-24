@@ -3,7 +3,7 @@
 // The SVG uses IDs such as CNAH and stores region names in the name attribute.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "China",
+  slug: "china",
   lang: "en",
   kicker: "GeoPlay · China",
   title: "How many Chinese provinces can you name?",

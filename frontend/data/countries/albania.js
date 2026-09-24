@@ -1,7 +1,7 @@
 // data/countries/albania.js
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Albania",
+  slug: "albania",
   lang: "en",
 
   kicker: "GeoPlay · Albania",

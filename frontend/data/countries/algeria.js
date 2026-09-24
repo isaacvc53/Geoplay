@@ -1,7 +1,7 @@
 // data/countries/algeria.js
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Algeria",
+  slug: "algeria",
   lang: "en",
 
   kicker: "GeoPlay · Algeria",

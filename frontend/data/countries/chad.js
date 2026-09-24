@@ -1,7 +1,7 @@
 // data/countries/chad.js
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Chad",
+  slug: "chad",
   lang: "en",
 
   kicker: "GeoPlay · Chad",

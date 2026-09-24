@@ -3,7 +3,7 @@
 // The SVG uses IDs such as MN035 and stores region names in the `name` attribute.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Mongolia",
+  slug: "mongolia",
   lang: "en",
   kicker: "GeoPlay · Mongolia",
   title: "How many Mongolian provinces can you name?",

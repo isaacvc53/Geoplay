@@ -4,7 +4,7 @@
 // viewBox: 0 0 1000 368.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Indonesia",
+  slug: "indonesia",
   lang: "en",
   kicker: "GeoPlay · Indonesia",
   title: "How many Indonesian provinces can you name?",

@@ -2,7 +2,7 @@
 // Based on the Afghanistan Admin Areas (level 1) SVG.
 
 window.GEOPLAY_COUNTRY = {
-  slug: "Afghanistan",
+  slug: "afghanistan",
   lang: "en",
   kicker: "GeoPlay · Afghanistan",
   title: "How many Afghan provinces can you name?",
