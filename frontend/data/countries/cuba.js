@@ -1,17 +1,15 @@
-// data/countries/angola.js
-
 window.GEOPLAY_COUNTRY = {
-  slug: "angola",
+  slug: "cuba",
   lang: "en",
 
-  kicker: "GeoPlay · Angola",
-  title: "How many Angolan provinces can you name?",
-  subtitle: "Type an Angolan province and the map will fill in.",
+  kicker: "GeoPlay · Cuba",
+  title: "How many provinces of Cuba can you name?",
+  subtitle: "Type a Cuban province and the map will fill in.",
 
-  total: 18,
+  total: 16,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/angola.svg",
+  geoFile: "../data/geo/cuba.svg",
 
   guessPlaceholder: "Type a province…",
   submitLabel: "Check",
@@ -31,7 +29,7 @@ window.GEOPLAY_COUNTRY = {
   pausedMessage: "The quiz is paused.",
 
   completeMessage:
-    "You've completed all 18 provinces of Angola! 🇦🇴",
+    "You've completed all 16 provinces of Cuba! 🇨🇺",
 
   timeUpMessage: "Time's up.",
 
@@ -42,197 +40,107 @@ window.GEOPLAY_COUNTRY = {
   readyLocalMessage: "Map ready in local mode.",
 
   loadErrorMessage:
-    "Could not load the map of Angola. Check your connection.",
+    "Could not load the map of Cuba. Check your connection.",
 
   regions: [
     {
-      id: "AOBGO",
-      display: "Bengo",
-      names: [
-        "Bengo",
-        "Bengo Province"
-      ],
+      id: "CU01",
+      display: "Pinar del Río",
+      names: ["Pinar del Río", "Pinar del Rio", "Pinar"],
       region_id: null
     },
-
     {
-      id: "AOBGU",
-      display: "Benguela",
-      names: [
-        "Benguela",
-        "Benguela Province"
-      ],
+      id: "CU15",
+      display: "Artemisa",
+      names: ["Artemisa"],
       region_id: null
     },
-
     {
-      id: "AOBIE",
-      display: "Bié",
-      names: [
-        "Bié",
-        "Bie",
-        "Bié Province",
-        "Bie Province"
-      ],
+      id: "CU16",
+      display: "Mayabeque",
+      names: ["Mayabeque"],
       region_id: null
     },
-
     {
-      id: "AOCAB",
-      display: "Cabinda",
-      names: [
-        "Cabinda",
-        "Cabinda Province"
-      ],
+      id: "CU03",
+      display: "La Habana",
+      names: ["La Habana", "Havana", "Habana"],
       region_id: null
     },
-
     {
-      id: "AOCCU",
-      display: "Cuando Cubango",
-      names: [
-        "Cuando Cubango",
-        "Cuando Cubango Province"
-      ],
+      id: "CU04",
+      display: "Matanzas",
+      names: ["Matanzas"],
       region_id: null
     },
-
     {
-      id: "AOCNN",
-      display: "Cunene",
-      names: [
-        "Cunene",
-        "Cunene Province"
-      ],
+      id: "CU05",
+      display: "Villa Clara",
+      names: ["Villa Clara"],
       region_id: null
     },
-
     {
-      id: "AOCNO",
-      display: "Cuanza Norte",
-      names: [
-        "Cuanza Norte",
-        "Cuanza Norte Province",
-        "Kwanza Norte",
-        "Kwanza Norte Province"
-      ],
+      id: "CU06",
+      display: "Cienfuegos",
+      names: ["Cienfuegos"],
       region_id: null
     },
-
     {
-      id: "AOCUS",
-      display: "Cuanza Sul",
-      names: [
-        "Cuanza Sul",
-        "Cuanza Sul Province",
-        "Kwanza Sul",
-        "Kwanza Sul Province"
-      ],
+      id: "CU07",
+      display: "Sancti Spíritus",
+      names: ["Sancti Spíritus", "Sancti Spiritus"],
       region_id: null
     },
-
     {
-      id: "AOHUA",
-      display: "Huambo",
-      names: [
-        "Huambo",
-        "Huambo Province"
-      ],
+      id: "CU08",
+      display: "Ciego de Ávila",
+      names: ["Ciego de Ávila", "Ciego de Avila"],
       region_id: null
     },
-
     {
-      id: "AOHUI",
-      display: "Huíla",
-      names: [
-        "Huíla",
-        "Huila",
-        "Huíla Province",
-        "Huila Province"
-      ],
+      id: "CU09",
+      display: "Camagüey",
+      names: ["Camagüey", "Camaguey"],
       region_id: null
     },
-
     {
-      id: "AOLNO",
-      display: "Lunda Norte",
-      names: [
-        "Lunda Norte",
-        "Lunda Norte Province"
-      ],
+      id: "CU10",
+      display: "Las Tunas",
+      names: ["Las Tunas"],
       region_id: null
     },
-
     {
-      id: "AOLSU",
-      display: "Lunda Sul",
-      names: [
-        "Lunda Sul",
-        "Lunda Sul Province"
-      ],
+      id: "CU11",
+      display: "Holguín",
+      names: ["Holguín", "Holguin"],
       region_id: null
     },
-
     {
-      id: "AOLUA",
-      display: "Luanda",
-      names: [
-        "Luanda",
-        "Luanda Province"
-      ],
+      id: "CU12",
+      display: "Granma",
+      names: ["Granma"],
       region_id: null
     },
-
     {
-      id: "AOMAL",
-      display: "Malanje",
-      names: [
-        "Malanje",
-        "Malanje Province"
-      ],
+      id: "CU13",
+      display: "Santiago de Cuba",
+      names: ["Santiago de Cuba", "Santiago"],
       region_id: null
     },
-
     {
-      id: "AOMOX",
-      display: "Moxico",
-      names: [
-        "Moxico",
-        "Moxico Province"
-      ],
+      id: "CU14",
+      display: "Guantánamo",
+      names: ["Guantánamo", "Guantanamo"],
       region_id: null
     },
-
     {
-      id: "AONAM",
-      display: "Namibe",
+      id: "CU99",
+      display: "Isla de la Juventud",
       names: [
-        "Namibe",
-        "Namibe Province",
-        "Moçâmedes",
-        "Mocamedes"
-      ],
-      region_id: null
-    },
-
-    {
-      id: "AOUIG",
-      display: "Uíge",
-      names: [
-        "Uíge",
-        "Uige",
-        "Uíge Province",
-        "Uige Province"
-      ],
-      region_id: null
-    },
-
-    {
-      id: "AOZAI",
-      display: "Zaire",
-      names: [
-        "Zaire",
-        "Zaire Province"
+        "Isla de la Juventud",
+        "Isla Juventud",
+        "Isle of Youth",
+        "Isla de Pinos"
       ],
       region_id: null
     }
