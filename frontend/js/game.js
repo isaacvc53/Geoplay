@@ -1611,13 +1611,22 @@
     let region =
       null;
 
-    if (localMode) {
-      region =
-        findLocalGuess(
-          regions,
-          raw
-        );
-    } else {
+    // Comprobamos SIEMPRE en local primero (instantáneo, sin red): los
+    // nombres válidos ya están cargados en `regions` desde loadRegions(),
+    // así que no hay que esperar a un roundtrip contra el backend/Neon en
+    // cada intento (eso era lo que hacía la partida sentirse lenta, a
+    // diferencia de JetPunk, que valida 100% en el cliente).
+    region =
+      findLocalGuess(
+        regions,
+        raw
+      );
+
+    // Solo si el local NO encuentra nada, preguntamos al backend por si
+    // conoce un nombre/idioma que el JSON local no contempla (red de
+    // seguridad, no el camino habitual). No ralentiza los aciertos, que
+    // son el caso común: solo se dispara cuando el local ya ha fallado.
+    if (!region && !localMode) {
       try {
         const data =
           await api.checkRegionName(
@@ -1637,12 +1646,6 @@
         }
       } catch (err) {
         localMode = true;
-
-        region =
-          findLocalGuess(
-            regions,
-            raw
-          );
       }
     }
 

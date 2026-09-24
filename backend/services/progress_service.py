@@ -1,5 +1,5 @@
 from sqlalchemy import case, func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from models.country_db import Country
 from models.progress import (
@@ -74,7 +74,16 @@ def _mejor_sesion(sesiones: list[GameSession]) -> GameSession | None:
 
 
 def get_country_progress(db: Session, user: User, country: Country) -> CountryProgressOut:
-    regiones = db.query(Region).filter(Region.country_id == country.id).all()
+    # OJO: selectinload(Region.names) evita que _nombre_region(region) más
+    # abajo dispare una query de lazy-load POR CADA región (N+1). Con esto
+    # pasamos de "1 + N" queries a solo 2, sin importar cuántas regiones
+    # tenga el país. Es el mismo fix que ya usa get_all_countries_progress.
+    regiones = (
+        db.query(Region)
+        .options(selectinload(Region.names))
+        .filter(Region.country_id == country.id)
+        .all()
+    )
     total_regiones = len(regiones)
 
     # % de acierto acumulado por región: de todos los intentos que ha tenido
@@ -155,8 +164,99 @@ def get_country_progress(db: Session, user: User, country: Country) -> CountryPr
 
 
 def get_all_countries_progress(db: Session, user: User) -> list[CountryProgressOut]:
+    """Versión "en bloque" de get_country_progress(), pensada para no golpear
+    la base de datos una vez por país (antes: 3 queries + 1 por región y
+    país -> cientos de queries; ahora: 4 queries fijas, sin importar cuántos
+    países/regiones haya). Fundamental contra una BD remota (Neon), donde
+    cada roundtrip de más se nota mucho más que en local."""
     paises = db.query(Country).all()
-    return [get_country_progress(db, user, pais) for pais in paises]
+
+    # Todas las regiones de todos los países en una sola consulta, con sus
+    # nombres precargados (selectinload) para que _nombre_region() no dispare
+    # una query por región al leer region.names.
+    regiones = db.query(Region).options(selectinload(Region.names)).all()
+    regiones_por_pais: dict[int, list[Region]] = {}
+    for region in regiones:
+        regiones_por_pais.setdefault(region.country_id, []).append(region)
+
+    # Estadísticas de acierto por región para TODAS las regiones del usuario
+    # de una sola vez (antes se repetía esta misma consulta, filtrada por
+    # country_id, una vez por cada país).
+    filas_por_region = (
+        db.query(
+            GameSessionAnswer.region_id,
+            func.count(GameSessionAnswer.id).label("intentos"),
+            func.sum(case((GameSessionAnswer.correct.is_(True), 1), else_=0)).label("aciertos"),
+        )
+        .join(GameSession, GameSessionAnswer.session_id == GameSession.id)
+        .filter(GameSession.user_id == user.id)
+        .group_by(GameSessionAnswer.region_id)
+        .all()
+    )
+    stats_por_region = {
+        fila.region_id: (fila.intentos, fila.aciertos or 0) for fila in filas_por_region
+    }
+
+    # Todas las partidas del usuario de una sola vez, repartidas por país.
+    sesiones = db.query(GameSession).filter(GameSession.user_id == user.id).all()
+    sesiones_por_pais: dict[int, list[GameSession]] = {}
+    for sesion in sesiones:
+        sesiones_por_pais.setdefault(sesion.country_id, []).append(sesion)
+
+    resultado = []
+    for pais in paises:
+        regiones_pais = regiones_por_pais.get(pais.id, [])
+        sesiones_pais = sesiones_por_pais.get(pais.id, [])
+
+        regiones_progreso = []
+        for region in regiones_pais:
+            intentos, aciertos = stats_por_region.get(region.id, (0, 0))
+            precision = round((aciertos / intentos) * 100, 1) if intentos else 0.0
+            regiones_progreso.append(
+                RegionProgressOut(
+                    region_id=region.id,
+                    region_name=_nombre_region(region),
+                    attempts=intentos,
+                    correct=aciertos,
+                    accuracy=precision,
+                )
+            )
+        regiones_progreso.sort(key=lambda r: r.region_name)
+
+        mejor_sesion = _mejor_sesion(sesiones_pais)
+        best_score = None
+        porcentaje_cabecera = 0.0
+        if mejor_sesion is not None:
+            porcentaje_cabecera = (
+                round((mejor_sesion.correct_regions / mejor_sesion.total_regions) * 100, 1)
+                if mejor_sesion.total_regions
+                else 0.0
+            )
+            best_score = BestScoreOut(
+                correct_regions=mejor_sesion.correct_regions,
+                total_regions=mejor_sesion.total_regions,
+                percentage=porcentaje_cabecera,
+                time_seconds=mejor_sesion.time_seconds,
+                played_at=mejor_sesion.played_at,
+            )
+
+        ultima_partida = max((s.played_at for s in sesiones_pais), default=None)
+
+        resultado.append(
+            CountryProgressOut(
+                country_id=pais.id,
+                country_name=pais.nombre,
+                country_slug=getattr(pais, "slug", None),
+                total_regions=len(regiones_pais),
+                percentage=porcentaje_cabecera,
+                games_played=len(sesiones_pais),
+                best_score=best_score,
+                last_played_at=ultima_partida,
+                regions=regiones_progreso,
+            )
+        )
+
+    return resultado
 
 
 # NUEVO: últimas partidas del jugador (de todos los países), más recientes

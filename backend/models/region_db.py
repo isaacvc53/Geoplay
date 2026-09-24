@@ -16,7 +16,7 @@ class Region(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     country_id: Mapped[int] = mapped_column(
-        ForeignKey("countries.id")
+        ForeignKey("countries.id"), index=True
     )
 
     country: Mapped["Country"] = relationship()

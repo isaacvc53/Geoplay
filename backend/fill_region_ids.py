@@ -129,7 +129,7 @@ def rellenar_region_ids(ruta_js, nombre_pais, ruta_salida=None):
             continue
 
         bloque_actualizado = re.sub(
-            r"region_id:\s*null", f"region_id: {region_id_encontrado}", bloque
+        r"region_id:\s*(?:null|\d+)", f"region_id: {region_id_encontrado}", bloque
         )
         contenido_nuevo = contenido_nuevo.replace(bloque, bloque_actualizado, 1)
 

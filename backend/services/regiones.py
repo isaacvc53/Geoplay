@@ -1,8 +1,12 @@
+from sqlalchemy.orm import selectinload
+
 from models.region_db import Region
 from models.country_db import Country
 from database.connection import SessionLocal
 from models.region_name_db import RegionName
 from utils.normalize import normalizar
+# NOTA: este archivo es services/regiones.py (el service), no confundir con
+# routes/regiones.py (el router), que tiene el mismo nombre de fichero.
 
 
 def service_conseguir_regions(nombre_pais):
@@ -149,11 +153,19 @@ def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
 
 
 def service_listar_regiones_con_nombres(nombre_pais: str):
-    """Para que el frontend cargue el tablero: todas las regiones + sus nombres válidos."""
+    """Para que el frontend cargue el tablero: todas las regiones + sus nombres válidos.
+
+    OJO: usa selectinload(Region.names) para traer los nombres en UNA query
+    aparte (2 queries en total), en vez de dejar que r.names dispare una
+    query de lazy-load POR CADA región (N+1). Contra una BD remota como
+    Neon, esto es la diferencia entre ~100ms y varios segundos si el país
+    tiene muchas regiones.
+    """
     db = SessionLocal()
 
     regiones = (
         db.query(Region)
+        .options(selectinload(Region.names))
         .join(Country, Region.country_id == Country.id)
         .filter(Country.slug == nombre_pais)
         .all()

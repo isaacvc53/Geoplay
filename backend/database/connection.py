@@ -5,25 +5,19 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 load_dotenv()
 
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_NAME = os.getenv("DB_NAME")
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-DATABASE_URL = (
-    f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+if DATABASE_URL and DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True,      # comprueba la conexión antes de usarla; si Neon
+                              # la cerró por autosuspend, la descarta y abre
+                              # una nueva en vez de fallar o colgarse
+    pool_recycle=280,        # recicla conexiones cada ~4.5 min, antes de que
+                              # Neon las cierre por inactividad (autosuspend
+                              # suele ser a los 5 min en el plan free)
+    connect_args={"connect_timeout": 10},
 )
-
-engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
-
-# Importamos TODOS los modelos antes de create_all,
-# para que Base.metadata los conozca y cree sus tablas.
-from models.country_db import Base, Country
-from models.region_db import Region
-from models.region_name_db import RegionName
-from models.user_db import User
-from models.progress_db import GameSession, GameSessionAnswer  # NUEVO
-
-Base.metadata.create_all(engine)

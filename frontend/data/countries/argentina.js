@@ -1,6 +1,6 @@
 window.GEOPLAY_COUNTRY = {
   slug: "argentina",
-  id: 7,
+  id: 15,
   lang: "en",
   kicker: "GeoPlay · Argentina",
   title: "How many Argentine provinces can you name?",
@@ -43,7 +43,7 @@ window.GEOPLAY_COUNTRY = {
         "Salta",
         "Salta Province"
       ],
-      region_id: 410
+      region_id: 102
     },
     {
       id: "ARB",
@@ -53,7 +53,7 @@ window.GEOPLAY_COUNTRY = {
         "Buenos Aires Province",
         "Buenos Aires Province of Argentina"
       ],
-      region_id: 404
+      region_id: 96
     },
     {
       id: "ARC",
@@ -66,7 +66,7 @@ window.GEOPLAY_COUNTRY = {
         "CABA",
         "Capital Federal"
       ],
-      region_id: 641
+      region_id: 95
     },
     {
       id: "ARD",
@@ -75,7 +75,7 @@ window.GEOPLAY_COUNTRY = {
         "San Luis",
         "San Luis Province"
       ],
-      region_id: 421
+      region_id: 113
     },
     {
       id: "ARE",
@@ -86,7 +86,7 @@ window.GEOPLAY_COUNTRY = {
         "Entre Ríos Province",
         "Entre Rios Province"
       ],
-      region_id: 409
+      region_id: 101
     },
     {
       id: "ARF",
@@ -95,7 +95,7 @@ window.GEOPLAY_COUNTRY = {
         "La Rioja",
         "La Rioja Province"
       ],
-      region_id: 423
+      region_id: 115
     },
     {
       id: "ARG",
@@ -104,7 +104,7 @@ window.GEOPLAY_COUNTRY = {
         "Santiago del Estero",
         "Santiago del Estero Province"
       ],
-      region_id: 414
+      region_id: 106
     },
     {
       id: "ARH",
@@ -113,7 +113,7 @@ window.GEOPLAY_COUNTRY = {
         "Chaco",
         "Chaco Province"
       ],
-      region_id: 412
+      region_id: 104
     },
     {
       id: "ARJ",
@@ -122,7 +122,7 @@ window.GEOPLAY_COUNTRY = {
         "San Juan",
         "San Juan Province"
       ],
-      region_id: 415
+      region_id: 107
     },
     {
       id: "ARK",
@@ -131,7 +131,7 @@ window.GEOPLAY_COUNTRY = {
         "Catamarca",
         "Catamarca Province"
       ],
-      region_id: 422
+      region_id: 114
     },
     {
       id: "ARL",
@@ -140,7 +140,7 @@ window.GEOPLAY_COUNTRY = {
         "La Pampa",
         "La Pampa Province"
       ],
-      region_id: 424
+      region_id: 116
     },
     {
       id: "ARM",
@@ -149,7 +149,7 @@ window.GEOPLAY_COUNTRY = {
         "Mendoza",
         "Mendoza Province"
       ],
-      region_id: 407
+      region_id: 99
     },
     {
       id: "ARN",
@@ -158,7 +158,7 @@ window.GEOPLAY_COUNTRY = {
         "Misiones",
         "Misiones Province"
       ],
-      region_id: 411
+      region_id: 103
     },
     {
       id: "ARP",
@@ -167,7 +167,7 @@ window.GEOPLAY_COUNTRY = {
         "Formosa",
         "Formosa Province"
       ],
-      region_id: 419
+      region_id: 111
     },
     {
       id: "ARQ",
@@ -178,7 +178,7 @@ window.GEOPLAY_COUNTRY = {
         "Neuquén Province",
         "Neuquen Province"
       ],
-      region_id: 418
+      region_id: 110
     },
     {
       id: "ARR",
@@ -189,7 +189,7 @@ window.GEOPLAY_COUNTRY = {
         "Río Negro Province",
         "Rio Negro Province"
       ],
-      region_id: 417
+      region_id: 109
     },
     {
       id: "ARS",
@@ -198,7 +198,7 @@ window.GEOPLAY_COUNTRY = {
         "Santa Fe",
         "Santa Fe Province"
       ],
-      region_id: 406
+      region_id: 98
     },
     {
       id: "ART",
@@ -209,7 +209,7 @@ window.GEOPLAY_COUNTRY = {
         "Tucumán Province",
         "Tucuman Province"
       ],
-      region_id: 408
+      region_id: 100
     },
     {
       id: "ARU",
@@ -218,7 +218,7 @@ window.GEOPLAY_COUNTRY = {
         "Chubut",
         "Chubut Province"
       ],
-      region_id: 420
+      region_id: 112
     },
     {
       id: "ARV",
@@ -229,7 +229,7 @@ window.GEOPLAY_COUNTRY = {
         "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
         "Tierra del Fuego Antarctica and South Atlantic Islands"
       ],
-      region_id: 426
+      region_id: 118
     },
     {
       id: "ARW",
@@ -238,7 +238,7 @@ window.GEOPLAY_COUNTRY = {
         "Corrientes",
         "Corrientes Province"
       ],
-      region_id: 413
+      region_id: 105
     },
     {
       id: "ARX",
@@ -249,7 +249,7 @@ window.GEOPLAY_COUNTRY = {
         "Córdoba Province",
         "Cordoba Province"
       ],
-      region_id: 405
+      region_id: 97
     },
     {
       id: "ARY",
@@ -258,7 +258,7 @@ window.GEOPLAY_COUNTRY = {
         "Jujuy",
         "Jujuy Province"
       ],
-      region_id: 416
+      region_id: 108
     },
     {
       id: "ARZ",
@@ -267,7 +267,7 @@ window.GEOPLAY_COUNTRY = {
         "Santa Cruz",
         "Santa Cruz Province"
       ],
-      region_id: 425
+      region_id: 117
     }
   ]
 };
