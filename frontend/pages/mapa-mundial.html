@@ -451,7 +451,9 @@
 
   // Lanza los fetch de todos los países en tandas (para no disparar 240+
   // peticiones a la vez) y devuelve un Set con los slugs que sí tienen mapa.
-  async function findAvailableCountries(features, concurrency = 12){
+  // Respaldo: solo se usa si no existe (o falla) el manifiesto generado en
+  // el deploy (ver findAvailableCountries más abajo).
+  async function findAvailableCountriesSlow(features, concurrency = 12){
     const available = new Set();
     let i = 0;
     async function worker(){
@@ -465,6 +467,25 @@
     const workers = Array.from({length: Math.min(concurrency, features.length)}, worker);
     await Promise.all(workers);
     return available;
+  }
+
+  // Vía rápida: en el deploy, generate-manifest.sh escribe
+  // data/available-countries.json con los slugs listos (ver el hook
+  // post-merge). Con esto basta UNA petición en vez de las 240+ del
+  // método lento. Si el manifiesto no existe o falla (por ejemplo, en un
+  // entorno donde aún no se ha corrido el script), cae automáticamente al
+  // método país por país para que la página siga funcionando igual.
+  async function findAvailableCountries(features){
+    try {
+      const res = await fetch('../data/available-countries.json', { cache: 'no-store' });
+      if (res.ok) {
+        const slugs = await res.json();
+        return new Set(slugs);
+      }
+    } catch (err) {
+      console.warn('Sin manifiesto (available-countries.json), comprobando país a país', err);
+    }
+    return findAvailableCountriesSlow(features);
   }
 
   function goToCountryGame(feature){
