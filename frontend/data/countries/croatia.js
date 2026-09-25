@@ -1,6 +1,6 @@
 // data/countries/croatia.js
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "croatia",
   lang: "en",
 

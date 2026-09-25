@@ -1,6 +1,6 @@
 // data/countries/albania.js
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "albania",
   lang: "en",
 

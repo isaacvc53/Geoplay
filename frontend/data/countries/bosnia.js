@@ -1,4 +1,4 @@
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "bosnia",
   lang: "en",
   kicker: "GeoPlay · Bosnia and Herzegovina",

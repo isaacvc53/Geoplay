@@ -24,7 +24,7 @@
 // cuba.js/italy.js), so this page will work in local mode until you
 // decide to seed Country="France" in the database.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "france",
   lang: "en",
   kicker: "GeoPlay · France",

@@ -26,7 +26,7 @@
 // getAttribute("viewBox") won't pick it up automatically; it's set
 // explicitly here.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "india",
   lang: "en",
   kicker: "GeoPlay · India",

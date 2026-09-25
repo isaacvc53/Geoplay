@@ -1,6 +1,6 @@
 // data/countries/chad.js
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "chad",
   lang: "en",
 

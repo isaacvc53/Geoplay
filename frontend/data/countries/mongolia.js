@@ -2,7 +2,7 @@
 // Based on the SimpleMaps Mongolia Admin Areas (level 1) SVG.
 // The SVG uses IDs such as MN035 and stores region names in the `name` attribute.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "mongolia",
   lang: "en",
   kicker: "GeoPlay · Mongolia",

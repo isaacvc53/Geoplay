@@ -1,4 +1,4 @@
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "belize",
   id: 31,
   lang: "en",

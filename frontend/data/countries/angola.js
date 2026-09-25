@@ -1,6 +1,6 @@
 // data/countries/angola.js
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "angola",
   lang: "en",
 

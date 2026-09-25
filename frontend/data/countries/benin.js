@@ -1,4 +1,4 @@
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "benin",
   lang: "en",
   kicker: "GeoPlay · Benin",

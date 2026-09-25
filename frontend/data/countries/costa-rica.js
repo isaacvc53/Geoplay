@@ -1,6 +1,6 @@
 // data/countries/costa-rica.js
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "costa-rica",
   id: 35,
   lang: "en",

@@ -1,4 +1,4 @@
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "burkina",
   lang: "en",
   kicker: "GeoPlay · Burkina Faso",

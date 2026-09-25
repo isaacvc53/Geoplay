@@ -1,7 +1,7 @@
 // data/countries/afghanistan.js
 // Based on the Afghanistan Admin Areas (level 1) SVG.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "afghanistan",
   lang: "en",
   kicker: "GeoPlay · Afghanistan",

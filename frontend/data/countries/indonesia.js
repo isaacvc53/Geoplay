@@ -3,7 +3,7 @@
 // The SVG uses IDs such as IDKU and stores region names in the `name` attribute.
 // viewBox: 0 0 1000 368.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "indonesia",
   lang: "en",
   kicker: "GeoPlay · Indonesia",

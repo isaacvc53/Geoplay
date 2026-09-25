@@ -2,7 +2,7 @@
 // Based on the SimpleMaps China Admin Areas (level 1) SVG.
 // The SVG uses IDs such as CNAH and stores region names in the name attribute.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "china",
   lang: "en",
   kicker: "GeoPlay · China",

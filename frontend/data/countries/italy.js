@@ -24,7 +24,7 @@
 // so this page will work in local mode until you decide to seed
 // Country="Italy" in the database.
 
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "italy",
   lang: "en",
   kicker: "GeoPlay · Italy",

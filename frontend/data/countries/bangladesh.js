@@ -1,4 +1,4 @@
-window.GEOPLAY_COUNTRY = {
+window.GEOTARIA_COUNTRY = {
   slug: "bangladesh",
   lang: "en",
   kicker: "GeoPlay · Bangladesh",
