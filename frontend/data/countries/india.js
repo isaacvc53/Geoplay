@@ -102,3 +102,4 @@ window.GEOTARIA_COUNTRY = {
     { id: "INWB", display: "West Bengal", names: ["West Bengal"], region_id: null },
   ],
 };
+

@@ -86,3 +86,4 @@ window.GEOTARIA_COUNTRY = {
     { id: "IT34", display: "Veneto", names: ["Veneto"], region_id: null },
   ],
 };
+

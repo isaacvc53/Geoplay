@@ -77,3 +77,4 @@ window.GEOTARIA_COUNTRY = {
     { id: "FRPAC", display: "Provence-Alpes-Côte d'Azur", names: ["Provence-Alpes-Cote d'Azur", "Provence-Alpes-Côte d'Azur", "PACA"], region_id: null },
   ],
 };
+
