@@ -107,23 +107,11 @@
   /* Mientras se hace pinch/arrastre (clase puesta por d3-zoom en start/end)
      se baja la calidad de antialiasing: es la diferencia entre un gesto
      fluido y uno a tirones en móviles de gama media/baja. En reposo se usa
-     de nuevo geometricPrecision, así que no se pierde nitidez. También se
-     cambia el patrón rayado de los países deshabilitados por un color
-     plano mientras se interactúa: los patrones SVG (como los filtros) son
-     otro punto que puede forzar renderizado por software en según qué
-     navegador móvil. */
+     de nuevo geometricPrecision, así que no se pierde nitidez. */
   svg#worldmap.interacting .country,
   svg#worldmap.interacting .graticule{
     shape-rendering:optimizeSpeed;
   }
-  svg#worldmap.interacting .country.disabled{
-    fill:var(--land-disabled);
-  }
-
-  /* El grosor de trazo no cambia con el zoom (en vez de recalcularse cada
-     vez que el <g> se escala), un pelín más barato y evita bordes
-     borrosos o excesivamente gruesos al hacer zoom. */
-  .country, .graticule{ vector-effect:non-scaling-stroke; }
 
   #fpsMeter{
     position:fixed; top:10px; right:10px; z-index:100;
@@ -650,6 +638,26 @@
     rafScheduled = false;
   }
 
+  // Restaurar sombra + antialiasing de golpe justo al soltar el dedo era
+  // el propio causante del tirón: es una operación pesada (241 países a la
+  // vez) y ocurría exactamente en el peor momento, el frame del soltar.
+  // En vez de eso, se espera a que el hilo principal esté libre (o, si el
+  // navegador no soporta requestIdleCallback como Safari, un pequeño
+  // retraso) para reactivarlo cuando ya no hay nada en movimiento y nadie
+  // nota que tarde unos milisegundos más.
+  let restoreHandle = null;
+  const cancelRestore = window.cancelIdleCallback || clearTimeout;
+  function scheduleRestore(){
+    cancelRestore(restoreHandle);
+    const restore = () => {
+      countriesG.attr('filter', 'url(#landShadow)');
+      svg.classed('interacting', false);
+    };
+    restoreHandle = window.requestIdleCallback
+      ? requestIdleCallback(restore, { timeout: 300 })
+      : setTimeout(restore, 200);
+  }
+
   const zoom = d3.zoom()
     .scaleExtent([1, 8])
     // Un toque en pantalla táctil nunca es tan quieto como un clic de
@@ -659,10 +667,14 @@
     // Mientras se hace pinch/arrastre: se quita la sombra (cara de
     // recalcular) y se baja la calidad del trazado de geometricPrecision a
     // optimizeSpeed, para que el navegador no intente antialiasing de
-    // máxima calidad en cada frame. Ambas cosas se restauran al soltar, así
-    // que la calidad final en reposo no cambia.
-    .on('start.perf', ()=>{ countriesG.attr('filter', null); svg.classed('interacting', true); })
-    .on('end.perf', ()=>{ countriesG.attr('filter', 'url(#landShadow)'); svg.classed('interacting', false); })
+    // máxima calidad en cada frame. Al soltar, la restauración se retrasa
+    // (ver scheduleRestore) para no coincidir con el frame del soltar.
+    .on('start.perf', ()=>{
+      cancelRestore(restoreHandle);
+      countriesG.attr('filter', null);
+      svg.classed('interacting', true);
+    })
+    .on('end.perf', scheduleRestore)
     .on('zoom', (event)=>{
       pendingTransform = event.transform;
       if(!rafScheduled){ rafScheduled = true; requestAnimationFrame(flushTransform); }
