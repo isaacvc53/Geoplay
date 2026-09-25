@@ -104,6 +104,15 @@
   .country:hover{ fill:var(--land-hover); fill-opacity:1; }
   .country.active{ fill:var(--land-active); fill-opacity:1; }
 
+  /* Mientras se hace pinch/arrastre (clase puesta por d3-zoom en start/end)
+     se baja la calidad de antialiasing: es la diferencia entre un gesto
+     fluido y uno a tirones en móviles de gama media/baja. En reposo se usa
+     de nuevo geometricPrecision, así que no se pierde nitidez. */
+  svg#worldmap.interacting .country,
+  svg#worldmap.interacting .graticule{
+    shape-rendering:optimizeSpeed;
+  }
+
   /* Disabled countries: diagonal hatch pattern, no highlight on hover or
      click — like the uncharted areas on an old atlas. */
   .country.disabled{
@@ -562,6 +571,11 @@
   svg.attr('viewBox', [0,0,width,height]);
 
   const g = svg.append('g');
+  // Le pedimos al navegador que ascienda este grupo a su propia capa de
+  // composición (GPU) desde el principio, en vez de esperar a que empiece
+  // a moverse. Así, cambiar su "transform" en cada frame no obliga a
+  // repintar sobre CPU los ~241 países con todo su detalle.
+  g.style('will-change', 'transform');
 
   const defs = svg.append('defs');
 
@@ -602,19 +616,36 @@
   const graticuleG = g.append('path').attr('class','graticule');
   const countriesG = g.append('g').attr('class','countries-group').attr('filter','url(#landShadow)');
 
+  // El evento 'zoom' de d3 se dispara una vez por cada pointermove/touchmove
+  // que reporta el sistema, lo cual en muchos móviles llega con más
+  // frecuencia de la que la pantalla puede realmente repintar. Sin
+  // throttling, se acumulan escrituras al DOM que el navegador nunca llega
+  // a mostrar, solo consumen batería y meten tirones. Con esto, por rápido
+  // que lleguen los eventos, el <g> solo se actualiza una vez por frame,
+  // siempre con la transformación más reciente.
+  let pendingTransform = null, rafScheduled = false;
+  function flushTransform(){
+    if(pendingTransform) g.attr('transform', pendingTransform);
+    rafScheduled = false;
+  }
+
   const zoom = d3.zoom()
     .scaleExtent([1, 8])
     // Un toque en pantalla táctil nunca es tan quieto como un clic de
     // ratón: sin esto, el mínimo temblor del dedo hacía que d3 lo
     // interpretase como un arrastre y cancelara la selección del país.
     .clickDistance(12)
-    // La sombra (feDropShadow) de los países es cara de recalcular en el
-    // móvil cada vez que cambia la transformación del mapa. Se desactiva
-    // mientras se hace pinch/arrastre y se restaura al soltar, para que
-    // el gesto se sienta fluido en vez de a tirones.
-    .on('start.perf', ()=> countriesG.attr('filter', null))
-    .on('end.perf', ()=> countriesG.attr('filter', 'url(#landShadow)'))
-    .on('zoom', (event)=>{ g.attr('transform', event.transform); });
+    // Mientras se hace pinch/arrastre: se quita la sombra (cara de
+    // recalcular) y se baja la calidad del trazado de geometricPrecision a
+    // optimizeSpeed, para que el navegador no intente antialiasing de
+    // máxima calidad en cada frame. Ambas cosas se restauran al soltar, así
+    // que la calidad final en reposo no cambia.
+    .on('start.perf', ()=>{ countriesG.attr('filter', null); svg.classed('interacting', true); })
+    .on('end.perf', ()=>{ countriesG.attr('filter', 'url(#landShadow)'); svg.classed('interacting', false); })
+    .on('zoom', (event)=>{
+      pendingTransform = event.transform;
+      if(!rafScheduled){ rafScheduled = true; requestAnimationFrame(flushTransform); }
+    });
   svg.call(zoom);
   svg.on('mousedown.cursor', ()=> svg.classed('grabbing', true));
   svg.on('mouseup.cursor', ()=> svg.classed('grabbing', false));
