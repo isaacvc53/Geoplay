@@ -1904,7 +1904,8 @@
   async function loadGeometry() {
     const res =
       await fetch(
-        country.geoFile
+        country.geoFile,
+        { cache: "no-store" }
       );
 
     if (!res.ok) {

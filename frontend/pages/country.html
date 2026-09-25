@@ -71,7 +71,10 @@
   const pais = params.get("pais") || "spain";
 
   const dataScript = document.createElement("script");
-  dataScript.src = `../data/countries/${pais}.js`;
+  // ?v=... evita que el navegador reutilice una copia vieja de este script
+  // que haya quedado cacheada de una visita anterior (por ejemplo, de antes
+  // de que el país existiera, o de antes del último cambio de contenido).
+  dataScript.src = `../data/countries/${pais}.js?v=${Date.now()}`;
   dataScript.onload = () => {
     const c = window.GEOTARIA_COUNTRY;
     if (!c) {
