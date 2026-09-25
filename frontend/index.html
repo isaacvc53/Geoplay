@@ -76,20 +76,14 @@
     opacity:.55;
   }
 
-  .page{ position:relative; z-index:1; max-width:1680px; margin:0 auto; }
+  .page{ position:relative; z-index:1; max-width:1680px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
 
   /* ---------- topbar ---------- */
   .topbar{
     position:sticky; top:0; z-index:10;
     display:flex; align-items:center; justify-content:space-between;
-    gap:20px; padding:20px 40px;
-    background:rgba(10,25,40,0.88);
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    box-shadow:0 1px 0 rgba(0,0,0,.4), 0 16px 32px -26px rgba(3,9,15,.85);
-  }
-  .topbar::after{
-    content:""; position:absolute; left:0; right:0; bottom:0; height:1px;
-    background:linear-gradient(90deg, transparent, var(--line) 12%, var(--line) 88%, transparent);
+    gap:20px; padding:28px 40px 14px;
+    background:transparent;
   }
   .brand{ display:flex; align-items:center; gap:12px; text-decoration:none; }
   .brand .mark{
@@ -129,15 +123,23 @@
   /* ---------- layout ---------- */
   .layout{
     display:grid;
-    grid-template-columns:224px 1fr 272px;
-    gap:24px;
-    padding:40px 40px 56px;
-    align-items:start;
+    grid-template-columns:1fr 1fr 2fr 1fr 1fr;
+    gap:16px;
+    padding:14px 40px 20px;
+    align-items:stretch;
+    min-height:460px;
+    margin-top:auto;
+    margin-bottom:auto;
   }
   @media (max-width:1180px){
+    .layout{ grid-template-columns:repeat(3, 1fr); }
+  }
+  @media (max-width:760px){
+    .layout{ grid-template-columns:repeat(2, 1fr); }
+  }
+  @media (max-width:460px){
     .layout{ grid-template-columns:1fr; }
   }
-  .col{ display:flex; flex-direction:column; gap:16px; min-height:100%; }
 
   /* ---------- shared panel ---------- */
   .panel{
@@ -154,11 +156,11 @@
     transform:translateY(-2px);
     box-shadow:0 14px 30px -18px rgba(3,9,15,.7);
   }
-  .col:nth-of-type(1) .panel{ animation-delay:.02s; }
-  .col:nth-of-type(2) .center-group > *:nth-child(1){ animation-delay:.06s; }
-  .col:nth-of-type(2) .center-group > *:nth-child(2){ animation-delay:.1s; }
-  .col:nth-of-type(2) .center-group > *:nth-child(3){ animation-delay:.14s; }
-  .col:nth-of-type(3) .panel{ animation-delay:.18s; }
+  .layout > *:nth-child(1){ animation-delay:.02s; }
+  .layout > *:nth-child(2){ animation-delay:.06s; }
+  .layout > *:nth-child(3){ animation-delay:.1s; }
+  .layout > *:nth-child(4){ animation-delay:.14s; }
+  .layout > *:nth-child(5){ animation-delay:.18s; }
 
   .pill{
     display:inline-flex; align-items:center;
@@ -176,15 +178,15 @@
   }
 
   /* ---------- roadmap panel (left) ---------- */
-  .roadmap{ flex:1; padding:20px; display:flex; flex-direction:column; }
-  .roadmap-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .roadmap-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:16px; }
-  .roadmap p.desc{ font-size:11px; color:var(--parchment-dim); line-height:1.65; margin-bottom:6px; }
-  .roadmap-list{ margin-top:10px; }
+  .roadmap{ flex:1; padding:14px; display:flex; flex-direction:column; }
+  .roadmap-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .roadmap-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:15px; }
+  .roadmap p.desc{ font-size:10.5px; color:var(--parchment-dim); line-height:1.55; margin-bottom:4px; }
+  .roadmap-list{ margin-top:6px; }
   .roadmap-row{
     display:flex; align-items:center; gap:10px;
-    padding:12px 2px; border-top:1px solid var(--line-soft);
-    font-size:11.5px; color:var(--parchment-dim);
+    padding:9px 2px; border-top:1px solid var(--line-soft);
+    font-size:11px; color:var(--parchment-dim);
     border-radius:var(--radius);
     transition:background-color var(--ease), padding-left var(--ease);
   }
@@ -198,24 +200,15 @@
   .roadmap-row span.label{ flex:1; color:var(--parchment); }
   .roadmap-row span.tag{ font-size:9.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--brass-dim); }
 
-  /* ---------- center: how-to-play group ---------- */
-  .center-group{
-    display:grid;
-    grid-template-columns:208px 1fr 208px;
-    gap:20px;
-    align-items:stretch;
-  }
-  @media (max-width:860px){ .center-group{ grid-template-columns:1fr; } }
-
-  .side-card{ padding:22px 20px; justify-content:space-between; gap:32px; }
+  .side-card{ padding:14px 14px; justify-content:space-between; gap:12px; }
   .side-card .head{ display:flex; align-items:center; justify-content:space-between; }
-  .side-card .body{ margin-top:16px; }
-  .side-card .widget-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:18px; margin-bottom:6px; }
-  .side-card .widget-desc{ font-size:11.5px; color:var(--parchment-dim); line-height:1.65; }
+  .side-card .body{ margin-top:10px; }
+  .side-card .widget-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:15px; margin-bottom:5px; }
+  .side-card .widget-desc{ font-size:11px; color:var(--parchment-dim); line-height:1.55; }
   .side-card .foot{
     display:flex; justify-content:space-between; align-items:center;
-    padding-top:12px; margin-top:14px; border-top:1px solid var(--line-soft);
-    font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--brass-dim);
+    padding-top:8px; margin-top:8px; border-top:1px solid var(--line-soft);
+    font-size:9px; letter-spacing:.05em; text-transform:uppercase; color:var(--brass-dim);
   }
 
   /* ---------- hero: select a country ---------- */
@@ -244,15 +237,15 @@
   .tick-bl{ bottom:-1px; left:-1px; border-bottom:1px solid var(--brass-bright); border-left:1px solid var(--brass-bright); }
   .tick-br{ bottom:-1px; right:-1px; border-bottom:1px solid var(--brass-bright); border-right:1px solid var(--brass-bright); }
 
-  .hero-head{ padding:34px 36px 0; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; }
-  .hero-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(28px,3.4vw,44px); letter-spacing:-.01em; line-height:1.08; }
-  .compass{ color:var(--brass); flex:none; margin-top:6px; transition:transform .35s ease; }
-  .hero-sub{ padding:12px 36px 0; font-size:13.5px; color:#9fb0bf; max-width:44ch; line-height:1.65; }
+  .hero-head{ padding:14px 14px 0; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .hero-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(15px,1.5vw,19px); letter-spacing:-.01em; line-height:1.15; }
+  .compass{ width:20px; height:20px; color:var(--brass); flex:none; margin-top:2px; transition:transform .35s ease; }
+  .hero-sub{ padding:6px 14px 0; font-size:10.5px; color:#9fb0bf; line-height:1.5; }
 
   .map-wrap{
-    position:relative; flex:1; min-height:300px;
+    position:relative; flex:1; min-height:0;
     display:flex; align-items:center; justify-content:center;
-    border-top:1px solid var(--line-soft); margin-top:24px; padding:22px 32px;
+    border-top:1px solid var(--line-soft); margin-top:10px; padding:8px 12px;
     overflow:hidden;
   }
   .map-wrap::before{
@@ -260,10 +253,10 @@
     background:radial-gradient(ellipse 70% 60% at 50% 45%, transparent 55%, var(--ocean-deep) 100%);
     opacity:.9; z-index:1;
   }
-  .map-wrap svg.worldmap{ width:100%; height:100%; max-height:360px; position:relative; }
+  .map-wrap svg.worldmap{ width:100%; height:100%; position:relative; }
   .worldmap path{ fill:var(--land); opacity:.72; transition:fill var(--ease-slow), opacity var(--ease-slow); }
 
-  .scale-bar{ position:absolute; left:32px; bottom:18px; display:flex; align-items:center; gap:5px; color:var(--brass-dim); }
+  .scale-bar{ position:absolute; left:14px; bottom:8px; display:flex; align-items:center; gap:5px; color:var(--brass-dim); }
   .scale-bar .bar{ width:44px; height:1px; background:var(--brass-dim); position:relative; }
   .scale-bar .bar::before, .scale-bar .bar::after{
     content:""; position:absolute; top:-3px; width:1px; height:7px; background:var(--brass-dim);
@@ -273,66 +266,69 @@
   .scale-bar span{ font-size:8.5px; letter-spacing:.04em; }
 
   .hero-foot{
-    padding:18px 36px 26px; border-top:1px solid var(--line-soft);
+    padding:10px 14px 12px; border-top:1px solid var(--line-soft);
     display:flex; justify-content:space-between; align-items:center;
   }
-  .hero-foot .pill{ font-size:10.5px; padding:5px 11px; }
-  .hero-foot .cta{ font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--brass-bright); }
+  .hero-foot .pill{ font-size:9px; padding:4px 9px; }
+  .hero-foot .cta{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--brass-bright); }
 
   /* ---------- right: statistics ---------- */
-  .stats{ flex:1; padding:20px 20px 18px; }
-  .stats .head{ display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .stats{ flex:1; padding:14px 14px 12px; }
+  .stats .head{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
   .stats .head svg{ color:var(--brass); }
-  .stats .widget-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:17px; }
-  .stats .widget-desc{ font-size:11px; color:var(--parchment-dim); line-height:1.6; margin:8px 0 16px; }
+  .stats .widget-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:15px; }
+  .stats .widget-desc{ font-size:10px; color:var(--parchment-dim); line-height:1.5; margin:5px 0 10px; }
 
-  /* compact tiles for the headline numbers */
+  /* compact tiles for the headline numbers — all four the same shape,
+     label pinned to the top and value pinned to the bottom so the grid
+     reads as symmetric no matter how long each value is. */
   .stat-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:8px;
-    margin-bottom:14px;
+    display:grid; grid-template-columns:1fr 1fr; grid-auto-rows:1fr; gap:6px;
+    margin-bottom:10px;
   }
   .stat-tile{
-    padding:12px 12px 11px; border-radius:var(--radius);
+    min-height:54px;
+    padding:8px 9px; border-radius:var(--radius);
     background:var(--panel-bg); border:1px solid var(--line-soft);
-    display:flex; flex-direction:column; gap:7px;
+    display:flex; flex-direction:column; justify-content:space-between; gap:4px;
     transition:border-color var(--ease), background-color var(--ease);
   }
   .stat-tile:hover{ border-color:var(--line); background:var(--panel-bg-hover); }
-  .stat-tile svg{ width:12px; height:12px; flex:none; color:var(--brass-dim); }
+  .stat-tile svg{ width:11px; height:11px; flex:none; color:var(--brass-dim); }
   .stat-tile-label{
     display:flex; align-items:center; gap:5px;
-    font-size:8.5px; letter-spacing:.03em; text-transform:uppercase; color:var(--brass-dim);
+    font-size:8px; letter-spacing:.03em; text-transform:uppercase; color:var(--brass-dim);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .stat-tile-value{ font-family:'Fraunces',Georgia,serif; font-size:21px; line-height:1; }
-  .stat-tile-value.dim{ color:var(--parchment-dim); font-size:12px; font-family:'Space Mono',monospace; }
+  .stat-tile-value{ font-family:'Fraunces',Georgia,serif; font-size:17px; line-height:1; }
+  .stat-tile-value.dim{ color:var(--parchment-dim); font-size:11px; font-family:'Space Mono',monospace; }
 
   .stat-row{
     display:flex; justify-content:space-between; align-items:baseline;
-    padding:11px 0; border-top:1px solid var(--line-soft);
+    padding:8px 0; border-top:1px solid var(--line-soft);
   }
-  .stat-label{ font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--brass-dim); }
-  .stat-value{ font-family:'Fraunces',Georgia,serif; font-size:17px; }
-  .stat-value.dim{ color:var(--brass-dim); font-size:12.5px; font-family:'Space Mono',monospace; }
+  .stat-label{ font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--brass-dim); }
+  .stat-value{ font-family:'Fraunces',Georgia,serif; font-size:14px; }
+  .stat-value.dim{ color:var(--brass-dim); font-size:11px; font-family:'Space Mono',monospace; }
 
   .mastery{ padding-top:2px; }
   .mastery-head{
     display:flex; justify-content:space-between; align-items:baseline;
-    padding:11px 0 8px; border-top:1px solid var(--line-soft);
+    padding:8px 0 6px; border-top:1px solid var(--line-soft);
   }
-  .stat-bar{ height:6px; border-radius:4px; background:var(--line-soft); overflow:hidden; }
+  .stat-bar{ height:5px; border-radius:4px; background:var(--line-soft); overflow:hidden; }
   .stat-bar span{ display:block; height:100%; width:0%; border-radius:4px; background:linear-gradient(90deg,var(--brass-dim),var(--brass-bright)); transition:width .8s var(--ease-slow); box-shadow:0 0 10px -2px rgba(224,189,125,.6); }
 
   .stats-foot{
-    margin-top:16px; padding-top:16px; border-top:1px solid var(--line-soft);
-    font-size:10.5px; color:var(--parchment-dim); line-height:1.6;
+    margin-top:10px; padding-top:10px; border-top:1px solid var(--line-soft);
+    font-size:9.5px; color:var(--parchment-dim); line-height:1.5;
   }
   .stats-foot a{ color:var(--brass-bright); text-decoration:none; border-bottom:1px solid var(--line); }
   .stats-foot a:hover{ border-color:var(--brass-bright); }
 
   /* ---------- footer ---------- */
   footer{
-    grid-column:1/-1; margin:0 40px; padding:20px 0 40px;
+    margin:0 40px; padding:12px 0 18px;
     border-top:1px solid var(--line);
     display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap;
   }
@@ -342,8 +338,8 @@
   .footer-status{ font-size:10.5px; color:var(--brass-dim); text-align:right; letter-spacing:.04em; }
 
   @media (max-width:640px){
-    .topbar{ padding:16px 20px; }
-    .layout{ padding:24px 20px 40px; }
+    .topbar{ padding:22px 20px 12px; }
+    .layout{ padding:14px 20px 24px; }
     footer{ margin:0 20px; flex-direction:column; align-items:flex-start; }
     .footer-status{ text-align:left; }
   }
@@ -374,44 +370,41 @@
 
   <main class="layout">
 
-    <!-- LEFT: roadmap -->
-    <div class="col">
-      <a class="panel roadmap" href="#" onclick="return false;">
-        <div class="roadmap-head">
-          <h2>Roadmap</h2>
-          <span class="pill soon">Coming soon</span>
-        </div>
-        <p class="desc">More ways to play are on the way.</p>
-        <div class="roadmap-list">
-          <div class="roadmap-row"><span class="bullet"></span><span class="label">Friends</span><span class="tag">Soon</span></div>
-          <div class="roadmap-row"><span class="bullet"></span><span class="label">Challenges</span><span class="tag">Soon</span></div>
-          <div class="roadmap-row"><span class="bullet"></span><span class="label">Achievements</span><span class="tag">Soon</span></div>
-        </div>
-      </a>
-    </div>
+    <!-- 1: roadmap -->
+    <a class="panel roadmap" href="#" onclick="return false;">
+      <div class="roadmap-head">
+        <h2>Roadmap</h2>
+        <span class="pill soon">Coming soon</span>
+      </div>
+      <p class="desc">More ways to play are on the way.</p>
+      <div class="roadmap-list">
+        <div class="roadmap-row"><span class="bullet"></span><span class="label">Friends</span><span class="tag">Soon</span></div>
+        <div class="roadmap-row"><span class="bullet"></span><span class="label">Challenges</span><span class="tag">Soon</span></div>
+        <div class="roadmap-row"><span class="bullet"></span><span class="label">Achievements</span><span class="tag">Soon</span></div>
+      </div>
+    </a>
 
-    <!-- CENTER: last played / select a country / multiplayer -->
-    <div class="col">
-      <div class="center-group">
-
-        <a class="panel side-card" href="pages/mapa-mundial.html" id="lastPlayedCard">
+        <!-- 2: multiplayer -->
+        <a class="panel side-card" href="#" onclick="return false;">
           <div>
             <div class="head">
               <div class="icon-circle">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M4 12a8 8 0 1 1 2.7 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                  <path d="M4 12V7.3M4 12h4.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" stroke-width="1.4"/>
+                  <path d="M12 13.5V9.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
                 </svg>
               </div>
             </div>
             <div class="body">
-              <div class="widget-title">Last played</div>
-              <p class="widget-desc" id="lastPlayedDesc">You haven't played yet — start with the World map.</p>
+              <div class="widget-title">Multiplayer</div>
+              <p class="widget-desc">Race against other players on timed challenges.</p>
             </div>
           </div>
-          <div class="foot"><span id="lastPlayedScore">—</span><span id="lastPlayedWhen">—</span></div>
+          <div class="foot"><span class="pill soon">Coming soon</span><span>—</span></div>
         </a>
 
+        <!-- 3: select a country -->
         <a class="hero" href="pages/mapa-mundial.html">
           <span class="tick tick-tl" aria-hidden="true"></span>
           <span class="tick tick-tr" aria-hidden="true"></span>
@@ -696,30 +689,7 @@
           </div>
         </a>
 
-        <a class="panel side-card" href="#" onclick="return false;">
-          <div>
-            <div class="head">
-              <div class="icon-circle">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" stroke-width="1.4"/>
-                  <path d="M12 13.5V9.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                  <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-                </svg>
-              </div>
-            </div>
-            <div class="body">
-              <div class="widget-title">Multiplayer</div>
-              <p class="widget-desc">Race against other players on timed challenges.</p>
-            </div>
-          </div>
-          <div class="foot"><span class="pill soon">Coming soon</span><span>—</span></div>
-        </a>
-
-      </div>
-    </div>
-
-    <!-- RIGHT: statistics -->
-    <div class="col">
+    <!-- 4: statistics -->
       <a class="panel stats" href="#" onclick="return false;">
         <div class="head">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -769,7 +739,27 @@
 
         <div class="stats-foot" id="statsFoot">Play a round to start building your stats.</div>
       </a>
-    </div>
+
+    <!-- 5: last played -->
+    <a class="panel side-card" href="pages/mapa-mundial.html" id="lastPlayedCard">
+          <div>
+            <div class="head">
+              <div class="icon-circle">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M4 12a8 8 0 1 1 2.7 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+                  <path d="M4 12V7.3M4 12h4.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+            <div class="body">
+              <div class="widget-title">Last played</div>
+              <p class="widget-desc" id="lastPlayedDesc">You haven't played yet — start with the World map.</p>
+            </div>
+          </div>
+          <div class="foot"><span id="lastPlayedScore">—</span><span id="lastPlayedWhen">—</span></div>
+        </a>
+
+  </main>
 
     <footer>
       <div class="footer-brand">
@@ -778,8 +768,6 @@
       </div>
       <div class="footer-status">geotaria.com</div>
     </footer>
-
-  </main>
 
 </div>
 
