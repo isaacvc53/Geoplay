@@ -1897,13 +1897,47 @@
   );
 
 
-  // Comprobación instantánea mientras se escribe: usa el mismo matching
-  // local (sin red) que submitGuess(), así que en cuanto el texto
-  // identifica una única región sin ambigüedad, se acierta al momento,
-  // sin necesidad de pulsar Enter ni el botón "Comprobar". El fallback al
-  // backend (para nombres que el JSON local no contempla) se sigue
-  // haciendo solo al enviar de verdad, para no disparar una petición de
-  // red en cada pulsación.
+  // A diferencia de findLocalGuess() (que también acepta prefijos de >= 3
+  // letras cuando identifican una única región — pensado para cuando el
+  // usuario ya ha terminado de escribir y pulsa Enter/Comprobar), esta
+  // variante SOLO acepta el nombre completo. Es la que usa el chequeo en
+  // vivo de abajo: si aceptara prefijos, escribir por ejemplo "juj" ya
+  // marcaría "Jujuy" como acertado antes de que el usuario termine de
+  // escribirlo.
+  function findExactLocalMatch(
+    regionsList,
+    raw
+  ) {
+    const q =
+      normalizeSafe(raw);
+
+    if (!q) {
+      return null;
+    }
+
+    const exact =
+      regionsList.filter(
+        (r) =>
+          (r.names || []).some(
+            (n) =>
+              normalizeSafe(n) ===
+              q
+          )
+      );
+
+    return exact.length === 1
+      ? exact[0]
+      : null;
+  }
+
+
+  // Comprobación instantánea mientras se escribe: en cuanto el texto
+  // coincide EXACTAMENTE con el nombre completo de una región, se acierta
+  // al momento, sin necesidad de pulsar Enter ni el botón "Comprobar".
+  // Aquí no se usa el matching parcial/por prefijos de findLocalGuess()
+  // (ese se reserva para el envío manual): en cada tecla ese matching
+  // parcial daría por buena una región en cuanto se escribieran solo sus
+  // primeras 3 letras, antes de que el usuario terminara de escribir.
   guessEl.addEventListener(
     "input",
     () => {
@@ -1922,7 +1956,7 @@
       }
 
       const region =
-        findLocalGuess(
+        findExactLocalMatch(
           regions,
           raw
         );
