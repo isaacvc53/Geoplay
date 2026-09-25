@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GeoPlay — Create account</title>
+<title>Geotaria — Create account</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500;1,9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@
 <div class="card">
   <a class="brand" href="index.html">
     <div class="mark">G</div>
-    <span class="word">Geo<i>Play</i></span>
+    <span class="word">Geo<i>taria</i></span>
   </a>
 
   <h1>Create account</h1>
@@ -182,7 +182,7 @@
 
     try {
       await api.register(email, username, password);
-      // Registro correcto -> login automático para no pedir los datos otra vez
+      // Successful registration -> auto-login so we don't ask for the details again
       await api.login(email, password);
       window.location.href = 'index.html';
     } catch (err) {

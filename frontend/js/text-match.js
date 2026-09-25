@@ -1,8 +1,8 @@
 // js/text-match.js
-// Normalización de texto y matching local de emergencia.
-// La validación "de verdad" la hace SIEMPRE el backend (api.checkRegionName);
-// esto solo se usa como red de seguridad si el backend no responde
-// (ver GEOPLAY_QUIZ.localMode en js/game.js).
+// Text normalization and local emergency matching.
+// The "real" validation is ALWAYS done by the backend (api.checkRegionName);
+// this is only used as a safety net if the backend doesn't respond
+// (see GEOTARIA_QUIZ.localMode in js/game.js).
 
 function normalizar(text) {
   return (text || "")

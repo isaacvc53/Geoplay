@@ -1,13 +1,13 @@
 // js/api.js
-// Todas las llamadas al backend pasan por aquí. Ninguna página debe hacer
-// fetch(...) directamente contra el backend: así, si cambia una ruta o
-// tenemos que añadir el token de autenticación más adelante (fase 5),
-// se toca en un único sitio.
+// All calls to the backend go through here. No page should make
+// fetch(...) directly against the backend: that way, if a route changes or
+// we need to add the auth token later on (phase 5),
+// it's touched in a single place.
 
-const TOKEN_KEY = "geoplay_token";
+const TOKEN_KEY = "geotaria_token";
 
 const api = {
-  // --- Helpers internos ---
+  // --- Internal helpers ---
 
   _getToken() {
     return localStorage.getItem(TOKEN_KEY);
@@ -26,8 +26,8 @@ const api = {
     return token ? { Authorization: `Bearer ${token}` } : {};
   },
 
-  // Si el token caducó o es inválido, limpiamos sesión y mandamos
-  // al usuario a iniciar sesión de nuevo (salvo que ya esté ahí).
+  // If the token expired or is invalid, clear the session and send
+  // the user to sign in again (unless they're already there).
   _handleUnauthorized() {
     this._clearToken();
     const page = window.location.pathname.split("/").pop();
@@ -37,7 +37,7 @@ const api = {
   },
 
   async _get(path) {
-    const res = await fetch(`${GEOPLAY_CONFIG.API_BASE}${path}`, {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}${path}`, {
       headers: { ...this._authHeaders() },
     });
     if (res.status === 401 && this._getToken()) {
@@ -52,7 +52,7 @@ const api = {
   },
 
   async _post(path, body) {
-    const res = await fetch(`${GEOPLAY_CONFIG.API_BASE}${path}`, {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}${path}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -71,9 +71,9 @@ const api = {
     return res.json();
   },
 
-  // --- Geografía (ya existentes) ---
+  // --- Geography (already existing) ---
 
-  // GET /countries/{pais}/regions/names
+  // GET /countries/{country}/regions/names
   // -> [{ region_id, names: [...] }, ...]
   getRegionsNames(countrySlug) {
     return this._get(`/countries/${encodeURIComponent(countrySlug)}/regions/names`);
@@ -92,12 +92,12 @@ const api = {
     return this._get(`/countries`);
   },
 
-  // GET /countries/{pais}
+  // GET /countries/{country}
   getCountry(countrySlug) {
     return this._get(`/countries/${encodeURIComponent(countrySlug)}`);
   },
 
-  // --- Autenticación (nuevo) ---
+  // --- Authentication (new) ---
 
   // POST /auth/register (JSON: { email, username, password })
   register(email, username, password) {
@@ -105,14 +105,14 @@ const api = {
   },
 
   // POST /auth/login
-  // OJO: este endpoint espera form-urlencoded (OAuth2PasswordRequestForm),
-  // no JSON, así que no puede usar _post. Guarda el token si el login va bien.
+  // NOTE: this endpoint expects form-urlencoded (OAuth2PasswordRequestForm),
+  // not JSON, so it can't use _post. Saves the token if login succeeds.
   async login(email, password) {
     const body = new URLSearchParams();
-    body.append("username", email); // el backend usa "username" como email
+    body.append("username", email); // the backend uses "username" as the email
     body.append("password", password);
 
-    const res = await fetch(`${GEOPLAY_CONFIG.API_BASE}/auth/login`, {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
@@ -137,26 +137,26 @@ const api = {
     return Boolean(this._getToken());
   },
 
-  // GET /auth/me (ruta protegida)
+  // GET /auth/me (protected route)
   getCurrentUser() {
     return this._get(`/auth/me`);
   },
 
-  // --- Progreso / estadísticas (nuevo) ---
+  // --- Progress / statistics (new) ---
 
-  // GET /progress/countries (ruta protegida)
+  // GET /progress/countries (protected route)
   // -> [{ country_id, country_name, total_regions, percentage, games_played,
   //       best_score: {...} | null, regions: [{ region_id, region_name, attempts, correct, accuracy }] }, ...]
   getCountriesProgress() {
     return this._get(`/progress/countries`);
   },
 
-  // GET /progress/countries/{id} (ruta protegida)
+  // GET /progress/countries/{id} (protected route)
   getCountryProgress(countryId) {
     return this._get(`/progress/countries/${countryId}`);
   },
 
-  // POST /progress/sessions (ruta protegida)
+  // POST /progress/sessions (protected route)
   // answers: [{ region_id, correct }, ...]
   saveGameSession(countryId, timeSeconds, answers) {
     return this._post(`/progress/sessions`, {
@@ -166,11 +166,11 @@ const api = {
     });
   },
 
-  // NUEVO: GET /progress/sessions/recent?limit=N (ruta protegida)
+  // NEW: GET /progress/sessions/recent?limit=N (protected route)
   // -> [{ id, country_id, country_name, country_slug, total_regions,
   //       correct_regions, percentage, time_seconds, played_at }, ...]
-  // Más recientes primero. Alimenta el feed de actividad y la gráfica
-  // de evolución del perfil.
+  // Most recent first. Feeds the activity feed and the profile's
+  // progress chart.
   getRecentSessions(limit = 20) {
     return this._get(`/progress/sessions/recent?limit=${limit}`);
   },

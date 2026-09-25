@@ -1,8 +1,8 @@
 // js/game.js
-// Motor genérico del juego "adivina la región".
+// Generic engine for the "guess the region" game.
 //
 // Todo lo específico del país viene de:
-// window.GEOPLAY_COUNTRY
+// window.GEOTARIA_COUNTRY
 //
 // La geometría se carga desde country.geoFile.
 //
@@ -14,11 +14,11 @@
 // demasiado hacia un lado.
 
 (function () {
-  const country = window.GEOPLAY_COUNTRY;
+  const country = window.GEOTARIA_COUNTRY;
 
   if (!country) {
     console.error(
-      "Falta window.GEOPLAY_COUNTRY: pages/country.html debe cargar data/countries/<pais>.js antes de js/game.js"
+      "Falta window.GEOTARIA_COUNTRY: pages/country.html debe cargar data/countries/<pais>.js antes de js/game.js"
     );
     return;
   }
@@ -247,7 +247,7 @@
     ) {
       endQuiz(
         country.completeMessage ||
-          "¡Completado!",
+          "Completed!",
         "ok"
       );
     }
@@ -281,7 +281,7 @@
     if (hintEl) {
       hintEl.textContent =
         country.hintTextRevealed ||
-        "Pasa el ratón para ver los nombres";
+        "Hover to see the names";
     }
   }
 
@@ -319,7 +319,7 @@
 
           endQuiz(
             country.timeUpMessage ||
-              "Se acabó el tiempo.",
+              "Time's up.",
             "no"
           );
         }
@@ -392,7 +392,7 @@
         null;
     } catch (err) {
       console.warn(
-        "No se pudo cargar el mejor resultado previo de este país",
+        "Could not load the previous best result for this country",
         err
       );
     }
@@ -508,7 +508,7 @@
       localMode ||
       !regions.length
     ) {
-      console.warn("saveGameSession: cancelado por alguna condición de arriba");
+      console.warn("saveGameSession: cancelled by one of the conditions above");
       return;
     }
 
@@ -1042,7 +1042,7 @@
             );
         } catch (err) {
           console.warn(
-            "No se pudo obtener el bounding box de una región.",
+            "Could not get the bounding box of a region.",
             err
           );
         }
@@ -1188,7 +1188,7 @@
 
     if (!bounds) {
       console.warn(
-        "No se pudo calcular el bounding box real del país."
+        "Could not compute the actual bounding box of the country."
       );
 
       return;
@@ -1506,7 +1506,7 @@
     setFeedback(
       (
         country.correctPrefix ||
-        "¡Correcto! "
+        "Correct! "
       ) +
         (
           region.display ||
@@ -1578,7 +1578,7 @@
       );
     } catch (err) {
       console.warn(
-        "Backend no disponible o país no sembrado, usando modo local",
+        "Backend unavailable or country not seeded, using local mode",
         err
       );
 
@@ -1668,7 +1668,7 @@
     ) {
       setFeedback(
         country.alreadyFoundMessage ||
-          "Ya está descubierta."
+          "Already found."
       );
 
       guessEl.select();
@@ -1729,7 +1729,7 @@
     if (!solved.size) {
       setFeedback(
         country.noneFoundMessage ||
-          "Todavía no has acertado ninguna."
+          "You haven't got any right yet."
       );
 
       return;
@@ -1909,7 +1909,7 @@
 
     if (!res.ok) {
       throw new Error(
-        "No se pudo cargar la geometría: HTTP " +
+        "Could not load the geometry: HTTP " +
           res.status
       );
     }
@@ -1929,7 +1929,7 @@
       )
     ) {
       throw new Error(
-        "El SVG de geometría no es válido"
+        "The geometry SVG is not valid"
       );
     }
 
@@ -2079,12 +2079,12 @@
       if (loadingOverlay) {
         loadingOverlay.textContent =
           country.loadErrorMessage ||
-          "No se pudo cargar el mapa.";
+          "Could not load the map.";
       }
 
       setFeedback(
         country.loadErrorMessage ||
-          "No se pudo cargar el mapa. Comprueba la conexión.",
+          "Could not load the map. Check your connection.",
         "no"
       );
     }

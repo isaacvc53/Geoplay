@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GeoPlay</title>
+<title>Geotaria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/global.css">
@@ -12,8 +12,8 @@
 <body>
 <div class="page">
   <header>
-    <p class="kicker" id="kicker">GeoPlay</p>
-    <h1 id="title">Cargando…</h1>
+    <p class="kicker" id="kicker">Geotaria</p>
+    <h1 id="title">Loading…</h1>
     <p class="subtitle" id="subtitle"></p>
   </header>
 
@@ -21,24 +21,24 @@
     <div class="toolbar">
       <div class="progress"><span id="count">0</span> / <span id="total">…</span></div>
       <div class="input-wrap">
-        <input id="guess" type="text" placeholder="Escribe una región…" autocomplete="off" autofocus disabled>
-        <button id="submit" disabled>Comprobar</button>
+        <input id="guess" type="text" placeholder="Type a region…" autocomplete="off" autofocus disabled>
+        <button id="submit" disabled>Check</button>
       </div>
       <div id="timer" class="timer">00:00</div>
-      <button id="pause" class="secondary" type="button">Pausa</button>
+      <button id="pause" class="secondary" type="button">Pause</button>
     </div>
 
     <div class="map-area" id="map-area">
-      <svg id="map" viewBox="0 0 960 620" aria-label="Mapa">
+      <svg id="map" viewBox="0 0 960 620" aria-label="Map">
         <g class="regions"></g>
       </svg>
       <div class="map-tools">
-        <button id="zoom-in" type="button" title="Acercar">+</button>
-        <button id="zoom-out" type="button" title="Alejar">−</button>
-        <button id="reset-view" type="button" title="Restablecer vista">⤢</button>
+        <button id="zoom-in" type="button" title="Zoom in">+</button>
+        <button id="zoom-out" type="button" title="Zoom out">−</button>
+        <button id="reset-view" type="button" title="Reset view">⤢</button>
       </div>
-      <div class="hint">Arrastra el mapa · rueda para ampliar</div>
-      <div class="loading-overlay" id="loading-overlay">Cargando el mapa…</div>
+      <div class="hint">Drag the map · scroll to zoom</div>
+      <div class="loading-overlay" id="loading-overlay">Loading the map…</div>
       <div class="toast" id="toast"></div>
     </div>
 
@@ -46,11 +46,11 @@
 
     <div class="bottom">
       <div class="left-actions">
-        <button id="missing" class="secondary" type="button">Mis regiones</button>
-        <button id="give-up" class="secondary" type="button">Rendirme</button>
+        <button id="missing" class="secondary" type="button">My regions</button>
+        <button id="give-up" class="secondary" type="button">Give up</button>
       </div>
       <div class="right-actions">
-        <button id="reset" class="secondary" type="button">Reiniciar</button>
+        <button id="reset" class="secondary" type="button">Restart</button>
       </div>
     </div>
     <div class="found-list-wrap" id="found-list-wrap"><div class="found-list" id="found-list"></div></div>
@@ -62,41 +62,41 @@
 <script src="../js/api.js"></script>
 <script src="../js/text-match.js"></script>
 <script>
-  // Bootstrap de la plantilla: lee ?pais=spain de la URL, carga
-  // data/countries/<pais>.js dinámicamente y, cuando está listo,
-  // rellena los textos de la página y arranca js/game.js.
-  // Esto es lo único que hace que country.html sirva para CUALQUIER país
-  // (punto 9 y 18 del documento de arquitectura).
+  // Template bootstrap: reads ?pais=spain from the URL, dynamically loads
+  // data/countries/<country>.js and, once ready, fills in the page's
+  // text and starts js/game.js.
+  // This is what lets country.html serve ANY country
+  // (see the architecture document).
   const params = new URLSearchParams(location.search);
   const pais = params.get("pais") || "spain";
 
   const dataScript = document.createElement("script");
   dataScript.src = `../data/countries/${pais}.js`;
   dataScript.onload = () => {
-    const c = window.GEOPLAY_COUNTRY;
+    const c = window.GEOTARIA_COUNTRY;
     if (!c) {
-      document.getElementById("title").textContent = "País no encontrado";
+      document.getElementById("title").textContent = "Country not found";
       return;
     }
-    document.getElementById("kicker").textContent = c.kicker || "GeoPlay";
+    document.getElementById("kicker").textContent = c.kicker || "Geotaria";
     document.getElementById("title").textContent = c.title || "";
     document.getElementById("subtitle").textContent = c.subtitle || "";
     document.getElementById("guess").placeholder = c.guessPlaceholder || "";
-    document.getElementById("submit").textContent = c.submitLabel || "Comprobar";
-    document.getElementById("pause").textContent = c.pauseLabel || "Pausa";
-    document.getElementById("missing").textContent = c.missingLabel || "Mis regiones";
-    document.getElementById("give-up").textContent = c.giveUpLabel || "Rendirme";
-    document.getElementById("reset").textContent = c.resetLabel || "Reiniciar";
+    document.getElementById("submit").textContent = c.submitLabel || "Check";
+    document.getElementById("pause").textContent = c.pauseLabel || "Pause";
+    document.getElementById("missing").textContent = c.missingLabel || "My regions";
+    document.getElementById("give-up").textContent = c.giveUpLabel || "Give up";
+    document.getElementById("reset").textContent = c.resetLabel || "Restart";
     document.querySelector(".hint").textContent = c.hintText || "";
-    document.getElementById("loading-overlay").textContent = `Cargando el mapa de ${c.title || pais}…`;
+    document.getElementById("loading-overlay").textContent = `Loading the map of ${c.title || pais}…`;
 
     const gameScript = document.createElement("script");
     gameScript.src = "../js/game.js";
     document.body.appendChild(gameScript);
   };
   dataScript.onerror = () => {
-    document.getElementById("title").textContent = "País no encontrado";
-    document.getElementById("loading-overlay").textContent = `No existe data/countries/${pais}.js`;
+    document.getElementById("title").textContent = "Country not found";
+    document.getElementById("loading-overlay").textContent = `data/countries/${pais}.js does not exist`;
   };
   document.body.appendChild(dataScript);
 </script>
