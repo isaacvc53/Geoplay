@@ -99,8 +99,8 @@
   .country:hover{ fill:var(--land-hover); fill-opacity:1; }
   .country.active{ fill:var(--land-active); fill-opacity:1; }
 
-  /* Países desactivados: trama de rayas, sin resalte al pasar el ratón ni
-     al hacer clic — como las zonas sin cartografiar de un atlas antiguo. */
+  /* Disabled countries: diagonal hatch pattern, no highlight on hover or
+     click — like the uncharted areas on an old atlas. */
   .country.disabled{
     fill:url(#disabledHatch);
     fill-opacity:0.65;
@@ -169,7 +169,7 @@
   }
   .overlay.open{ opacity:1; pointer-events:auto; }
 
-  /* ---------- Panel de país: rediseñado simple ---------- */
+  /* ---------- Country panel: simple redesign ---------- */
   .panel{
     position:fixed;
     top:50%; left:50%;
@@ -280,7 +280,7 @@
 <div class="stage">
   <header>
     <a class="btn-back" id="backToMenu" href="../index.html">
-      <span class="arrow">←</span> Menú principal
+      <span class="arrow">←</span> Main menu
     </a>
     <div class="eyebrow-row">
       <h1>Atlas <em>World</em></h1>
@@ -289,14 +289,14 @@
   </header>
 
   <div id="map-wrap">
-    <div class="loading" id="loading">cargando fronteras del mundo…</div>
+    <div class="loading" id="loading">loading world borders…</div>
     <svg id="worldmap"></svg>
   </div>
 
   <div class="zoom-controls">
-    <button id="zoomIn" aria-label="Acercar">+</button>
-    <button id="zoomOut" aria-label="Alejar">–</button>
-    <button id="zoomReset" aria-label="Restablecer zoom">⟲</button>
+    <button id="zoomIn" aria-label="Zoom in">+</button>
+    <button id="zoomOut" aria-label="Zoom out">–</button>
+    <button id="zoomReset" aria-label="Reset zoom">⟲</button>
   </div>
   <div class="scale"><span>0</span><span class="bar"></span><span>2000 km</span></div>
 </div>
@@ -305,7 +305,7 @@
 <div class="overlay" id="overlay"></div>
 
 <div class="panel" id="panel" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
-  <button class="panel-close" id="panelClose" aria-label="Cerrar">✕</button>
+  <button class="panel-close" id="panelClose" aria-label="Close">✕</button>
   <div class="panel-watermark" id="panelWatermark" aria-hidden="true"></div>
   <div class="panel-scroll">
     <div class="panel-header">
@@ -316,14 +316,14 @@
       </div>
     </div>
 
-    <p class="panel-sub">Elige un nivel para explorar sus divisiones internas.</p>
+    <p class="panel-sub">Choose a level to explore its internal divisions.</p>
 
     <button class="action-primary" id="exploreBtn" type="button">
-      <span class="a-title">Explorar regiones</span>
-      <span class="a-desc">Estados, provincias o su equivalente administrativo.</span>
+      <span class="a-title">Explore regions</span>
+      <span class="a-desc">States, provinces, or their administrative equivalent.</span>
     </button>
 
-    <p class="panel-note">Municipios, distritos y otros niveles: en desarrollo.</p>
+    <p class="panel-note">Municipalities, districts, and other levels: in development.</p>
   </div>
 </div>
 
@@ -347,17 +347,23 @@
 
   const numericToIso = {"533":"aw","004":"af","024":"ao","660":"ai","248":"ax","008":"al","020":"ad","784":"ae","032":"ar","051":"am","016":"as","010":"aq","260":"tf","028":"ag","036":"au","040":"at","031":"az","108":"bi","056":"be","204":"bj","535":"bq","854":"bf","050":"bd","100":"bg","048":"bh","044":"bs","070":"ba","652":"bl","112":"by","084":"bz","060":"bm","068":"bo","076":"br","052":"bb","096":"bn","064":"bt","074":"bv","072":"bw","140":"cf","124":"ca","166":"cc","756":"ch","152":"cl","156":"cn","384":"ci","120":"cm","180":"cd","178":"cg","184":"ck","170":"co","174":"km","132":"cv","188":"cr","192":"cu","531":"cw","162":"cx","136":"ky","196":"cy","203":"cz","276":"de","262":"dj","212":"dm","208":"dk","214":"do","012":"dz","218":"ec","818":"eg","232":"er","732":"eh","724":"es","233":"ee","231":"et","246":"fi","242":"fj","238":"fk","250":"fr","234":"fo","583":"fm","266":"ga","826":"gb","268":"ge","831":"gg","288":"gh","292":"gi","324":"gn","312":"gp","270":"gm","624":"gw","226":"gq","300":"gr","308":"gd","304":"gl","320":"gt","254":"gf","316":"gu","328":"gy","344":"hk","334":"hm","340":"hn","191":"hr","332":"ht","348":"hu","360":"id","833":"im","356":"in","086":"io","372":"ie","364":"ir","368":"iq","352":"is","376":"il","380":"it","388":"jm","832":"je","400":"jo","392":"jp","398":"kz","404":"ke","417":"kg","116":"kh","296":"ki","659":"kn","410":"kr","414":"kw","418":"la","422":"lb","430":"lr","434":"ly","662":"lc","438":"li","144":"lk","426":"ls","440":"lt","442":"lu","428":"lv","446":"mo","663":"mf","504":"ma","492":"mc","498":"md","450":"mg","462":"mv","484":"mx","584":"mh","807":"mk","466":"ml","470":"mt","104":"mm","499":"me","496":"mn","580":"mp","508":"mz","478":"mr","500":"ms","474":"mq","480":"mu","454":"mw","458":"my","175":"yt","516":"na","540":"nc","562":"ne","574":"nf","566":"ng","558":"ni","570":"nu","528":"nl","578":"no","524":"np","520":"nr","554":"nz","512":"om","586":"pk","591":"pa","612":"pn","604":"pe","608":"ph","585":"pw","598":"pg","616":"pl","630":"pr","408":"kp","620":"pt","600":"py","275":"ps","258":"pf","634":"qa","638":"re","642":"ro","643":"ru","646":"rw","682":"sa","729":"sd","686":"sn","702":"sg","239":"gs","654":"sh","744":"sj","090":"sb","694":"sl","222":"sv","674":"sm","706":"so","666":"pm","688":"rs","728":"ss","678":"st","740":"sr","703":"sk","705":"si","752":"se","748":"sz","534":"sx","690":"sc","760":"sy","796":"tc","148":"td","768":"tg","764":"th","762":"tj","772":"tk","795":"tm","626":"tl","776":"to","780":"tt","788":"tn","792":"tr","798":"tv","158":"tw","834":"tz","800":"ug","804":"ua","581":"um","858":"uy","840":"us","860":"uz","336":"va","670":"vc","862":"ve","092":"vg","850":"vi","704":"vn","548":"vu","876":"wf","882":"ws","887":"ye","710":"za","894":"zm","716":"zw"};
 
-  // --- Conexión con la página del juego de cada país ---------------------
-  // La página que carga el .js/.svg de cada país (ajusta esta ruta si
-  // mapa-mundial.html no vive en la misma carpeta que country.html).
+  // --- Connection to each country's game page -----------------------------
+  // The page that loads the .js/.svg for each country (adjust this path if
+  // mapa-mundial.html doesn't live in the same folder as country.html).
+  // NOTE: the query param name ('pais') is kept as-is because country.html
+  // is expected to read it under that name — rename both together if you
+  // want it in English.
   const COUNTRY_PAGE = 'country.html';
   const COUNTRY_QUERY_PARAM = 'pais';
 
-  // El topojson de world-atlas (Natural Earth) usa a veces nombres
-  // abreviados que no coinciden con el nombre completo usado para nombrar
-  // los archivos (ej. "Dem. Rep. Congo" en vez de "Democratic Republic of
-  // the Congo"). Aquí se puede forzar el slug exacto para esos casos —
-  // añade o corrige entradas según los nombres de archivo que ya tengas.
+  // The world-atlas (Natural Earth) topojson sometimes uses abbreviated
+  // names that don't match the full name used to name the files (e.g.
+  // "Dem. Rep. Congo" instead of "Democratic Republic of the Congo"). You
+  // can force the exact slug here for those cases — add or fix entries
+  // to match the file names you already have.
+  // NOTE: the slug values themselves are left as-is (some are in Spanish,
+  // e.g. "camerun") since they must match your actual file names on disk —
+  // only rename them here if you also rename the corresponding files.
   const COUNTRY_SLUG_OVERRIDES = {
     "United States of America": "united-states",
     "Dem. Rep. Congo": "democratic-republic-of-the-congo",
@@ -381,12 +387,12 @@
     "Somaliland": "somaliland"
   };
 
-  // Países "desactivados": se pintan con una trama de rayas y no abren el
-  // panel al hacer clic (ni responden al hover con el color activo). Usa
-  // aquí el "name" tal cual aparece en las propiedades del topojson — si no
-  // estás seguro de cómo se llama un país en los datos, abre la consola del
-  // navegador, pasa el ratón sobre él y revisa el texto del tooltip.
-  // Ejemplo para añadir más:
+  // "Disabled" countries: painted with a hatch pattern and don't open the
+  // panel on click (nor respond to hover with the active color). Use the
+  // "name" exactly as it appears in the topojson properties here — if
+  // you're not sure how a country is named in the data, open the browser
+  // console, hover over it, and check the tooltip text.
+  // Example to add more:
   //   const DISABLED_COUNTRIES = new Set(['Antarctica', 'Fr. S. Antarctic Lands']);
   const DISABLED_COUNTRIES = new Set([
     'Antarctica'
@@ -396,64 +402,86 @@
     const rawName = feature?.properties?.name || '';
     if(COUNTRY_SLUG_OVERRIDES[rawName]) return COUNTRY_SLUG_OVERRIDES[rawName];
     return rawName
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip accents
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
   }
 
-  // --- Comprobación automática de qué países ya tienen su mapa/juego -------
-  // Cada país tiene (o debería tener) dos archivos en /data:
-  //   data/countries/<slug>.js   (la lógica/datos del juego)
-  //   data/geo/<slug>.svg        (el contorno recortado del país)
-  // En vez de mantener a mano una lista de qué países están listos, al
-  // cargar la página se comprueba con un fetch si esos dos archivos existen
-  // de verdad. Si faltan, el país se pinta igual que los "desactivados"
-  // (trama oscura, sin hover ni clic). En cuanto añadas los archivos de un
-  // país, la próxima vez que se cargue la página aparecerá activo solo.
+  // --- Automatic check of which countries already have a map/game ---------
+  // Each country has (or should have) two files under /data:
+  //   data/countries/<slug>.js   (the game's logic/data)
+  //   data/geo/<slug>.svg        (the country's clipped outline)
+  // Rather than hand-maintaining a list of which countries are ready, the
+  // page checks with a fetch whether those two files really exist. If
+  // they're missing, the country is painted like the "disabled" ones (dark
+  // hatch, no hover or click). As soon as you add a country's files, it
+  // will show up active the next time the page loads.
   //
-  // Importante: esto funciona sirviendo la carpeta con un servidor local
-  // (ej. `python3 -m http.server`) o en un hosting real. Abriendo el HTML
-  // directamente desde el disco (file://) los navegadores bloquean estos
-  // fetch por CORS y todos los países aparecerán como no disponibles.
+  // This check runs in the background AFTER the map is already drawn (see
+  // findAvailableCountries below), so a slow network or a missing manifest
+  // never blocks the initial render — only the disabled/enabled styling is
+  // updated once the check finishes, a few hundred ms to a couple of
+  // seconds later. Its result is also cached in sessionStorage so
+  // navigating back to this page in the same tab is instant.
+  //
+  // Important: this works when the folder is served by a local server
+  // (e.g. `python3 -m http.server`) or on real hosting. Opening the HTML
+  // directly from disk (file://) makes browsers block these fetches via
+  // CORS, so every country will be treated as unavailable until you serve
+  // it over http(s).
   const DATA_JS_DIR = '../data/countries/';
   const DATA_JS_EXT = '.js';
   const DATA_SVG_DIR = '../data/geo/';
   const DATA_SVG_EXT = '.svg';
-  // true  -> hace falta el .js Y el .svg para considerar el país "listo"
-  // false -> basta con que exista el .js (ajusta a tu gusto)
+  // true  -> both the .js AND the .svg are required for a country to count as "ready"
+  // false -> having the .js is enough (adjust to taste)
   const REQUIRE_BOTH_FILES = true;
+  // How long to wait for each existence check before giving up on it.
+  const FILE_CHECK_TIMEOUT_MS = 4000;
+  const AVAILABILITY_CACHE_KEY = 'geoplay:available-countries';
 
-  // Comprueba si un archivo existe con un HEAD (no descarga el contenido).
-  // Si el servidor no soporta HEAD (algunos hosts estáticos lo rechazan),
-  // reintenta con GET como respaldo.
+  // Checks whether a file exists with a HEAD request (doesn't download the
+  // content). If the server doesn't support HEAD (some static hosts reject
+  // it), retries with GET as a fallback. Aborts and treats it as "not
+  // found" if it takes longer than FILE_CHECK_TIMEOUT_MS, so one slow or
+  // hanging request can't stall the whole scan.
   async function fileExists(url){
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FILE_CHECK_TIMEOUT_MS);
     try{
-      const res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+      const res = await fetch(url, { method: 'HEAD', cache: 'no-store', signal: controller.signal });
       if(res.status === 405 || res.status === 501){
-        const res2 = await fetch(url, { method: 'GET', cache: 'no-store' });
+        const res2 = await fetch(url, { method: 'GET', cache: 'no-store', signal: controller.signal });
         return res2.ok;
       }
       return res.ok;
     }catch(err){
       return false;
+    }finally{
+      clearTimeout(timer);
     }
   }
 
   async function countryHasMap(slug){
     if(!slug) return false;
-    const jsOk = await fileExists(DATA_JS_DIR + slug + DATA_JS_EXT);
-    if(!REQUIRE_BOTH_FILES) return jsOk;
-    if(!jsOk) return false;
-    const svgOk = await fileExists(DATA_SVG_DIR + slug + DATA_SVG_EXT);
-    return svgOk;
+    if(!REQUIRE_BOTH_FILES){
+      return fileExists(DATA_JS_DIR + slug + DATA_JS_EXT);
+    }
+    // Check both files at once instead of one after the other — halves the
+    // time this takes per country.
+    const [jsOk, svgOk] = await Promise.all([
+      fileExists(DATA_JS_DIR + slug + DATA_JS_EXT),
+      fileExists(DATA_SVG_DIR + slug + DATA_SVG_EXT)
+    ]);
+    return jsOk && svgOk;
   }
 
-  // Lanza los fetch de todos los países en tandas (para no disparar 240+
-  // peticiones a la vez) y devuelve un Set con los slugs que sí tienen mapa.
-  // Respaldo: solo se usa si no existe (o falla) el manifiesto generado en
-  // el deploy (ver findAvailableCountries más abajo).
-  async function findAvailableCountriesSlow(features, concurrency = 12){
+  // Fires the fetches for every country in batches (so it doesn't launch
+  // 240+ requests at once) and returns a Set with the slugs that do have a
+  // map. Fallback: only used if the manifest generated at deploy time is
+  // missing or fails to load (see findAvailableCountries below).
+  async function findAvailableCountriesSlow(features, concurrency = 16){
     const available = new Set();
     let i = 0;
     async function worker(){
@@ -469,23 +497,43 @@
     return available;
   }
 
-  // Vía rápida: en el deploy, generate-manifest.sh escribe
-  // data/available-countries.json con los slugs listos (ver el hook
-  // post-merge). Con esto basta UNA petición en vez de las 240+ del
-  // método lento. Si el manifiesto no existe o falla (por ejemplo, en un
-  // entorno donde aún no se ha corrido el script), cae automáticamente al
-  // método país por país para que la página siga funcionando igual.
+  // Fast path: at deploy time, generate-manifest.sh writes
+  // data/available-countries.json with the ready slugs (see the post-merge
+  // hook). This means just ONE request instead of the 240+ of the slow
+  // method. If the manifest doesn't exist or fails (e.g. in an environment
+  // where the script hasn't run yet), it automatically falls back to the
+  // country-by-country method so the page keeps working the same way.
+  // The result of either path is cached in sessionStorage for the rest of
+  // the tab session, so re-visiting this page doesn't repeat the scan.
   async function findAvailableCountries(features){
+    try {
+      const cached = sessionStorage.getItem(AVAILABILITY_CACHE_KEY);
+      if(cached) return new Set(JSON.parse(cached));
+    } catch(err) {
+      // sessionStorage unavailable (private browsing, etc.) — just skip the cache.
+    }
+
+    let available;
     try {
       const res = await fetch('../data/available-countries.json', { cache: 'no-store' });
       if (res.ok) {
         const slugs = await res.json();
-        return new Set(slugs);
+        available = new Set(slugs);
       }
     } catch (err) {
-      console.warn('Sin manifiesto (available-countries.json), comprobando país a país', err);
+      console.warn('No manifest found (available-countries.json), checking country by country', err);
     }
-    return findAvailableCountriesSlow(features);
+    if(!available){
+      available = await findAvailableCountriesSlow(features);
+    }
+
+    try {
+      sessionStorage.setItem(AVAILABILITY_CACHE_KEY, JSON.stringify([...available]));
+    } catch(err) {
+      // sessionStorage unavailable — nothing to do, just skip caching.
+    }
+
+    return available;
   }
 
   function goToCountryGame(feature){
@@ -503,15 +551,15 @@
 
   const defs = svg.append('defs');
 
-  // Brillo oceánico
+  // Ocean glow
   const grad = defs.append('radialGradient')
     .attr('id','oceanGlow').attr('cx','30%').attr('cy','25%').attr('r','85%');
   grad.append('stop').attr('offset','0%').attr('stop-color','#16405f');
   grad.append('stop').attr('offset','100%').attr('stop-color','#0e2233');
 
-  // Trama diagonal para los países desactivados (estilo "zona sin cartografiar").
-  // Los colores se leen de las variables --land-disabled / --land-disabled-line
-  // definidas en :root, para que ese sea el único lugar donde ajustarlos.
+  // Diagonal hatch for disabled countries ("uncharted area" style).
+  // The colors are read from the --land-disabled / --land-disabled-line
+  // variables defined in :root, so that's the only place to adjust them.
   const rootStyles = getComputedStyle(document.documentElement);
   const disabledFill = rootStyles.getPropertyValue('--land-disabled').trim() || '#6d6555';
   const disabledLine = rootStyles.getPropertyValue('--land-disabled-line').trim() || '#443f34';
@@ -525,7 +573,7 @@
   hatch.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',6)
     .attr('stroke', disabledLine).attr('stroke-width',2);
 
-  // Sombra suave bajo las masas de tierra, para dar sensación de recorte de papel
+  // Soft shadow under the landmasses, to give a cut-paper feel
   const shadowFilter = defs.append('filter')
     .attr('id','landShadow')
     .attr('x','-20%').attr('y','-20%').attr('width','140%').attr('height','140%');
@@ -562,9 +610,9 @@
     graticuleG.attr('d', path(d3.geoGraticule10()));
     countriesG.selectAll('path').attr('d', path);
 
-    // Bloquea el paneo del mapa cuando no hay zoom (scale=1): al fijar la
-    // extensión de traslación igual a la del viewport, no queda margen para
-    // arrastrar el mapa hasta que el usuario haga zoom.
+    // Locks map panning when there's no zoom (scale=1): by setting the
+    // translate extent equal to the viewport's, there's no room left to
+    // drag the map until the user zooms in.
     zoom.extent([[0,0],[width,height]])
         .translateExtent([[0,0],[width,height]]);
   }
@@ -572,10 +620,9 @@
   let activeNode = null;
   let activeFeature = null;
 
-  // Para la silueta en miniatura del panel, cuando un país es un MultiPolygon
-  // (p. ej. Rusia con el exclave de Kaliningrado), nos quedamos solo con el
-  // polígono de mayor área para que la silueta muestre únicamente el
-  // territorio principal.
+  // For the panel's mini silhouette, when a country is a MultiPolygon
+  // (e.g. Russia with the Kaliningrad exclave), we keep only the
+  // largest-area polygon so the silhouette shows just the main territory.
   function mainlandOnly(feature){
     if(feature?.geometry?.type !== 'MultiPolygon') return feature;
     const coords = feature.geometry.coordinates;
@@ -591,7 +638,7 @@
   }
 
   function renderCountryPreview(feature){
-    const name = feature?.properties?.name || 'País';
+    const name = feature?.properties?.name || 'Country';
     const numericId = String(feature?.id || '').padStart(3, '0');
     const iso2 = numericToIso[numericId] || '';
     const previewFeature = mainlandOnly(feature);
@@ -609,7 +656,7 @@
     panelTitle.textContent = name;
 
     if(iso2){
-      flagEl.alt = 'Bandera de ' + name;
+      flagEl.alt = 'Flag of ' + name;
       flagEl.src = 'https://flagcdn.com/w160/' + iso2 + '.png';
       flagEl.style.display = 'block';
       codeChip.textContent = iso2.toUpperCase();
@@ -645,17 +692,17 @@
     goToCountryGame(activeFeature);
   });
 
-  // Datos del mapa incrustados directamente en la página (ver el
-  // <script type="application/json" id="world-data"> al final del body).
-  // Así no hay que descargar nada de un CDN externo: la página funciona
-  // sin conexión y carga más rápido.
+  // Map data embedded directly in the page (see the
+  // <script type="application/json" id="world-data"> at the end of the
+  // body). This means nothing needs to be downloaded from an external CDN
+  // for the geometry itself: the page works offline and loads faster.
   //
-  // world-atlas solo publica tres resoluciones oficiales (110m, 50m, 10m);
-  // no existe una "70m" real. Este archivo usa una versión intermedia
-  // propia: se generó simplificando el topojson de 50m (740KB) con
-  // topojson-simplify hasta ~310KB, conservando los 241 países/territorios
-  // (ninguna isla pequeña desaparece). Queda un punto medio entre el
-  // detalle del 50m y la ligereza del 110m.
+  // world-atlas only publishes three official resolutions (110m, 50m,
+  // 10m); a real "70m" doesn't exist. This file uses its own in-between
+  // version: it was generated by simplifying the 50m topojson (740KB) with
+  // topojson-simplify down to ~310KB, keeping all 241 countries/territories
+  // (no small island disappears). That lands as a middle ground between
+  // the detail of 50m and the lightness of 110m.
   function loadWorldData(){
     return new Promise((resolve, reject) => {
       try{
@@ -665,47 +712,33 @@
     });
   }
 
-  loadWorldData().then(async worldData => {
+  loadWorldData().then(worldData => {
     const countries = topojson.feature(worldData, worldData.objects.countries);
 
-    // Antes de dibujar nada, comprobamos qué países ya tienen sus archivos
-    // en data/countries/*.js y data/geo/*.svg (ver la función más arriba).
-    // Mientras tanto se mantiene visible el aviso de carga.
-    if(loadingEl) loadingEl.textContent = 'comprobando países disponibles…';
-    const availableSlugs = await findAvailableCountries(countries.features);
-
-    // --- Ayuda para comprobar rápido qué países detecta como listos -------
-    // Abre la consola del navegador (F12 → pestaña "Console") y recarga la
-    // página: verás dos listas, la de países con archivos y la de los que
-    // aún no los tienen. Puedes quitar este bloque cuando ya no lo necesites.
-    {
-      const allSlugs = countries.features.map(f => countrySlug(f)).filter(Boolean);
-      const missing = allSlugs.filter(s => !availableSlugs.has(s));
-      console.groupCollapsed(
-        `Mapa: ${availableSlugs.size}/${allSlugs.length} países con archivos (data/countries + data/geo)`
-      );
-      console.log('Disponibles:', [...availableSlugs].sort());
-      console.log('Faltan:', missing.sort());
-      console.groupEnd();
-    }
-    // ------------------------------------------------------------------
-    if(loadingEl) loadingEl.style.display = 'none';
+    // Availability state: `null` means "not checked yet". While it's null,
+    // every country is treated as available so the map is fully visible
+    // and interactive the instant the geometry is parsed — we don't wait
+    // on any network round trip to draw it. The (possibly slow) per-country
+    // check runs afterwards, in the background, and only then do the
+    // truly-unavailable countries get re-painted with the disabled hatch.
+    let availableSlugs = null;
 
     function isUnavailable(feature){
       const name = feature.properties.name;
       if(DISABLED_COUNTRIES.has(name)) return true;
+      if(availableSlugs === null) return false;
       const slug = countrySlug(feature);
       return !availableSlugs.has(slug);
     }
 
-    countriesG.selectAll('path')
+    const countryPaths = countriesG.selectAll('path')
       .data(countries.features)
       .join('path')
       .attr('class','country')
       .classed('disabled', isUnavailable)
       .attr('d', path)
       .on('mouseenter', function(event, d){
-        const name = d.properties.name || 'País';
+        const name = d.properties.name || 'Country';
         const isDisabled = isUnavailable(d);
 
         tooltip.innerHTML = '';
@@ -716,7 +749,7 @@
         if(isDisabled){
           const noteEl = document.createElement('span');
           noteEl.className = 'tooltip-note';
-          noteEl.textContent = 'No disponible';
+          noteEl.textContent = 'Not available';
           tooltip.appendChild(noteEl);
         }
         tooltip.classList.toggle('is-disabled', isDisabled);
@@ -737,9 +770,36 @@
         openPanel(d);
       });
 
+    // The map is drawn and usable now — hide the loading notice and size
+    // it, without waiting on the availability check below.
+    if(loadingEl) loadingEl.style.display = 'none';
     resize();
+
+    // Check in the background which countries actually have their
+    // data/countries/*.js and data/geo/*.svg files (see the functions
+    // above), then re-apply the disabled styling for the ones that don't.
+    findAvailableCountries(countries.features).then(slugs => {
+      availableSlugs = slugs;
+      countryPaths.classed('disabled', isUnavailable);
+
+      // --- Quick way to check which countries it detects as ready -------
+      // Open the browser console (F12 → "Console" tab) and reload the
+      // page: you'll see two lists, the countries with files and the ones
+      // that still don't have them. Remove this block once you no longer need it.
+      const allSlugs = countries.features.map(f => countrySlug(f)).filter(Boolean);
+      const missing = allSlugs.filter(s => !availableSlugs.has(s));
+      console.groupCollapsed(
+        `Map: ${availableSlugs.size}/${allSlugs.length} countries with files (data/countries + data/geo)`
+      );
+      console.log('Available:', [...availableSlugs].sort());
+      console.log('Missing:', missing.sort());
+      console.groupEnd();
+      // --------------------------------------------------------------
+    }).catch(err => {
+      console.warn('Could not check country availability; leaving all countries enabled.', err);
+    });
   }).catch(err => {
-    loadingEl.textContent = 'no se pudieron cargar los datos del mapa.';
+    if(loadingEl) loadingEl.textContent = 'could not load the map data.';
     console.error(err);
   });
 
