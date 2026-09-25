@@ -38,8 +38,13 @@
   }
 
   .stage{
-    position:relative; width:100vw; height:100vh;
+    position:relative; width:100vw; height:100vh; height:100dvh;
     background:radial-gradient(ellipse at 30% 20%, var(--ocean-mid) 0%, var(--ocean-deep) 65%);
+    /* Evita que el navegador móvil interprete el pellizco/arrastre sobre el
+       mapa como zoom o scroll de la página: así los gestos táctiles quedan
+       libres para que d3-zoom los gestione él mismo, sin pelearse con el
+       navegador. */
+    touch-action:none;
   }
   header{
     position:absolute; top:0; left:0; right:0;
@@ -132,6 +137,13 @@
   .tooltip.is-disabled{ border-color:var(--brass-dim); }
   .tooltip-name{ display:block; font-size:11px; letter-spacing:0.04em; }
   .tooltip-note{ display:block; font-size:9.5px; letter-spacing:0.03em; color:var(--brass-dim); font-style:italic; margin-top:2px; }
+
+  /* En pantallas táctiles no hay "hover" real: el tooltip se quedaba
+     pegado en pantalla tras tocar un país porque nunca llega el
+     mouseleave. Se oculta directamente en dispositivos sin hover. */
+  @media (hover:none){
+    .tooltip{ display:none !important; }
+  }
 
   .zoom-controls{
     position:absolute;
@@ -272,6 +284,8 @@
     .panel-scroll{ max-height:88vh; padding:26px 20px 22px; }
     .panel-title{ font-size:24px; }
     .panel-flag{ width:52px; height:36px; }
+    .zoom-controls{ bottom:calc(18px + env(safe-area-inset-bottom,0px)); left:16px; gap:10px; }
+    .zoom-controls button{ width:42px; height:42px; font-size:18px; }
   }
 </style>
 </head>
@@ -590,6 +604,16 @@
 
   const zoom = d3.zoom()
     .scaleExtent([1, 8])
+    // Un toque en pantalla táctil nunca es tan quieto como un clic de
+    // ratón: sin esto, el mínimo temblor del dedo hacía que d3 lo
+    // interpretase como un arrastre y cancelara la selección del país.
+    .clickDistance(12)
+    // La sombra (feDropShadow) de los países es cara de recalcular en el
+    // móvil cada vez que cambia la transformación del mapa. Se desactiva
+    // mientras se hace pinch/arrastre y se restaura al soltar, para que
+    // el gesto se sienta fluido en vez de a tirones.
+    .on('start.perf', ()=> countriesG.attr('filter', null))
+    .on('end.perf', ()=> countriesG.attr('filter', 'url(#landShadow)'))
     .on('zoom', (event)=>{ g.attr('transform', event.transform); });
   svg.call(zoom);
   svg.on('mousedown.cursor', ()=> svg.classed('grabbing', true));
