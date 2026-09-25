@@ -94,7 +94,10 @@
     document.getElementById("loading-overlay").textContent = `Loading the map of ${c.title || pais}…`;
 
     const gameScript = document.createElement("script");
-    gameScript.src = "../js/game.js";
+    // Mismo motivo que el ?v=... de arriba: sin esto, el navegador (o un
+    // CDN por delante) puede seguir sirviendo indefinidamente una copia
+    // vieja de game.js cacheada, aunque subas un archivo nuevo al servidor.
+    gameScript.src = `../js/game.js?v=${Date.now()}`;
     document.body.appendChild(gameScript);
   };
   dataScript.onerror = () => {
