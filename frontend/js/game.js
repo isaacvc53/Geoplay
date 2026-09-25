@@ -1897,15 +1897,65 @@
   );
 
 
+  // Comprobación instantánea mientras se escribe: usa el mismo matching
+  // local (sin red) que submitGuess(), así que en cuanto el texto
+  // identifica una única región sin ambigüedad, se acierta al momento,
+  // sin necesidad de pulsar Enter ni el botón "Comprobar". El fallback al
+  // backend (para nombres que el JSON local no contempla) se sigue
+  // haciendo solo al enviar de verdad, para no disparar una petición de
+  // red en cada pulsación.
+  guessEl.addEventListener(
+    "input",
+    () => {
+      if (
+        quizEnded ||
+        paused
+      ) {
+        return;
+      }
+
+      const raw =
+        guessEl.value.trim();
+
+      if (!raw) {
+        return;
+      }
+
+      const region =
+        findLocalGuess(
+          regions,
+          raw
+        );
+
+      if (
+        region &&
+        !solved.has(
+          region.id
+        )
+      ) {
+        startOnFirstInput();
+
+        addSolved(
+          region
+        );
+      }
+    }
+  );
+
+
   // ============================================================
   // CARGAR GEOMETRÍA
   // ============================================================
 
   async function loadGeometry() {
+    // Sin { cache: "no-store" }: dejamos que el navegador use su caché
+    // HTTP normal para el SVG. Antes se forzaba una descarga completa por
+    // red en cada visita, que era buena parte de los "segundos" de espera;
+    // así, la segunda vez que se carga el mismo país, el SVG puede salir
+    // de caché casi al instante.
     const res =
       await fetch(
-        country.geoFile,
-        { cache: "no-store" }
+        country.geoFile
       );
 
     if (!res.ok) {
@@ -2034,11 +2084,14 @@
     }
 
     try {
+      // Solo esperamos la geometría del SVG, que es lo único que
+      // renderMap() necesita de verdad para dibujar el mapa. loadRegions()
+      // y loadPreviousBest() son llamadas al backend (con su propia
+      // latencia de red/BD) que solo hacen falta más tarde, al terminar la
+      // partida (guardar progreso / celebrar récord) — así que se lanzan
+      // en paralelo, en segundo plano, y ya NO retrasan que el mapa
+      // aparezca y se pueda jugar.
       await loadGeometry();
-
-      await loadRegions();
-
-      await loadPreviousBest();
 
       renderMap();
 
@@ -2066,14 +2119,23 @@
       }
 
       setFeedback(
-        localMode
-          ? country.readyLocalMessage ||
-            "Mapa listo en modo local."
-          : country.readyMessage ||
-            "Mapa listo."
+        country.readyMessage ||
+          "Mapa listo."
       );
 
       guessEl.focus();
+
+      Promise.all([
+        loadRegions(),
+        loadPreviousBest()
+      ]).then(() => {
+        if (localMode) {
+          showToast(
+            country.readyLocalMessage ||
+              "Modo local (sin conexión con el servidor)."
+          );
+        }
+      });
     } catch (err) {
       console.error(err);
 
