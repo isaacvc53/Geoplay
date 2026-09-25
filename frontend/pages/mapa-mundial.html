@@ -107,10 +107,30 @@
   /* Mientras se hace pinch/arrastre (clase puesta por d3-zoom en start/end)
      se baja la calidad de antialiasing: es la diferencia entre un gesto
      fluido y uno a tirones en móviles de gama media/baja. En reposo se usa
-     de nuevo geometricPrecision, así que no se pierde nitidez. */
+     de nuevo geometricPrecision, así que no se pierde nitidez. También se
+     cambia el patrón rayado de los países deshabilitados por un color
+     plano mientras se interactúa: los patrones SVG (como los filtros) son
+     otro punto que puede forzar renderizado por software en según qué
+     navegador móvil. */
   svg#worldmap.interacting .country,
   svg#worldmap.interacting .graticule{
     shape-rendering:optimizeSpeed;
+  }
+  svg#worldmap.interacting .country.disabled{
+    fill:var(--land-disabled);
+  }
+
+  /* El grosor de trazo no cambia con el zoom (en vez de recalcularse cada
+     vez que el <g> se escala), un pelín más barato y evita bordes
+     borrosos o excesivamente gruesos al hacer zoom. */
+  .country, .graticule{ vector-effect:non-scaling-stroke; }
+
+  #fpsMeter{
+    position:fixed; top:10px; right:10px; z-index:100;
+    background:rgba(5,14,22,0.75); color:#8fe388;
+    font-family:'Space Mono',monospace; font-size:12px;
+    padding:4px 8px; border-radius:3px; pointer-events:none;
+    letter-spacing:0.04em;
   }
 
   /* Disabled countries: diagonal hatch pattern, no highlight on hover or
@@ -325,6 +345,7 @@
 </div>
 
 <div class="tooltip" id="tooltip" aria-hidden="true"></div>
+<div id="fpsMeter">-- fps</div>
 <div class="overlay" id="overlay"></div>
 
 <div class="panel" id="panel" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
@@ -859,6 +880,29 @@
   });
 
   window.addEventListener('resize', resize);
+
+  // --- Contador de FPS temporal, solo para diagnóstico ----------------
+  // Muestra en la esquina superior derecha los fotogramas por segundo
+  // reales del dispositivo, calculados sobre una ventana de ~500ms.
+  // Quita este bloque (y el div#fpsMeter del HTML / su CSS) cuando ya
+  // no lo necesites.
+  (function fpsLoop(){
+    const fpsEl = document.getElementById('fpsMeter');
+    let frames = 0, windowStart = performance.now();
+    function tick(now){
+      frames++;
+      const elapsed = now - windowStart;
+      if(elapsed >= 500){
+        const fps = Math.round((frames * 1000) / elapsed);
+        if(fpsEl) fpsEl.textContent = fps + ' fps';
+        frames = 0; windowStart = now;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+  // ----------------------------------------------------------------------
+
 })();
 </script>
 
