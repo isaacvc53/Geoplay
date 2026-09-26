@@ -647,16 +647,16 @@
   // siempre con la transformación más reciente.
   let pendingTransform = null, rafScheduled = false;
   function flushTransform(){
-    // Se aplica como propiedad CSS (style), no como atributo SVG: solo así
-    // se garantiza que el navegador trate esto como una animación de
-    // "transform" normal y pueda promocionar el <g> a su propia capa de
-    // composición (ver will-change más arriba). El atributo SVG puro no
-    // siempre entra por esa vía en WebViews de Android de gama media/baja,
-    // y entonces cada frame se re-rasteriza el vector entero en vez de
-    // solo desplazar un mapa de bits ya pintado. El "translateZ(0)" es un
-    // empujón extra para forzar esa promoción en los navegadores más
-    // remisos a hacerlo solo con transforms 2D.
-    if(pendingTransform) g.style('transform', `${pendingTransform} translateZ(0)`);
+    // Se aplica como atributo SVG "transform" (no como propiedad CSS
+    // style): d3-zoom calcula la posición del mapa asumiendo que el
+    // origen de coordenadas de la transformación es (0,0), que es como
+    // siempre se comporta el atributo SVG. Como propiedad CSS, el
+    // navegador usa en su lugar el centro del elemento como origen por
+    // defecto, así que cada gesto de zoom/arrastre acababa desplazando el
+    // mapa a un sitio distinto de donde realmente apuntaba el dedo o el
+    // ratón. El "throttling" con requestAnimationFrame de más arriba ya
+    // se encarga de que el atributo solo se actualice una vez por frame.
+    if(pendingTransform) g.attr('transform', pendingTransform);
     rafScheduled = false;
   }
 
