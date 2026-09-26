@@ -688,15 +688,19 @@
     // ZOOM
     // ----------------------------------------------------------
     //
-    // translateExtent matches the viewBox exactly, which keeps panning
-    // symmetric.
+    // extent and translateExtent must share the same coordinate space
+    // for the drag clamp to be symmetric. Since the zoom transform is
+    // applied to a <g> that lives inside the SVG's own viewBox, both
+    // are expressed in viewBox units (matching "fitted") — not the
+    // container's CSS pixel size, which is a different coordinate
+    // system and was skewing the clamp toward one corner.
 
     zoomBehavior = d3
       .zoom()
       .scaleExtent([1, 10])
       .extent([
-        [0, 0],
-        [width, height],
+        [fitted.x, fitted.y],
+        [fitted.x + fitted.width, fitted.y + fitted.height],
       ])
       .translateExtent([
         [fitted.x, fitted.y],
