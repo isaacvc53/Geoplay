@@ -638,15 +638,10 @@
   // siempre con la transformación más reciente.
   let pendingTransform = null, rafScheduled = false;
   function flushTransform(){
-    // Se aplica como atributo SVG "transform" (no como propiedad CSS
-    // style): d3-zoom calcula la posición del mapa asumiendo que el
-    // origen de coordenadas de la transformación es (0,0), que es como
-    // siempre se comporta el atributo SVG. Como propiedad CSS, el
-    // navegador usa en su lugar el centro del elemento como origen por
-    // defecto, así que cada gesto de zoom/arrastre acababa desplazando el
-    // mapa a un sitio distinto de donde realmente apuntaba el dedo o el
-    // ratón. El "throttling" con requestAnimationFrame de más arriba ya
-    // se encarga de que el atributo solo se actualice una vez por frame.
+    // Se aplica como atributo SVG, no como propiedad CSS (style): así el
+    // origen de coordenadas que el navegador usa para la transformación
+    // es el mismo que usa d3-zoom internamente, y el zoom/paneo funciona
+    // correctamente en todos los navegadores.
     if(pendingTransform) g.attr('transform', pendingTransform);
     rafScheduled = false;
   }
