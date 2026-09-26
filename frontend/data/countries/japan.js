@@ -1,80 +1,427 @@
-// data/countries/france.js
-// Checked against the real france.svg (same simplemaps.com family as
-// italy.svg, not amCharts). Its <path> elements use:
-//   <path id="FRIDF" name="Île de France" d="...">
-// i.e. ids are "FR" + a country-specific code (uppercase, NO hyphen),
-// and the region name lives in a "name" attribute, not "title" like
-// the amCharts-sourced SVGs. Note france.svg's own "name" values have
-// minor typos/omissions (e.g. "Provence Alpes Côte d'Azu", missing
-// the final "r", and no hyphens/apostrophes normalized), so the ids
-// below were taken verbatim from the SVG while `display`/`names` use
-// the correct, fully-accented official region names for matching and
-// display.
-//
-// All 13 ids in france.svg were confirmed to map 1:1 to the 13
-// current metropolitan regions (post-2016 merger) — no overseas
-// regions and no neighboring-country shapes in this file.
-//
-// viewBox: france.svg declares lowercase viewbox="0 0 1000 960",
-// so — same caveat as italy.js — game.js's case-sensitive
-// getAttribute("viewBox") won't pick it up automatically; it's set
-// explicitly here.
-//
-// NOTE: there is currently no seed_france.py (same as brazil.js/
-// cuba.js/italy.js), so this page will work in local mode until you
-// decide to seed Country="France" in the database.
-
 window.GEOTARIA_COUNTRY = {
-  slug: "france",
+  slug: "japan",
   lang: "en",
-  kicker: "GeoPlay · France",
-  title: "How many French regions can you name?",
-  subtitle: "Type a French region and the map will fill in.",
-  total: 13,
+  kicker: "GeoPlay · Country",
+  title: "How many prefectures of Japan can you name?",
+  subtitle: "Type a Japanese prefecture and the map will fill in.",
+  total: 47,
   quizSeconds: 15 * 60,
-  geoFile: "../data/geo/france.svg",
-  // france.svg declares its viewBox as lowercase `viewbox="0 0 1000 960"`
-  // (simplemaps.com convention, like italy.svg). Must be set explicitly
-  // here or the map falls back to the page's default viewBox and renders
-  // cropped/misaligned with a miscalibrated zoom extent.
-  viewBox: "0 0 1000 960",
 
-  guessPlaceholder: "Type a region…",
+  geoFile: "../data/geo/japan.svg",
+
+  guessPlaceholder: "Type a prefecture…",
   submitLabel: "Check",
   pauseLabel: "Pause",
   resumeLabel: "Resume",
-  missingLabel: "My regions",
+  missingLabel: "My prefectures",
   giveUpLabel: "Give up",
   resetLabel: "Reset",
+
   hintText: "Drag the map · scroll to zoom",
-  hintTextRevealed: "Hover over a region to see its name",
+  hintTextRevealed: "Hover over a prefecture to see its name",
 
   correctPrefix: "Correct! ",
   notFoundMessage: "Not found or ambiguous name.",
-  alreadyFoundMessage: "That one has already been found.",
+  alreadyFoundMessage: "That one has already been guessed.",
   noneFoundMessage: "You haven't guessed any yet.",
   pausedMessage: "The quiz is paused.",
-  completeMessage: "You've completed all 13 regions of France! 🇫🇷",
+
+  completeMessage: "You've completed all 47 prefectures of Japan! 🇯🇵",
+
   timeUpMessage: "Time's up.",
-  giveUpMessage: "Quiz finished: {count}/{total}. The missing regions are highlighted; hover over them to see their names.",
+
+  giveUpMessage:
+    "Quiz finished: {count}/{total}. The missing prefectures are highlighted; hover over them to see their names.",
+
   readyMessage: "Map ready — start typing!",
   readyLocalMessage: "Map ready in local mode.",
-  loadErrorMessage: "Could not load the map of France. Check your connection.",
+
+  loadErrorMessage:
+    "Could not load the map of Japan. Check your connection.",
 
   regions: [
-    { id: "FRARA", display: "Auvergne-Rhône-Alpes", names: ["Auvergne-Rhone-Alpes", "Auvergne-Rhône-Alpes"], region_id: null },
-    { id: "FRBFC", display: "Bourgogne-Franche-Comté", names: ["Bourgogne-Franche-Comte", "Bourgogne-Franche-Comté", "Burgundy-Franche-Comte"], region_id: null },
-    { id: "FRBRE", display: "Bretagne", names: ["Bretagne", "Brittany"], region_id: null },
-    { id: "FRCVL", display: "Centre-Val de Loire", names: ["Centre-Val de Loire", "Centre Val de Loire"], region_id: null },
-    { id: "FR20R", display: "Corse", names: ["Corse", "Corsica"], region_id: null },
-    { id: "FRGES", display: "Grand Est", names: ["Grand Est"], region_id: null },
-    { id: "FRHDF", display: "Hauts-de-France", names: ["Hauts-de-France", "Hauts de France"], region_id: null },
-    { id: "FRIDF", display: "Île-de-France", names: ["Ile-de-France", "Île-de-France", "Ile de France"], region_id: null },
-    { id: "FRNOR", display: "Normandie", names: ["Normandie", "Normandy"], region_id: null },
-    { id: "FRNAQ", display: "Nouvelle-Aquitaine", names: ["Nouvelle-Aquitaine", "Nouvelle Aquitaine"], region_id: null },
-    { id: "FROCC", display: "Occitanie", names: ["Occitanie"], region_id: null },
-    { id: "FRPDL", display: "Pays de la Loire", names: ["Pays de la Loire"], region_id: null },
-    { id: "FRPAC", display: "Provence-Alpes-Côte d'Azur", names: ["Provence-Alpes-Cote d'Azur", "Provence-Alpes-Côte d'Azur", "PACA"], region_id: null },
-  ],
+    {
+      id: "JP01",
+      name: "Hokkaidō",
+      names: [
+        "Hokkaidō",
+        "Hokkaido",
+        "Hokkaido Prefecture"
+      ]
+    },
+    {
+      id: "JP02",
+      name: "Aomori",
+      names: [
+        "Aomori",
+        "Aomori Prefecture"
+      ]
+    },
+    {
+      id: "JP03",
+      name: "Iwate",
+      names: [
+        "Iwate",
+        "Iwate Prefecture"
+      ]
+    },
+    {
+      id: "JP04",
+      name: "Miyagi",
+      names: [
+        "Miyagi",
+        "Miyagi Prefecture"
+      ]
+    },
+    {
+      id: "JP05",
+      name: "Akita",
+      names: [
+        "Akita",
+        "Akita Prefecture"
+      ]
+    },
+    {
+      id: "JP06",
+      name: "Yamagata",
+      names: [
+        "Yamagata",
+        "Yamagata Prefecture"
+      ]
+    },
+    {
+      id: "JP07",
+      name: "Fukushima",
+      names: [
+        "Fukushima",
+        "Fukushima Prefecture"
+      ]
+    },
+    {
+      id: "JP08",
+      name: "Ibaraki",
+      names: [
+        "Ibaraki",
+        "Ibaraki Prefecture"
+      ]
+    },
+    {
+      id: "JP09",
+      name: "Tochigi",
+      names: [
+        "Tochigi",
+        "Tochigi Prefecture"
+      ]
+    },
+    {
+      id: "JP10",
+      name: "Gunma",
+      names: [
+        "Gunma",
+        "Gunma Prefecture"
+      ]
+    },
+    {
+      id: "JP11",
+      name: "Saitama",
+      names: [
+        "Saitama",
+        "Saitama Prefecture"
+      ]
+    },
+    {
+      id: "JP12",
+      name: "Chiba",
+      names: [
+        "Chiba",
+        "Chiba Prefecture"
+      ]
+    },
+    {
+      id: "JP13",
+      name: "Tokyo",
+      names: [
+        "Tokyo",
+        "Tokyo Metropolis",
+        "Tokyo Prefecture"
+      ]
+    },
+    {
+      id: "JP14",
+      name: "Kanagawa",
+      names: [
+        "Kanagawa",
+        "Kanagawa Prefecture"
+      ]
+    },
+    {
+      id: "JP15",
+      name: "Niigata",
+      names: [
+        "Niigata",
+        "Niigata Prefecture"
+      ]
+    },
+    {
+      id: "JP16",
+      name: "Toyama",
+      names: [
+        "Toyama",
+        "Toyama Prefecture"
+      ]
+    },
+    {
+      id: "JP17",
+      name: "Ishikawa",
+      names: [
+        "Ishikawa",
+        "Ishikawa Prefecture"
+      ]
+    },
+    {
+      id: "JP18",
+      name: "Fukui",
+      names: [
+        "Fukui",
+        "Fukui Prefecture"
+      ]
+    },
+    {
+      id: "JP19",
+      name: "Yamanashi",
+      names: [
+        "Yamanashi",
+        "Yamanashi Prefecture"
+      ]
+    },
+    {
+      id: "JP20",
+      name: "Nagano",
+      names: [
+        "Nagano",
+        "Nagano Prefecture"
+      ]
+    },
+    {
+      id: "JP21",
+      name: "Gifu",
+      names: [
+        "Gifu",
+        "Gifu Prefecture"
+      ]
+    },
+    {
+      id: "JP22",
+      name: "Shizuoka",
+      names: [
+        "Shizuoka",
+        "Shizuoka Prefecture"
+      ]
+    },
+    {
+      id: "JP23",
+      name: "Aichi",
+      names: [
+        "Aichi",
+        "Aichi Prefecture"
+      ]
+    },
+    {
+      id: "JP24",
+      name: "Mie",
+      names: [
+        "Mie",
+        "Mie Prefecture"
+      ]
+    },
+    {
+      id: "JP25",
+      name: "Shiga",
+      names: [
+        "Shiga",
+        "Shiga Prefecture"
+      ]
+    },
+    {
+      id: "JP26",
+      name: "Kyōto",
+      names: [
+        "Kyōto",
+        "Kyoto",
+        "Kyoto Prefecture"
+      ]
+    },
+    {
+      id: "JP27",
+      name: "Ōsaka",
+      names: [
+        "Ōsaka",
+        "Osaka",
+        "Osaka Prefecture"
+      ]
+    },
+    {
+      id: "JP28",
+      name: "Hyōgo",
+      names: [
+        "Hyōgo",
+        "Hyogo",
+        "Hyogo Prefecture"
+      ]
+    },
+    {
+      id: "JP29",
+      name: "Nara",
+      names: [
+        "Nara",
+        "Nara Prefecture"
+      ]
+    },
+    {
+      id: "JP30",
+      name: "Wakayama",
+      names: [
+        "Wakayama",
+        "Wakayama Prefecture"
+      ]
+    },
+    {
+      id: "JP31",
+      name: "Tottori",
+      names: [
+        "Tottori",
+        "Tottori Prefecture"
+      ]
+    },
+    {
+      id: "JP32",
+      name: "Shimane",
+      names: [
+        "Shimane",
+        "Shimane Prefecture"
+      ]
+    },
+    {
+      id: "JP33",
+      name: "Okayama",
+      names: [
+        "Okayama",
+        "Okayama Prefecture"
+      ]
+    },
+    {
+      id: "JP34",
+      name: "Hiroshima",
+      names: [
+        "Hiroshima",
+        "Hiroshima Prefecture"
+      ]
+    },
+    {
+      id: "JP35",
+      name: "Yamaguchi",
+      names: [
+        "Yamaguchi",
+        "Yamaguchi Prefecture"
+      ]
+    },
+    {
+      id: "JP36",
+      name: "Tokushima",
+      names: [
+        "Tokushima",
+        "Tokushima Prefecture"
+      ]
+    },
+    {
+      id: "JP37",
+      name: "Kagawa",
+      names: [
+        "Kagawa",
+        "Kagawa Prefecture"
+      ]
+    },
+    {
+      id: "JP38",
+      name: "Ehime",
+      names: [
+        "Ehime",
+        "Ehime Prefecture"
+      ]
+    },
+    {
+      id: "JP39",
+      name: "Kōchi",
+      names: [
+        "Kōchi",
+        "Kochi",
+        "Kochi Prefecture"
+      ]
+    },
+    {
+      id: "JP40",
+      name: "Fukuoka",
+      names: [
+        "Fukuoka",
+        "Fukuoka Prefecture"
+      ]
+    },
+    {
+      id: "JP41",
+      name: "Saga",
+      names: [
+        "Saga",
+        "Saga Prefecture"
+      ]
+    },
+    {
+      id: "JP42",
+      name: "Nagasaki",
+      names: [
+        "Nagasaki",
+        "Nagasaki Prefecture"
+      ]
+    },
+    {
+      id: "JP43",
+      name: "Kumamoto",
+      names: [
+        "Kumamoto",
+        "Kumamoto Prefecture"
+      ]
+    },
+    {
+      id: "JP44",
+      name: "Ōita",
+      names: [
+        "Ōita",
+        "Oita",
+        "Oita Prefecture"
+      ]
+    },
+    {
+      id: "JP45",
+      name: "Miyazaki",
+      names: [
+        "Miyazaki",
+        "Miyazaki Prefecture"
+      ]
+    },
+    {
+      id: "JP46",
+      name: "Kagoshima",
+      names: [
+        "Kagoshima",
+        "Kagoshima Prefecture"
+      ]
+    },
+    {
+      id: "JP47",
+      name: "Okinawa",
+      names: [
+        "Okinawa",
+        "Okinawa Prefecture"
+      ]
+    }
+  ]
 };
-
