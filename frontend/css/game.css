@@ -24,10 +24,18 @@ body {
   margin: 0;
   overflow: hidden; /* the layout below is sized to always fit one viewport */
   overscroll-behavior: none;
-  background: var(--water, #0a1f30);
+  /* background-color, not the "background" shorthand: the shorthand would
+     reset background-image and wipe out the radial-gradient atmosphere
+     that global.css sets on body for every page. */
+  background-color: var(--water, #0a1f30);
 }
 
 .page {
+  /* global.css's own .page rule (width + margin) is meant for normal
+     content pages and would otherwise stack with this one: reset both
+     here so the game truly fills the viewport edge to edge. */
+  width: 100%;
+  margin: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -50,6 +58,7 @@ body {
 
 .game-header {
   flex: 0 0 auto;
+  margin-bottom: 0;
   display: grid;
   grid-template-columns: minmax(84px, 1fr) auto minmax(84px, 1fr);
   align-items: center;
@@ -150,7 +159,10 @@ input::placeholder { color: var(--muted, #7f93a8); }
 input:focus {
   outline: none;
   border-color: var(--accent, #7dd3fc);
-  box-shadow: 0 0 0 3px var(--accent-soft, rgba(125, 211, 252, .2));
+  /* not var(--accent-soft): in the real palette that's a solid opaque
+     brown (#3a2e14), not a translucent tint, so it rendered as a dark
+     smudge instead of a soft glow. */
+  box-shadow: 0 0 0 3px rgba(201, 162, 75, .3);
 }
 input:disabled { opacity: .5; }
 
@@ -175,14 +187,19 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 #submit:hover { filter: brightness(1.06); }
 #submit:disabled { opacity: .5; cursor: default; filter: none; }
 
-.secondary {
+/* "button.secondary", not just ".secondary": global.css's own
+   button.secondary rule has that same higher specificity (element +
+   class), and being loaded first it was winning the tie on color/
+   background/border. Matching it here restores this file's intent,
+   and simply not re-declaring :hover lets global.css's own hover
+   (panel background + ink text + land-hover border) apply as-is. */
+button.secondary {
   padding: 9px 14px;
   border: 1px solid var(--line, #1c4363);
   background: transparent;
   color: var(--ink, #eaf2fb);
   transition: border-color var(--game-transition), background var(--game-transition);
 }
-.secondary:hover { border-color: var(--accent, #7dd3fc); background: var(--accent-soft, rgba(125, 211, 252, .1)); }
 
 .regions-btn {
   display: inline-flex;
@@ -199,7 +216,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   background: var(--found, #c9a24b);
   box-shadow: 0 0 0 3px rgba(201, 162, 75, .22);
 }
-.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
+button.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
 
 .timer {
   font-variant-numeric: tabular-nums;

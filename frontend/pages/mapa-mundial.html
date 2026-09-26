@@ -610,13 +610,8 @@
   hatch.append('line').attr('x1',0).attr('y1',0).attr('x2',0).attr('y2',6)
     .attr('stroke', disabledLine).attr('stroke-width',2);
 
-  // Soft shadow under the landmasses, to give a cut-paper feel
-  const shadowFilter = defs.append('filter')
-    .attr('id','landShadow')
-    .attr('x','-20%').attr('y','-20%').attr('width','140%').attr('height','140%');
-  shadowFilter.append('feDropShadow')
-    .attr('dx',0).attr('dy',1.4).attr('stdDeviation',1.6)
-    .attr('flood-color','#04121d').attr('flood-opacity',0.45);
+  // Sin sombra/filtro de SVG: los filtros se recalculan durante el zoom/paneo
+  // y penalizan bastante el rendimiento en móviles.
 
   const projection = d3.geoNaturalEarth1();
   const path = d3.geoPath(projection);
@@ -627,7 +622,7 @@
 
   const sphere = g.append('path').attr('class','sphere');
   const graticuleG = g.append('path').attr('class','graticule');
-  const countriesG = g.append('g').attr('class','countries-group').attr('filter','url(#landShadow)');
+  const countriesG = g.append('g').attr('class','countries-group');
 
   // El evento 'zoom' de d3 se dispara una vez por cada pointermove/touchmove
   // que reporta el sistema, lo cual en muchos móviles llega con más
