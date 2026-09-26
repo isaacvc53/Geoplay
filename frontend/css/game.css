@@ -78,9 +78,9 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border: 1px solid var(--line, #1c4363);
+  border: 1px solid var(--muted, #7d6a3c);
   background: transparent;
-  color: var(--ink, #eaf2fb);
+  color: var(--ink, #f6f1e4);
   font: 700 12px "Space Mono", monospace;
   letter-spacing: .04em;
   text-decoration: none;
@@ -88,7 +88,7 @@ body {
   transition: border-color var(--game-transition), color var(--game-transition),
     transform var(--game-transition);
 }
-.back-btn:hover { border-color: var(--accent, #7dd3fc); color: var(--accent, #7dd3fc); }
+.back-btn:hover { border-color: var(--accent, #c9a24b); color: var(--accent, #c9a24b); }
 .back-btn:active { transform: scale(.97); }
 .back-btn .arrow { flex: none; font-size: 14px; line-height: 1; }
 
@@ -196,10 +196,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: var(--found, #2e7d5b);
-  box-shadow: 0 0 0 3px rgba(123, 227, 177, .22);
+  background: var(--found, #c9a24b);
+  box-shadow: 0 0 0 3px rgba(201, 162, 75, .22);
 }
-.regions-btn:hover { border-color: var(--found-stroke, #7be3b1); }
+.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
 
 .timer {
   font-variant-numeric: tabular-nums;
@@ -407,7 +407,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   font: 700 13px "Space Mono", monospace;
   text-transform: uppercase;
   letter-spacing: .06em;
-  color: var(--muted, #7f93a8);
+  color: var(--muted, #7d6a3c);
 }
 
 .icon-btn {
@@ -440,11 +440,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   gap: 5px;
   font-size: 12px;
   font-weight: 600;
-  background: rgba(46, 125, 91, .22);
-  border: 1px solid rgba(123, 227, 177, .3);
+  background: rgba(201, 162, 75, .18);
+  border: 1px solid rgba(212, 169, 76, .35);
   padding: 5px 12px;
   border-radius: 999px;
-  color: var(--found-stroke, #7be3b1);
+  color: var(--found-stroke, #d4a94c);
 }
 .chip::before {
   content: "✓";
