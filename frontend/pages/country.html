@@ -7,7 +7,7 @@
 <title>Geotaria</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../css/global.css">
 <link rel="stylesheet" href="../css/game.css">
 </head>
@@ -15,9 +15,7 @@
 <div class="page">
   <header class="game-header">
     <a href="mapa-mundial.html" id="back-to-world" class="back-btn">
-      <svg width="16" height="16" viewBox="0 0 20 20" aria-hidden="true">
-        <path d="M12.5 4 7 10l5.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <span class="arrow" aria-hidden="true">←</span>
       <span id="back-label">World map</span>
     </a>
     <div class="header-text">
@@ -59,7 +57,7 @@
 
     <div class="bottom">
       <div class="left-actions">
-        <button id="missing" class="secondary" type="button">My regions</button>
+        <button id="missing" class="secondary regions-btn" type="button">My regions</button>
         <button id="give-up" class="secondary" type="button">Give up</button>
       </div>
       <div class="right-actions">

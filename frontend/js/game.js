@@ -992,7 +992,7 @@
     link.id = "back-to-world";
     link.className = "back-btn";
     link.href = "mapa-mundial.html";
-    link.textContent = "← World map";
+    link.innerHTML = '<span class="arrow" aria-hidden="true">←</span><span>World map</span>';
 
     header.prepend(link);
   }
