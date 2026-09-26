@@ -54,7 +54,7 @@
     border:1px solid var(--line);
     border-radius:var(--radius);
     background:linear-gradient(180deg, rgba(243,238,224,0.03), rgba(243,238,224,0.015));
-    box-shadow:0 28px 64px var(--shadow);
+    box-shadow:0 20px 48px var(--shadow);
     padding:34px 32px 30px;
     transition:max-width .25s ease;
     animation:riseIn .5s ease both;
@@ -203,10 +203,10 @@
   .world-map-wrap svg{ display:block; width:100%; height:auto; }
   .world-map-wrap path.country{
     stroke:var(--ink); stroke-width:.4; fill:var(--map-empty);
-    cursor:default; transition:fill .15s ease, stroke-width .15s ease;
+    cursor:default;
   }
   .world-map-wrap path.country.played{ cursor:pointer; }
-  .world-map-wrap path.country:hover{ stroke:var(--brass-bright); stroke-width:1; }
+  .world-map-wrap path.country:hover{ stroke:var(--brass-bright); }
 
   .map-legend{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:9.5px; color:var(--parchment-dim); }
   .map-legend .swatch{ width:80px; height:8px; border-radius:2px; background:linear-gradient(90deg, rgb(70,62,44) 0%, var(--brass-bright) 100%); }
@@ -216,7 +216,7 @@
     background:var(--ink); border:1px solid var(--brass);
     color:var(--parchment); font-size:11px; padding:6px 10px;
     border-radius:2px; opacity:0; transform:translate(-50%,-120%);
-    white-space:nowrap; transition:opacity .1s ease; z-index:5;
+    white-space:nowrap; transition:opacity .1s ease; z-index:5; left:0; top:0; will-change:transform,opacity;
   }
   .map-tooltip .t-pct{ color:var(--brass-bright); font-weight:700; margin-left:6px; }
 
@@ -359,6 +359,15 @@
       .trim();
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function getCountryInfo(countryName) {
     const norm = normalizeName(countryName);
     return COUNTRY_INFO[norm] || { en: countryName, slug: norm, topo: norm };
@@ -486,23 +495,17 @@
     return attempts > 0 ? Math.round((correct / attempts) * 1000) / 10 : null;
   }
 
-  function findFastest(playedCountries) {
-    let best = null;
-    playedCountries.forEach((c) => {
+  function computeHighlights(playedCountries) {
+    let fastest = null;
+    let bestCountry = null;
+    for (const c of playedCountries) {
       const bs = c.best_score;
-      if (bs && bs.time_seconds != null && (!best || bs.time_seconds < best.time)) {
-        best = { time: bs.time_seconds, country: resolveDisplayName(c.country_name) };
+      if (bs && bs.time_seconds != null && (!fastest || bs.time_seconds < fastest.time)) {
+        fastest = { time: bs.time_seconds, country: resolveDisplayName(c.country_name) };
       }
-    });
-    return best;
-  }
-
-  function findBestCountry(playedCountries) {
-    let best = null;
-    playedCountries.forEach((c) => {
-      if (!best || c.percentage > best.percentage) best = c;
-    });
-    return best;
+      if (!bestCountry || c.percentage > bestCountry.percentage) bestCountry = c;
+    }
+    return { fastest, bestCountry };
   }
 
   // --- Puntos débiles: regiones con peor % de acierto acumulado, cruzando
@@ -542,8 +545,8 @@
     }
     const rows = weak.map((r) => `
       <a class="weak-row${countryId ? ' single-country' : ''}" href="pages/country.html?pais=${encodeURIComponent(r.country_slug)}">
-        <span class="weak-region">${r.region_name}</span>
-        ${countryId ? '' : `<span class="weak-country">${resolveDisplayName(r.country_name)}</span>`}
+        <span class="weak-region">${escapeHtml(r.region_name)}</span>
+        ${countryId ? '' : `<span class="weak-country">${escapeHtml(resolveDisplayName(r.country_name))}</span>`}
         <span class="weak-acc" style="color:${colorForPercentage(r.accuracy)}">${r.accuracy}%</span>
       </a>
     `).join('');
@@ -685,15 +688,26 @@
       tooltip.className = 'map-tooltip';
       wrap.appendChild(tooltip);
     }
+    let rect = null;
     wrap.querySelectorAll('.trend-point').forEach((dot) => {
-      dot.addEventListener('mousemove', (event) => {
-        const rect = wrap.getBoundingClientRect();
-        tooltip.style.left = (event.clientX - rect.left) + 'px';
-        tooltip.style.top = (event.clientY - rect.top) + 'px';
+      dot.addEventListener('mouseenter', () => {
+        rect = wrap.getBoundingClientRect();
+        tooltip.textContent = dot.dataset.date || '';
+        const pct = document.createElement('span');
+        pct.className = 't-pct';
+        pct.textContent = `${dot.dataset.pct}%`;
+        tooltip.appendChild(pct);
         tooltip.style.opacity = '1';
-        tooltip.innerHTML = `${dot.dataset.date}<span class="t-pct">${dot.dataset.pct}%</span>`;
       });
-      dot.addEventListener('mouseleave', () => { tooltip.style.opacity = '0'; });
+      dot.addEventListener('mousemove', (event) => {
+        if (!rect) rect = wrap.getBoundingClientRect();
+        tooltip.style.transform =
+          `translate3d(${event.clientX - containerRect.left}px,${event.clientY - containerRect.top}px,0) translate(-50%,-120%)`;
+      });
+      dot.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
+        rect = null;
+      });
     });
   }
 
@@ -791,7 +805,7 @@
       return `
         <a class="log-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
           <span class="log-date">${formatRelative(s.played_at)}</span>
-          <span class="log-country">${resolveDisplayName(s.country_name)}</span>
+          <span class="log-country">${escapeHtml(resolveDisplayName(s.country_name))}</span>
           <span class="log-right">
             <span class="log-pct" style="color:${color}">${s.percentage}%</span>
             <span class="log-time">${formatTime(s.time_seconds)}</span>
@@ -813,7 +827,7 @@
         const lastPlayed = formatRelative(c.last_played_at);
         return `
           <a class="ledger-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
-            <span class="lr-name">${resolveDisplayName(c.country_name)}</span>
+            <span class="lr-name">${escapeHtml(resolveDisplayName(c.country_name))}</span>
             <span class="lr-bar"><span class="lr-bar-fill" style="width:${c.percentage}%;background:${color}"></span></span>
             <span class="lr-pct" style="color:${color}">${c.percentage}%</span>
             <span class="lr-games">${c.games_played}×</span>
@@ -838,68 +852,93 @@
     `;
   }
 
+  let worldTopologyPromise = null;
+
   async function loadWorldTopology() {
-    // Reutilizamos el mismo topojson embebido en mapa-mundial.html en
-    // lugar de duplicar el archivo: lo pedimos y extraemos el JSON del
-    // <script id="world-data">.
-    const res = await fetch('pages/mapa-mundial.html');
-    if (!res.ok) throw new Error('No se pudo cargar mapa-mundial.html');
-    const html = await res.text();
-    const match = html.match(
-      /<script[^>]*id=["']world-data["'][^>]*>([\s\S]*?)<\/script>/
-    );
-    if (!match) throw new Error('No se encontró #world-data en mapa-mundial.html');
-    return JSON.parse(match[1]);
+    if (worldTopologyPromise) return worldTopologyPromise;
+    worldTopologyPromise = (async () => {
+      const res = await fetch('pages/mapa-mundial.html', { cache: 'force-cache' });
+      if (!res.ok) throw new Error('No se pudo cargar mapa-mundial.html');
+      const html = await res.text();
+      const match = html.match(
+        /<script[^>]*id=["']world-data["'][^>]*>([\s\S]*?)<\/script>/
+      );
+      if (!match) throw new Error('No se encontró #world-data en mapa-mundial.html');
+      return JSON.parse(match[1]);
+    })();
+    try {
+      return await worldTopologyPromise;
+    } catch (err) {
+      worldTopologyPromise = null;
+      throw err;
+    }
   }
 
   function renderWorldMap(container, topology, progressByCountry) {
     const geo = topojson.feature(topology, topology.objects.countries);
-
-    const width = 820;
-    const height = 420;
+    const width = 820, height = 420;
 
     const svg = d3.select(container)
       .append('svg')
       .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr('role', 'img')
+      .attr('aria-label', 'World map of charted territories');
 
     const projection = d3.geoNaturalEarth1().fitSize([width, height], geo);
     const path = d3.geoPath(projection);
 
     const tooltip = document.createElement('div');
     tooltip.className = 'map-tooltip';
+    tooltip.setAttribute('role', 'status');
     container.appendChild(tooltip);
+    let containerRect = null;
 
-    svg.append('g')
-      .selectAll('path')
+    svg.append('g').selectAll('path')
       .data(geo.features)
       .join('path')
       .attr('class', (d) => {
-        const key = normalizeName(d.properties.name);
-        return 'country' + (progressByCountry[key] ? ' played' : '');
+        const entry = progressByCountry[normalizeName(d.properties.name)];
+        return 'country' + (entry ? ' played' : '');
       })
       .attr('d', path)
       .style('fill', (d) => {
-        const key = normalizeName(d.properties.name);
-        const entry = progressByCountry[key];
+        const entry = progressByCountry[normalizeName(d.properties.name)];
         return entry ? colorForPercentage(entry.percentage) : null;
       })
-      .on('mousemove', (event, d) => {
-        const key = normalizeName(d.properties.name);
-        const entry = progressByCountry[key];
-        const rect = container.getBoundingClientRect();
-        tooltip.style.left = (event.clientX - rect.left) + 'px';
-        tooltip.style.top = (event.clientY - rect.top) + 'px';
-        tooltip.style.opacity = '1';
-        tooltip.innerHTML = entry
-          ? `${d.properties.name}<span class="t-pct">${entry.percentage}%</span>`
-          : `${d.properties.name}<span class="t-pct" style="color:var(--parchment-dim)">not played</span>`;
+      .each(function(d) {
+        const entry = progressByCountry[normalizeName(d.properties.name)];
+        this.setAttribute('aria-label',
+          entry ? `${d.properties.name}, ${entry.percentage}%` : `${d.properties.name}, not played`);
+        if (entry && entry.slug) this.setAttribute('tabindex', '0');
       })
-      .on('mouseleave', () => { tooltip.style.opacity = '0'; })
-      .on('click', (event, d) => {
-        const key = normalizeName(d.properties.name);
-        const entry = progressByCountry[key];
+      .on('mouseenter', function(event, d) {
+        const entry = progressByCountry[normalizeName(d.properties.name)];
+        containerRect = container.getBoundingClientRect();
+        tooltip.textContent = d.properties.name;
+        const pct = document.createElement('span');
+        pct.className = 't-pct';
+        pct.textContent = entry ? `${entry.percentage}%` : 'not played';
+        if (!entry) pct.style.color = 'var(--parchment-dim)';
+        tooltip.appendChild(pct);
+        tooltip.style.transform =
+          `translate3d(${event.clientX - rect.left}px,${event.clientY - rect.top}px,0) translate(-50%,-120%)`;
+        tooltip.style.opacity = '1';
+      })
+      .on('mousemove', function(event) {
+        if (!containerRect) containerRect = container.getBoundingClientRect();
+        tooltip.style.transform =
+          `translate3d(${event.clientX - containerRect.left}px,${event.clientY - containerRect.top}px,0) translate(-50%,-120%)`;
+      })
+      .on('mouseleave', () => {
+        tooltip.style.opacity = '0';
+        containerRect = null;
+      })
+      .on('click keydown', function(event, d) {
+        if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+        const entry = progressByCountry[normalizeName(d.properties.name)];
         if (entry && entry.slug) {
+          event.preventDefault();
           window.location.href = `pages/country.html?pais=${encodeURIComponent(entry.slug)}`;
         }
       });
@@ -914,16 +953,16 @@
   function renderCountryProvinceMap(container, topology, objectKey, regionsProgress) {
     container.innerHTML = '';
     const geo = topojson.feature(topology, topology.objects[objectKey]);
-
     const width = 620, height = 420;
     const svg = d3.select(container)
       .append('svg')
       .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+      .attr('preserveAspectRatio', 'xMidYMid meet')
+      .attr('role', 'img')
+      .attr('aria-label', 'Province accuracy map');
 
     const projection = d3.geoMercator().fitSize([width, height], geo);
     const path = d3.geoPath(projection);
-
     const progressByRegion = {};
     (regionsProgress || []).forEach((r) => {
       progressByRegion[normalizeName(r.region_name)] = r;
@@ -932,33 +971,42 @@
     const tooltip = document.createElement('div');
     tooltip.className = 'map-tooltip';
     container.appendChild(tooltip);
+    let containerRect = null;
 
-    svg.append('g')
-      .selectAll('path')
+    svg.append('g').selectAll('path')
       .data(geo.features)
       .join('path')
       .attr('class', (d) => {
-        const key = normalizeName(d.properties.name);
-        return 'country' + (progressByRegion[key] ? ' played' : '');
+        const entry = progressByRegion[normalizeName(d.properties.name)];
+        return 'country' + (entry ? ' played' : '');
       })
       .attr('d', path)
       .style('fill', (d) => {
-        const key = normalizeName(d.properties.name);
-        const entry = progressByRegion[key];
+        const entry = progressByRegion[normalizeName(d.properties.name)];
         return entry ? colorForPercentage(entry.accuracy) : null;
       })
-      .on('mousemove', (event, d) => {
-        const key = normalizeName(d.properties.name);
-        const entry = progressByRegion[key];
-        const rect = container.getBoundingClientRect();
-        tooltip.style.left = (event.clientX - rect.left) + 'px';
-        tooltip.style.top = (event.clientY - rect.top) + 'px';
+      .on('mouseenter', function(event, d) {
+        const entry = progressByRegion[normalizeName(d.properties.name)];
+        containerRect = container.getBoundingClientRect();
+        tooltip.textContent = d.properties.name;
+        const pct = document.createElement('span');
+        pct.className = 't-pct';
+        pct.textContent = entry ? `${entry.accuracy}%` : 'not played';
+        if (!entry) pct.style.color = 'var(--parchment-dim)';
+        tooltip.appendChild(pct);
+        tooltip.style.transform =
+          `translate3d(${event.clientX - containerRect.left}px,${event.clientY - containerRect.top}px,0) translate(-50%,-120%)`;
         tooltip.style.opacity = '1';
-        tooltip.innerHTML = entry
-          ? `${d.properties.name}<span class="t-pct">${entry.accuracy}%</span>`
-          : `${d.properties.name}<span class="t-pct" style="color:var(--parchment-dim)">not played</span>`;
       })
-      .on('mouseleave', () => { tooltip.style.opacity = '0'; });
+      .on('mousemove', function(event) {
+        if (!containerRect) containerRect = container.getBoundingClientRect();
+        tooltip.style.transform =
+          `translate3d(${event.clientX - containerRect.left}px,${event.clientY - containerRect.top}px,0) translate(-50%,-120%)`;
+      })
+      .on('mouseleave', () => {
+        tooltip.style.opacity = '0';
+        containerRect = null;
+      });
   }
 
   // PENDIENTE: falta enganchar con la fuente real de la geometría de
@@ -974,77 +1022,56 @@
     throw new Error('loadCountryTopology: falta conectar con la geometría real de provincias');
   }
 
+  let recentSessions = [];
+  let selectedTrendCountryId = '';
+
   Promise.all([
     api.getCurrentUser(),
     api.getCountriesProgress(),
-    // Si el backend todavía no tiene /progress/sessions/recent desplegado,
-    // no queremos que se rompa todo el perfil: degradamos a lista vacía.
-    api.getRecentSessions(100).catch(() => []),
-  ]).then(async ([user, countries, recentSessions]) => {
+  ]).then(async ([user, countries]) => {
     const created = new Date(user.created_at).toLocaleDateString(undefined, {
       year: 'numeric', month: 'long', day: 'numeric',
     });
-
     const played = countries.filter((c) => c.games_played > 0);
     const totalGames = countries.reduce((sum, c) => sum + c.games_played, 0);
     const overallAccuracy = computeOverallAccuracy(countries);
-    const fastest = findFastest(played);
-    const bestCountry = findBestCountry(played);
+    const { fastest, bestCountry } = computeHighlights(played);
     const rankTitle = computeRank(played.length);
 
     let bodyHtml;
-
     if (totalGames === 0) {
       bodyHtml = `
         <div class="empty-log">
           Your expedition log is empty. Play your first country to open it.
           <a class="btn" href="index.html">Start exploring</a>
-        </div>
-      `;
+        </div>`;
     } else {
       document.getElementById('profileCard').classList.add('wide');
       bodyHtml = `
         <div class="ledger-grid">
-          <div class="ledger-tile">
-            <span class="t-num">${played.length}<span class="t-num-sub">/${countries.length}</span></span>
-            <span class="t-label">Territories charted</span>
-          </div>
-          <div class="ledger-tile">
-            <span class="t-num">${totalGames}</span>
-            <span class="t-label">Expeditions logged</span>
-          </div>
-          <div class="ledger-tile">
-            <span class="t-num">${overallAccuracy != null ? overallAccuracy + '%' : '—'}</span>
-            <span class="t-label">Guess accuracy</span>
-          </div>
-          <div class="ledger-tile">
-            <span class="t-num">${bestCountry ? bestCountry.percentage + '%' : '—'}</span>
-            <span class="t-label">Best territory</span>
-            ${bestCountry ? `<span class="t-sub">${resolveDisplayName(bestCountry.country_name)}</span>` : ''}
-          </div>
-          <div class="ledger-tile">
-            <span class="t-num">${fastest ? formatTime(fastest.time) : '—'}</span>
-            <span class="t-label">Fastest expedition</span>
-            ${fastest ? `<span class="t-sub">${fastest.country}</span>` : ''}
-          </div>
+          <div class="ledger-tile"><span class="t-num">${played.length}<span class="t-num-sub">/${countries.length}</span></span><span class="t-label">Territories charted</span></div>
+          <div class="ledger-tile"><span class="t-num">${totalGames}</span><span class="t-label">Expeditions logged</span></div>
+          <div class="ledger-tile"><span class="t-num">${overallAccuracy != null ? overallAccuracy + '%' : '—'}</span><span class="t-label">Guess accuracy</span></div>
+          <div class="ledger-tile"><span class="t-num">${bestCountry ? bestCountry.percentage + '%' : '—'}</span><span class="t-label">Best territory</span>${bestCountry ? `<span class="t-sub">${escapeHtml(resolveDisplayName(bestCountry.country_name))}</span>` : ''}</div>
+          <div class="ledger-tile"><span class="t-num">${fastest ? formatTime(fastest.time) : '—'}</span><span class="t-label">Fastest expedition</span>${fastest ? `<span class="t-sub">${escapeHtml(fastest.country)}</span>` : ''}</div>
         </div>
 
         <div class="panel">
           <div class="panel-head"><h2>Activity streak</h2></div>
-          ${renderStreakHeatmap(recentSessions)}
+          <div id="heatmapContainer">${renderStreakHeatmap([])}</div>
         </div>
 
         <div class="split-row">
           <div class="panel">
             <div class="panel-head">
               <h2>Accuracy trend</h2>
-              ${played.length > 1 ? `<div class="country-picker" id="trendCountryPicker"><input type="text" class="country-picker-input" autocomplete="off"><div class="country-picker-list" hidden></div></div>` : ''}
+              ${played.length > 1 ? `<div class="country-picker" id="trendCountryPicker"><input type="text" class="country-picker-input" autocomplete="off" aria-label="Filter accuracy trend by country"><div class="country-picker-list" hidden></div></div>` : ''}
             </div>
-            <div id="trendContainer">${renderTrend(recentSessions, null)}</div>
+            <div id="trendContainer">${renderTrend([], null)}</div>
           </div>
           <div class="panel">
             <div class="panel-head"><h2>Recent log</h2></div>
-            ${renderRecentLog(recentSessions)}
+            <div id="recentLogContainer"><div class="log-empty">Loading recent activity…</div></div>
           </div>
         </div>
 
@@ -1053,7 +1080,7 @@
             <h2>Weak spots</h2>
             <div class="panel-head-right">
               <span class="panel-sub" id="weakSpotsSub">Regions worth another look</span>
-              ${played.length > 1 ? `<div class="country-picker" id="weakCountryPicker"><input type="text" class="country-picker-input" autocomplete="off"><div class="country-picker-list" hidden></div></div>` : ''}
+              ${played.length > 1 ? `<div class="country-picker" id="weakCountryPicker"><input type="text" class="country-picker-input" autocomplete="off" aria-label="Filter weak spots by country"><div class="country-picker-list" hidden></div></div>` : ''}
             </div>
           </div>
           <div id="weakSpotsContainer">${renderWeakSpots(countries, null)}</div>
@@ -1063,47 +1090,53 @@
 
         <div class="panel">
           <div class="panel-head"><h2>Charted territory</h2><span class="panel-sub">${played.length} of ${countries.length}</span></div>
-          <div class="world-map-wrap" id="worldMapWrap"></div>
+          <div class="world-map-wrap" id="worldMapWrap"><div class="log-empty">Loading map…</div></div>
           <div class="map-legend"><span>0%</span><span class="swatch"></span><span>100%</span></div>
         </div>
 
         <div class="panel">
           <div class="panel-head"><h2>Country ledger</h2></div>
           ${renderCountryLedger(played, countries.length)}
-        </div>
-      `;
+        </div>`;
     }
 
     document.getElementById('content').innerHTML = `
       <div class="identity">
         <div class="avatar-wrap">
-          <div class="avatar">${user.username.charAt(0).toUpperCase()}</div>
+          <div class="avatar" aria-hidden="true">${escapeHtml(user.username?.charAt(0).toUpperCase() || '?')}</div>
           ${rankSealSvg()}
         </div>
         <div class="identity-main">
-          <h1>${user.username}</h1>
+          <h1>${escapeHtml(user.username)}</h1>
           <p class="rank-title">${rankTitle}</p>
           ${renderRankProgress(played.length)}
           <dl class="identity-meta">
-            <div><dt>Member since</dt><dd>${created}</dd></div>
-            <div><dt>Email</dt><dd>${user.email}</dd></div>
+            <div><dt>Member since</dt><dd>${escapeHtml(created)}</dd></div>
+            <div><dt>Email</dt><dd>${escapeHtml(user.email)}</dd></div>
           </dl>
         </div>
       </div>
-
       ${bodyHtml}
-
-      <button id="logoutBtn">Log out</button>
-    `;
+      <button id="logoutBtn" type="button">Log out</button>`;
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
       api.logout();
       window.location.href = 'index.html';
     });
 
-    // Tendencia: engancha el tooltip del gráfico inicial (todos los países)
-    // y, si hay más de un país jugado, el buscador que filtra por país.
-    wireTrendTooltip(document.getElementById('trendContainer'));
+    const trendContainer = document.getElementById('trendContainer');
+    const refreshTrend = () => {
+      if (!trendContainer) return;
+      const filtered = selectedTrendCountryId
+        ? recentSessions.filter((s) => String(s.country_id) === selectedTrendCountryId)
+        : recentSessions;
+      const label = selectedTrendCountryId
+        ? resolveDisplayName((played.find((c) => String(c.country_id) === selectedTrendCountryId) || {}).country_name || '')
+        : null;
+      trendContainer.innerHTML = renderTrend(filtered, label);
+      wireTrendTooltip(trendContainer);
+    };
+    wireTrendTooltip(trendContainer);
 
     const trendPickerEl = document.getElementById('trendCountryPicker');
     if (trendPickerEl) {
@@ -1111,24 +1144,12 @@
         options: playedCountryOptions(played),
         allLabel: 'All countries',
         onSelect: (countryId) => {
-          const trendContainer = document.getElementById('trendContainer');
-          if (!countryId) {
-            trendContainer.innerHTML = renderTrend(recentSessions, null);
-          } else {
-            const filtered = recentSessions.filter((s) => String(s.country_id) === countryId);
-            const label = resolveDisplayName(
-              (played.find((c) => String(c.country_id) === countryId) || {}).country_name || ''
-            );
-            trendContainer.innerHTML = renderTrend(filtered, label);
-          }
-          wireTrendTooltip(trendContainer);
+          selectedTrendCountryId = countryId;
+          refreshTrend();
         },
       });
     }
 
-    // Puntos débiles: el mismo tipo de buscador, pero que además dispara el
-    // mapa de provincias del país elegido (ver loadCountryTopology más arriba,
-    // todavía pendiente de conectar a la geometría real).
     const weakPickerEl = document.getElementById('weakCountryPicker');
     if (weakPickerEl) {
       wireCountryPicker(weakPickerEl, {
@@ -1136,7 +1157,6 @@
         allLabel: 'All territories',
         onSelect: (countryId) => {
           document.getElementById('weakSpotsContainer').innerHTML = renderWeakSpots(countries, countryId);
-
           const sub = document.getElementById('weakSpotsSub');
           const mapWrap = document.getElementById('weakCountryMapWrap');
           const legend = document.getElementById('weakCountryMapLegend');
@@ -1156,9 +1176,7 @@
           mapWrap.innerHTML = '<div class="log-empty">Loading province map…</div>';
 
           loadCountryTopology(country)
-            .then(({ topology, objectKey }) => {
-              renderCountryProvinceMap(mapWrap, topology, objectKey, country.regions);
-            })
+            .then(({ topology, objectKey }) => renderCountryProvinceMap(mapWrap, topology, objectKey, country.regions))
             .catch((err) => {
               console.error(err);
               mapWrap.innerHTML = '<div class="log-empty">Province map for this territory isn\'t wired up yet.</div>';
@@ -1177,30 +1195,36 @@
           };
         }
       });
-
-      try {
-        const topology = await loadWorldTopology();
-        renderWorldMap(document.getElementById('worldMapWrap'), topology, progressByCountry);
-      } catch (err) {
-        console.error(err);
-        document.getElementById('worldMapWrap').innerHTML =
-          '<div class="log-empty">No se pudo cargar el mapa mundial.</div>';
-      }
+      loadWorldTopology()
+        .then((topology) => renderWorldMap(document.getElementById('worldMapWrap'), topology, progressByCountry))
+        .catch((err) => {
+          console.error(err);
+          const wrap = document.getElementById('worldMapWrap');
+          if (wrap) wrap.innerHTML = '<div class="log-empty">No se pudo cargar el mapa mundial.</div>';
+        });
     }
+
+    // Recent sessions hydrate after the main profile has already rendered.
+    api.getRecentSessions(100).catch(() => []).then((sessions) => {
+      recentSessions = Array.isArray(sessions) ? sessions : [];
+      const heat = document.getElementById('heatmapContainer');
+      const log = document.getElementById('recentLogContainer');
+      if (heat) heat.innerHTML = renderStreakHeatmap(recentSessions);
+      if (log) log.innerHTML = renderRecentLog(recentSessions);
+      refreshTrend();
+    });
   }).catch((err) => {
-    // Fallo real de carga del perfil (getCurrentUser o getCountriesProgress):
-    // sin esto la página se quedaba en "Loading…" para siempre.
     console.error('No se pudo cargar el perfil', err);
     document.getElementById('content').innerHTML = `
       <div class="empty-log">
         Couldn't load your expedition log. Check your connection and try again.
         <button id="retryProfileBtn" class="btn" type="button">Retry</button>
-      </div>
-    `;
+      </div>`;
     document.getElementById('retryProfileBtn').addEventListener('click', () => {
       window.location.reload();
     });
   });
+
 </script>
 
 </body>
