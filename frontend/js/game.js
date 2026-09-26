@@ -1,142 +1,78 @@
 // js/game.js
 // Generic engine for the "guess the region" game.
 //
-// Todo lo específico del país viene de:
-// window.GEOTARIA_COUNTRY
-//
-// La geometría se carga desde country.geoFile.
-//
-// La vista inicial del mapa se calcula automáticamente
-// usando el bounding box real de las regiones.
-//
-// El zoom y el desplazamiento están limitados de forma
-// simétrica para evitar que el mapa pueda escaparse
-// demasiado hacia un lado.
+// Everything country-specific comes from window.GEOTARIA_COUNTRY.
+// The geometry is loaded from country.geoFile.
+// The initial map view is computed automatically from the real
+// bounding box of the regions.
+// Zoom and panning are constrained symmetrically so the map can
+// never be dragged too far off to one side.
 
 (function () {
   const country = window.GEOTARIA_COUNTRY;
 
   if (!country) {
     console.error(
-      "Falta window.GEOTARIA_COUNTRY: pages/country.html debe cargar data/countries/<pais>.js antes de js/game.js"
+      "window.GEOTARIA_COUNTRY is missing: pages/country.html must load data/countries/<country>.js before js/game.js"
     );
     return;
   }
 
   const svg = d3.select("#map");
 
-  const guessEl =
-    document.getElementById("guess");
+  const guessEl = document.getElementById("guess");
+  const countEl = document.getElementById("count");
+  const totalEl = document.getElementById("total");
+  const timerEl = document.getElementById("timer");
+  const feedbackEl = document.getElementById("feedback");
+  const pauseBtn = document.getElementById("pause");
+  const toastEl = document.getElementById("toast");
+  const loadingOverlay = document.getElementById("loading-overlay");
+  const submitBtn = document.getElementById("submit");
+  const foundListWrap = document.getElementById("found-list-wrap");
+  const foundList = document.getElementById("found-list");
+  const foundScrim = document.getElementById("found-scrim");
+  const foundDrawerClose = document.getElementById("found-drawer-close");
+  const zoomInBtn = document.getElementById("zoom-in");
+  const zoomOutBtn = document.getElementById("zoom-out");
+  const resetViewBtn = document.getElementById("reset-view");
+  const missingBtn = document.getElementById("missing");
+  const giveUpBtn = document.getElementById("give-up");
+  const resetBtn = document.getElementById("reset");
+  const backBtn = document.getElementById("back-to-world");
 
-  const countEl =
-    document.getElementById("count");
+  const QUIZ_SECONDS = country.quizSeconds || 8 * 60;
+  const LOW_TIME_THRESHOLD = 30; // seconds left to show the "running out" warning
 
-  const totalEl =
-    document.getElementById("total");
+  const prefersReducedMotion =
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const timerEl =
-    document.getElementById("timer");
+  const ZOOM_TRANSITION_MS = prefersReducedMotion ? 0 : 180;
+  const RESET_TRANSITION_MS = prefersReducedMotion ? 0 : 220;
 
-  const feedbackEl =
-    document.getElementById("feedback");
-
-  const pauseBtn =
-    document.getElementById("pause");
-
-  const toastEl =
-    document.getElementById("toast");
-
-  const loadingOverlay =
-    document.getElementById("loading-overlay");
-
-  const submitBtn =
-    document.getElementById("submit");
-
-  const foundListWrap =
-    document.getElementById("found-list-wrap");
-
-  const foundList =
-    document.getElementById("found-list");
-
-  const zoomInBtn =
-    document.getElementById("zoom-in");
-
-  const zoomOutBtn =
-    document.getElementById("zoom-out");
-
-  const resetViewBtn =
-    document.getElementById("reset-view");
-
-  const missingBtn =
-    document.getElementById("missing");
-
-  const giveUpBtn =
-    document.getElementById("give-up");
-
-  const resetBtn =
-    document.getElementById("reset");
-
-  const backBtn =
-    document.getElementById("back-to-world");
-
-  const QUIZ_SECONDS =
-    country.quizSeconds || 8 * 60;
-
-  let regions =
-    country.regions || [];
-
-  let featureByRegion =
-    new Map();
-
-  let solved =
-    new Set();
-
-  let localMode =
-    false;
-
-  let secondsLeft =
-    QUIZ_SECONDS;
-
-  let timerHandle =
-    null;
-
-  let paused =
-    false;
-
-  let quizEnded =
-    false;
-
-  let tooltipEl =
-    null;
-
-  let zoomBehavior =
-    null;
-
-  let initialViewBox =
-    null;
-
-  let previousBest =
-    null;
-
-  let toastTimeoutHandle =
-    null;
+  let regions = country.regions || [];
+  let featureByRegion = new Map();
+  let solved = new Set();
+  let localMode = false;
+  let secondsLeft = QUIZ_SECONDS;
+  let timerHandle = null;
+  let paused = false;
+  let quizEnded = false;
+  let tooltipEl = null;
+  let zoomBehavior = null;
+  let initialViewBox = null;
+  let previousBest = null;
+  let toastTimeoutHandle = null;
 
 
   // ============================================================
-  // TIEMPO
+  // TIME
   // ============================================================
 
   function fmtTime(sec) {
-    const m =
-      String(
-        Math.floor(sec / 60)
-      ).padStart(2, "0");
-
-    const s =
-      String(
-        sec % 60
-      ).padStart(2, "0");
-
+    const m = String(Math.floor(sec / 60)).padStart(2, "0");
+    const s = String(sec % 60).padStart(2, "0");
     return `${m}:${s}`;
   }
 
@@ -145,15 +81,9 @@
   // FEEDBACK
   // ============================================================
 
-  function setFeedback(
-    msg,
-    type = ""
-  ) {
-    feedbackEl.textContent =
-      msg;
-
-    feedbackEl.className =
-      "feedback " + type;
+  function setFeedback(msg, type = "") {
+    feedbackEl.textContent = msg;
+    feedbackEl.className = "feedback " + type;
   }
 
 
@@ -162,126 +92,70 @@
   // ============================================================
 
   function showToast(msg) {
-    toastEl.textContent =
-      msg;
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
 
-    toastEl.classList.add(
-      "show"
-    );
-
-    if (toastTimeoutHandle) {
-      clearTimeout(
-        toastTimeoutHandle
-      );
-    }
-
-    toastTimeoutHandle =
-      setTimeout(() => {
-        toastEl.classList.remove(
-          "show"
-        );
-      }, 1200);
+    if (toastTimeoutHandle) clearTimeout(toastTimeoutHandle);
+    toastTimeoutHandle = setTimeout(() => {
+      toastEl.classList.remove("show");
+    }, 1200);
   }
 
 
   // ============================================================
-  // TOAST DE RÉCORD PERSONAL
+  // PERSONAL RECORD TOAST
   // ============================================================
-  // Variante más llamativa y con más duración que showToast(), para
-  // celebrar una mejor puntuación o un mejor tiempo en este país.
+  // A louder, longer-lived variant of showToast(), used to celebrate a
+  // better score or a better time for this country.
 
   function showRecordToast(msg) {
-    toastEl.textContent =
-      "🏆 " + msg;
+    toastEl.textContent = "🏆 " + msg;
+    toastEl.style.borderColor = "#e0bd7d";
+    toastEl.style.boxShadow = "0 0 18px rgba(224,189,125,.55)";
+    toastEl.classList.add("show");
 
-    toastEl.style.borderColor =
-      "#e0bd7d";
-
-    toastEl.style.boxShadow =
-      "0 0 18px rgba(224,189,125,.55)";
-
-    toastEl.classList.add(
-      "show"
-    );
-
-    if (toastTimeoutHandle) {
-      clearTimeout(
-        toastTimeoutHandle
-      );
-    }
-
-    toastTimeoutHandle =
-      setTimeout(() => {
-        toastEl.classList.remove(
-          "show"
-        );
-
-        toastEl.style.borderColor =
-          "";
-
-        toastEl.style.boxShadow =
-          "";
-      }, 2600);
+    if (toastTimeoutHandle) clearTimeout(toastTimeoutHandle);
+    toastTimeoutHandle = setTimeout(() => {
+      toastEl.classList.remove("show");
+      toastEl.style.borderColor = "";
+      toastEl.style.boxShadow = "";
+    }, 2600);
   }
 
 
   // ============================================================
-  // CONTADOR
+  // COUNTER
   // ============================================================
 
   function updateCount() {
-    countEl.textContent =
-      solved.size;
+    countEl.textContent = solved.size;
 
     if (totalEl) {
-      totalEl.textContent =
-        Number.isFinite(Number(country.total))
-          ? Number(country.total)
-          : regions.length;
+      totalEl.textContent = Number.isFinite(Number(country.total))
+        ? Number(country.total)
+        : regions.length;
     }
 
-    if (
-      solved.size ===
-        regions.length &&
-      regions.length
-    ) {
-      endQuiz(
-        country.completeMessage ||
-          "Completed!",
-        "ok"
-      );
+    if (solved.size === regions.length && regions.length) {
+      endQuiz(country.completeMessage || "Completed!", "ok");
     }
   }
 
 
   // ============================================================
-  // REVELAR REGIONES
+  // REVEAL MISSING REGIONS
   // ============================================================
 
   function revealMissingOnMap() {
     regions.forEach((r) => {
-      const el =
-        featureByRegion.get(
-          r.id
-        );
-
-      if (el) {
-        el.classed(
-          "revealed-missing",
-          !solved.has(r.id)
-        );
-      }
+      const el = featureByRegion.get(r.id);
+      if (el) el.classed("revealed-missing", !solved.has(r.id));
     });
 
-    const hintEl =
-      document.querySelector(
-        ".hint"
-      );
-
+    const hintEl = document.querySelector(".hint");
     if (hintEl) {
       hintEl.textContent =
-        country.hintTextRevealed ||
-        "Hover to see the names";
+        country.hintTextRevealed || "Hover over a region to see its name";
     }
   }
 
@@ -291,86 +165,50 @@
   // ============================================================
 
   function startTimer() {
-    if (
-      timerHandle ||
-      quizEnded
-    ) {
-      return;
-    }
+    if (timerHandle || quizEnded) return;
 
-    timerHandle =
-      setInterval(() => {
-        if (paused) {
-          return;
-        }
+    timerHandle = setInterval(() => {
+      if (paused) return;
 
-        secondsLeft--;
+      secondsLeft--;
+      timerEl.textContent = fmtTime(secondsLeft);
+      timerEl.classList.toggle("low", secondsLeft > 0 && secondsLeft <= LOW_TIME_THRESHOLD);
 
-        timerEl.textContent =
-          fmtTime(secondsLeft);
-
-        if (
-          secondsLeft <= 0
-        ) {
-          secondsLeft = 0;
-
-          timerEl.textContent =
-            "00:00";
-
-          endQuiz(
-            country.timeUpMessage ||
-              "Time's up.",
-            "no"
-          );
-        }
-      }, 1000);
+      if (secondsLeft <= 0) {
+        secondsLeft = 0;
+        timerEl.textContent = "00:00";
+        endQuiz(country.timeUpMessage || "Time's up.", "no");
+      }
+    }, 1000);
   }
 
 
   // ============================================================
-  // FIN DEL QUIZ
+  // END OF QUIZ
   // ============================================================
 
-  function endQuiz(
-    message,
-    type
-  ) {
+  function endQuiz(message, type) {
     quizEnded = true;
 
-    if (timerHandle) {
-      clearInterval(
-        timerHandle
-      );
-    }
-
+    if (timerHandle) clearInterval(timerHandle);
     timerHandle = null;
 
     guessEl.disabled = true;
+    if (submitBtn) submitBtn.disabled = true;
 
-    if (submitBtn) {
-      submitBtn.disabled = true;
-    }
-
-    setFeedback(
-      message,
-      type
-    );
-
+    setFeedback(message, type);
     revealMissingOnMap();
-
     maybeCelebrateRecord();
-
     saveGameSession();
   }
 
 
   // ============================================================
-  // MEJOR RESULTADO PREVIO (para poder celebrar récords)
+  // PREVIOUS BEST RESULT (so we can celebrate new records)
   // ============================================================
 
   async function loadPreviousBest() {
-    previousBest =
-      null;
+    previousBest = null;
 
     if (
       typeof api === "undefined" ||
@@ -382,31 +220,22 @@
     }
 
     try {
-      const progreso =
-        await api.getCountryProgress(
-          country.id
-        );
-
-      previousBest =
-        progreso.best_score ||
-        null;
+      const progressData = await api.getCountryProgress(country.id);
+      previousBest = progressData.best_score || null;
     } catch (err) {
-      console.warn(
-        "Could not load the previous best result for this country",
-        err
-      );
+      console.warn("Could not load the previous best result for this country", err);
     }
   }
 
 
   // ============================================================
-  // CELEBRAR RÉCORD PERSONAL
+  // CELEBRATE A PERSONAL RECORD
   // ============================================================
-  // Se compara el resultado de la partida que acaba de terminar contra
-  // previousBest (cargado al empezar la partida, ANTES de jugar, así que
-  // nunca se compara contra sí misma). Solo tiene sentido si el usuario ha
-  // iniciado sesión y la partida cuenta para el backend (mismas condiciones
-  // que saveGameSession).
+  // The result of the game that just ended is compared against
+  // previousBest (loaded when the game started, BEFORE playing, so it's
+  // never compared against itself). Only relevant if the player is
+  // logged in and the game counts towards the backend (same conditions
+  // as saveGameSession).
 
   function maybeCelebrateRecord() {
     if (
@@ -421,64 +250,35 @@
       return;
     }
 
-    const total =
-      regions.length;
-
-    const pctNow =
-      Math.round(
-        (solved.size / total) * 1000
-      ) / 10;
-
-    const elapsedNow =
-      QUIZ_SECONDS - secondsLeft;
+    const total = regions.length;
+    const pctNow = Math.round((solved.size / total) * 1000) / 10;
+    const elapsedNow = QUIZ_SECONDS - secondsLeft;
 
     if (!previousBest) {
       showRecordToast(
-        country.firstCompletionMessage ||
-          "First expedition logged for this country!"
+        country.firstCompletionMessage || "First expedition logged for this country!"
       );
-
       return;
     }
 
-    const prevPct =
-      previousBest.percentage;
-
-    const prevTime =
-      previousBest.time_seconds;
+    const prevPct = previousBest.percentage;
+    const prevTime = previousBest.time_seconds;
 
     if (pctNow > prevPct) {
-      const gain =
-        Math.round(
-          (pctNow - prevPct) * 10
-        ) / 10;
-
+      const gain = Math.round((pctNow - prevPct) * 10) / 10;
       showRecordToast(
-        (
-          country.newBestScoreMessage ||
-          "New best score! +{gain} pts"
-        ).replace(
+        (country.newBestScoreMessage || "New best score! +{gain} pts").replace(
           "{gain}",
           gain
         )
       );
-
       return;
     }
 
-    if (
-      pctNow === prevPct &&
-      prevTime != null &&
-      elapsedNow < prevTime
-    ) {
-      const saved =
-        prevTime - elapsedNow;
-
+    if (pctNow === prevPct && prevTime != null && elapsedNow < prevTime) {
+      const saved = prevTime - elapsedNow;
       showRecordToast(
-        (
-          country.newBestTimeMessage ||
-          "New best time! -{saved}s"
-        ).replace(
+        (country.newBestTimeMessage || "New best time! -{saved}s").replace(
           "{saved}",
           saved
         )
@@ -488,11 +288,11 @@
 
 
   // ============================================================
-  // GUARDAR PARTIDA (progreso)
+  // SAVE GAME SESSION (progress)
   // ============================================================
 
   function saveGameSession() {
-    console.log("saveGameSession: comprobando condiciones...", {
+    console.log("saveGameSession: checking conditions...", {
       apiDefined: typeof api !== "undefined",
       isLoggedIn: typeof api !== "undefined" && api.isLoggedIn && api.isLoggedIn(),
       countryId: country.id,
@@ -512,12 +312,11 @@
       return;
     }
 
-    const elapsed =
-      QUIZ_SECONDS - secondsLeft;
+    const elapsed = QUIZ_SECONDS - secondsLeft;
 
-    // Solo mandamos regiones que se emparejaron con un region_id real
-    // del backend (loadRegions se lo asigna). Las que no casaron no
-    // tienen un id válido para la tabla `regiones` y romperían el guardado.
+    // Only regions that matched a real backend region_id (loadRegions()
+    // assigns this) are sent. Ones that didn't match don't have a valid
+    // id for the `regions` table and would break the save.
     const answers = regions
       .filter((r) => r.region_id != null)
       .map((r) => ({
@@ -526,105 +325,54 @@
       }));
 
     if (!answers.length) {
-      console.warn(
-        "No hay regiones con region_id del backend; no se guarda la partida"
-      );
+      console.warn("No regions have a backend region_id; the session was not saved");
       return;
     }
 
-    api
-      .saveGameSession(
-        country.id,
-        elapsed,
-        answers
-      )
-      .catch((err) => {
-        console.error(
-          "No se pudo guardar el progreso de la partida",
-          err
-        );
-      });
+    api.saveGameSession(country.id, elapsed, answers).catch((err) => {
+      console.error("Could not save the game session progress", err);
+    });
   }
 
 
   // ============================================================
-  // RESET DEL QUIZ
+  // RESET QUIZ
   // ============================================================
 
   function resetQuiz() {
     solved.clear();
 
-    secondsLeft =
-      QUIZ_SECONDS;
-
+    secondsLeft = QUIZ_SECONDS;
     paused = false;
     quizEnded = false;
 
-    timerEl.textContent =
-      fmtTime(
-        QUIZ_SECONDS
-      );
+    timerEl.textContent = fmtTime(QUIZ_SECONDS);
+    timerEl.classList.remove("paused", "low");
 
-    timerEl.classList.remove(
-      "paused"
-    );
+    pauseBtn.textContent = country.pauseLabel || "Pause";
 
-    pauseBtn.textContent =
-      country.pauseLabel ||
-      "Pausa";
-
-    if (timerHandle) {
-      clearInterval(
-        timerHandle
-      );
-    }
-
+    if (timerHandle) clearInterval(timerHandle);
     timerHandle = null;
 
     guessEl.disabled = false;
+    if (submitBtn) submitBtn.disabled = false;
 
-    if (submitBtn) {
-      submitBtn.disabled = false;
-    }
-
-    if (foundListWrap) {
-      foundListWrap.classList.remove(
-        "open"
-      );
-    }
-
+    closeFoundDrawer();
     setFeedback("");
 
     svg
       .selectAll(".country")
-      .classed(
-        "found",
-        false
-      )
-      .classed(
-        "revealed-missing",
-        false
-      );
+      .classed("found", false)
+      .classed("revealed-missing", false);
 
-    const hintEl =
-      document.querySelector(
-        ".hint"
-      );
-
-    if (hintEl) {
-      hintEl.textContent =
-        country.hintText ||
-        "";
-    }
+    const hintEl = document.querySelector(".hint");
+    if (hintEl) hintEl.textContent = country.hintText || "";
 
     hideMapTooltip();
-
     updateFoundList();
     updateCount();
 
-    guessEl.value =
-      "";
-
+    guessEl.value = "";
     guessEl.focus();
 
     resetMapView();
@@ -637,242 +385,118 @@
 
 
   // ============================================================
-  // NORMALIZACIÓN
+  // NORMALIZATION
   // ============================================================
 
   function normalizeSafe(value) {
-    if (
-      typeof normalizar ===
-      "function"
-    ) {
-      return normalizar(
-        value
-      );
+    if (typeof normalizeText === "function") {
+      return normalizeText(value);
     }
 
-    return String(
-      value ?? ""
-    )
-      .normalize(
-        "NFD"
-      )
-      .replace(
-        /[\u0300-\u036f]/g,
-        ""
-      )
+    return String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .trim();
   }
 
 
   // ============================================================
-  // EMPAREJAMIENTO DE REGIONES CON EL SVG
+  // MATCHING REGIONS TO THE SVG
   // ============================================================
 
   function buildFeatureIndex() {
     featureByRegion.clear();
 
-    const shapes =
-      Array.from(
-        document.querySelectorAll(
-          "#map .regions .country"
-        )
-      );
-
-    const byId =
-      new Map();
-
-    const byName =
-      new Map();
-
-    shapes.forEach(
-      (el) => {
-        if (
-          el.id &&
-          !byId.has(
-            normalizeSafe(
-              el.id
-            )
-          )
-        ) {
-          byId.set(
-            normalizeSafe(
-              el.id
-            ),
-            el
-          );
-        }
-
-        const titleEl =
-          el.querySelector(
-            "title"
-          );
-
-        const label =
-          el.getAttribute(
-            "title"
-          ) ||
-          (
-            titleEl
-              ? titleEl.textContent
-              : ""
-          );
-
-        if (
-          label &&
-          !byName.has(
-            normalizeSafe(
-              label
-            )
-          )
-        ) {
-          byName.set(
-            normalizeSafe(
-              label
-            ),
-            el
-          );
-        }
-      }
+    const shapes = Array.from(
+      document.querySelectorAll("#map .regions .country")
     );
 
-    regions.forEach(
-      (r) => {
-        let el =
-          document.getElementById(
-            "hex-" + r.id
-          ) ||
-          byId.get(
-            normalizeSafe(
-              r.id
-            )
-          );
+    const byId = new Map();
+    const byName = new Map();
 
-        if (!el) {
-          const candidatos = [
-            r.id,
-            r.display,
-            ...(r.names || [])
-          ];
+    shapes.forEach((el) => {
+      if (el.id && !byId.has(normalizeSafe(el.id))) {
+        byId.set(normalizeSafe(el.id), el);
+      }
 
-          for (
-            const nombre
-            of candidatos
-          ) {
-            if (!nombre) {
-              continue;
-            }
+      const titleEl = el.querySelector("title");
+      const label = el.getAttribute("title") || (titleEl ? titleEl.textContent : "");
 
-            const found =
-              byName.get(
-                normalizeSafe(
-                  nombre
-                )
-              );
+      if (label && !byName.has(normalizeSafe(label))) {
+        byName.set(normalizeSafe(label), el);
+      }
+    });
 
-            if (found) {
-              el = found;
-              break;
-            }
+    regions.forEach((r) => {
+      let el =
+        document.getElementById("hex-" + r.id) || byId.get(normalizeSafe(r.id));
+
+      if (!el) {
+        const candidateNames = [r.id, r.display, ...(r.names || [])];
+
+        for (const candidateName of candidateNames) {
+          if (!candidateName) continue;
+
+          const found = byName.get(normalizeSafe(candidateName));
+
+          if (found) {
+            el = found;
+            break;
           }
         }
-
-        if (el) {
-          featureByRegion.set(
-            r.id,
-            d3.select(el)
-          );
-
-          el.setAttribute(
-            "data-region-id",
-            r.id
-          );
-        } else {
-          console.warn(
-            `No se encontró la forma del SVG para "${r.display || r.id}"`
-          );
-        }
       }
-    );
+
+      if (el) {
+        featureByRegion.set(r.id, d3.select(el));
+        el.setAttribute("data-region-id", r.id);
+      } else {
+        console.warn(`Could not find an SVG shape for "${r.display || r.id}"`);
+      }
+    });
   }
 
 
   // ============================================================
-  // VALIDACIÓN
+  // VALIDATION
   // ============================================================
 
   function validateRegions() {
-    const shapes =
-      Array.from(
-        document.querySelectorAll(
-          "#map .regions .country"
-        )
-      );
+    const shapes = Array.from(
+      document.querySelectorAll("#map .regions .country")
+    );
 
-    const sinForma =
-      regions.filter(
-        (r) =>
-          !featureByRegion.has(
-            r.id
-          )
-      );
+    const missingShapes = regions.filter((r) => !featureByRegion.has(r.id));
 
-    const elementosEmparejados =
-      new Set(
-        regions
-          .map(
-            (r) =>
-              featureByRegion
-                .get(r.id)
-                ?.node()
-          )
-          .filter(Boolean)
-      );
+    const matchedElements = new Set(
+      regions
+        .map((r) => featureByRegion.get(r.id)?.node())
+        .filter(Boolean)
+    );
 
-    const sobrantesEnSvg =
-      shapes.filter(
-        (el) =>
-          !elementosEmparejados.has(
-            el
-          )
-      );
+    const unmatchedShapes = shapes.filter((el) => !matchedElements.has(el));
 
-    if (
-      !sinForma.length &&
-      !sobrantesEnSvg.length
-    ) {
+    if (!missingShapes.length && !unmatchedShapes.length) {
       console.log(
-        `✅ ${country.slug}: las ${regions.length} regiones casan perfectamente con el SVG.`
+        `✅ ${country.slug}: all ${regions.length} regions match the SVG perfectly.`
       );
-
       return;
     }
 
-    if (sinForma.length) {
+    if (missingShapes.length) {
       console.warn(
-        `⚠️ ${country.slug}: ${sinForma.length} región(es) sin forma en el SVG:`,
-        sinForma.map(
-          (r) =>
-            `${r.id} → "${r.display}"`
-        )
+        `⚠️ ${country.slug}: ${missingShapes.length} region(s) have no matching shape in the SVG:`,
+        missingShapes.map((r) => `${r.id} → "${r.display}"`)
       );
     }
 
-    if (
-      sobrantesEnSvg.length
-    ) {
+    if (unmatchedShapes.length) {
       console.warn(
-        `⚠️ ${country.slug}: ${sobrantesEnSvg.length} forma(s) del SVG sin ninguna región asociada:`,
-        sobrantesEnSvg.map(
+        `⚠️ ${country.slug}: ${unmatchedShapes.length} SVG shape(s) have no matching region:`,
+        unmatchedShapes.map(
           (el) =>
             `id="${el.id}" title="${
-              el.getAttribute(
-                "title"
-              ) ||
-              el.querySelector(
-                "title"
-              )?.textContent ||
-              ""
+              el.getAttribute("title") || el.querySelector("title")?.textContent || ""
             }"`
         )
       );
@@ -884,18 +508,10 @@
   // TOOLTIP
   // ============================================================
 
-  function showMapTooltip(
-    name,
-    e
-  ) {
+  function showMapTooltip(name, e) {
     ensureMapTooltip();
-
-    tooltipEl.textContent =
-      name || "";
-
-    tooltipEl.style.display =
-      "block";
-
+    tooltipEl.textContent = name || "";
+    tooltipEl.style.display = "block";
     moveMapTooltip(e);
   }
 
@@ -903,181 +519,85 @@
   function moveMapTooltip(e) {
     ensureMapTooltip();
 
-    const mapArea =
-      document.getElementById(
-        "map-area"
-      );
+    const mapArea = document.getElementById("map-area");
+    if (!mapArea) return;
 
-    if (!mapArea) {
-      return;
-    }
-
-    const rect =
-      mapArea.getBoundingClientRect();
-
-    tooltipEl.style.left =
-      e.clientX -
-      rect.left +
-      12 +
-      "px";
-
-    tooltipEl.style.top =
-      e.clientY -
-      rect.top -
-      12 +
-      "px";
+    const rect = mapArea.getBoundingClientRect();
+    tooltipEl.style.left = e.clientX - rect.left + 12 + "px";
+    tooltipEl.style.top = e.clientY - rect.top - 12 + "px";
   }
 
 
   function hideMapTooltip() {
-    if (tooltipEl) {
-      tooltipEl.style.display =
-        "none";
-    }
+    if (tooltipEl) tooltipEl.style.display = "none";
   }
 
 
   function ensureMapTooltip() {
-    if (tooltipEl) {
-      return;
-    }
+    if (tooltipEl) return;
 
-    tooltipEl =
-      document.createElement(
-        "div"
-      );
+    tooltipEl = document.createElement("div");
 
     tooltipEl.style.cssText =
       "position:absolute;pointer-events:none;display:none;z-index:20;background:#0e2233;color:var(--ink);border:1px solid var(--accent);padding:6px 9px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap;box-shadow:0 5px 16px rgba(0,0,0,.2)";
 
-    const mapArea =
-      document.getElementById(
-        "map-area"
-      );
-
-    if (mapArea) {
-      mapArea.appendChild(
-        tooltipEl
-      );
-    }
+    const mapArea = document.getElementById("map-area");
+    if (mapArea) mapArea.appendChild(tooltipEl);
   }
 
 
   // ============================================================
-  // BOUNDING BOX REAL
+  // ACTUAL BOUNDING BOX OF THE REGIONS
   // ============================================================
 
   function getRegionsBounds() {
-    const nodes =
-      Array.from(
-        document.querySelectorAll(
-          "#map .regions .country"
-        )
-      );
-
-    if (!nodes.length) {
-      return null;
-    }
-
-    let minX =
-      Infinity;
-
-    let minY =
-      Infinity;
-
-    let maxX =
-      -Infinity;
-
-    let maxY =
-      -Infinity;
-
-    nodes.forEach(
-      (node) => {
-        try {
-          const box =
-            node.getBBox();
-
-          if (
-            !box ||
-            !Number.isFinite(
-              box.x
-            ) ||
-            !Number.isFinite(
-              box.y
-            ) ||
-            !Number.isFinite(
-              box.width
-            ) ||
-            !Number.isFinite(
-              box.height
-            )
-          ) {
-            return;
-          }
-
-          minX =
-            Math.min(
-              minX,
-              box.x
-            );
-
-          minY =
-            Math.min(
-              minY,
-              box.y
-            );
-
-          maxX =
-            Math.max(
-              maxX,
-              box.x +
-                box.width
-            );
-
-          maxY =
-            Math.max(
-              maxY,
-              box.y +
-                box.height
-            );
-        } catch (err) {
-          console.warn(
-            "Could not get the bounding box of a region.",
-            err
-          );
-        }
-      }
+    const nodes = Array.from(
+      document.querySelectorAll("#map .regions .country")
     );
 
+    if (!nodes.length) return null;
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    nodes.forEach((node) => {
+      try {
+        const box = node.getBBox();
+
+        if (
+          !box ||
+          !Number.isFinite(box.x) ||
+          !Number.isFinite(box.y) ||
+          !Number.isFinite(box.width) ||
+          !Number.isFinite(box.height)
+        ) {
+          return;
+        }
+
+        minX = Math.min(minX, box.x);
+        minY = Math.min(minY, box.y);
+        maxX = Math.max(maxX, box.x + box.width);
+        maxY = Math.max(maxY, box.y + box.height);
+      } catch (err) {
+        console.warn("Could not get the bounding box of a region", err);
+      }
+    });
+
     if (
-      !Number.isFinite(
-        minX
-      ) ||
-      !Number.isFinite(
-        minY
-      ) ||
-      !Number.isFinite(
-        maxX
-      ) ||
-      !Number.isFinite(
-        maxY
-      )
+      !Number.isFinite(minX) ||
+      !Number.isFinite(minY) ||
+      !Number.isFinite(maxX) ||
+      !Number.isFinite(maxY)
     ) {
       return null;
     }
 
-    const width =
-      maxX - minX;
+    const width = maxX - minX;
+    const height = maxY - minY;
 
-    const height =
-      maxY - minY;
-
-    if (
-      width <= 0 ||
-      height <= 0
-    ) {
-      return null;
-    }
+    if (width <= 0 || height <= 0) return null;
 
     return {
       minX,
@@ -1086,222 +606,110 @@
       maxY,
       width,
       height,
-      centerX:
-        (minX + maxX) / 2,
-      centerY:
-        (minY + maxY) / 2
+      centerX: (minX + maxX) / 2,
+      centerY: (minY + maxY) / 2,
     };
   }
 
 
   // ============================================================
-  // CALCULAR VIEWBOX AJUSTADO
+  // CALCULATE THE FITTED VIEWBOX
   // ============================================================
 
-  function calculateFittedViewBox(
-    bounds,
-    width,
-    height
-  ) {
-    if (!bounds) {
-      return null;
-    }
+  function calculateFittedViewBox(bounds, width, height) {
+    if (!bounds) return null;
 
-    const containerRatio =
-      width / height;
+    const containerRatio = width / height;
 
-    // Margen alrededor del territorio.
+    // Margin around the territory.
     const padding = 0.08;
 
-    let targetWidth =
-      bounds.width *
-      (1 + padding * 2);
+    let targetWidth = bounds.width * (1 + padding * 2);
+    let targetHeight = bounds.height * (1 + padding * 2);
 
-    let targetHeight =
-      bounds.height *
-      (1 + padding * 2);
+    const countryRatio = targetWidth / targetHeight;
 
-    const countryRatio =
-      targetWidth /
-      targetHeight;
-
-    // Ajustamos la caja para que tenga exactamente
-    // la misma proporción que el contenedor.
-    if (
-      countryRatio <
-      containerRatio
-    ) {
-      targetWidth =
-        targetHeight *
-        containerRatio;
+    // Adjust the box so it has exactly the same aspect ratio as the container.
+    if (countryRatio < containerRatio) {
+      targetWidth = targetHeight * containerRatio;
     } else {
-      targetHeight =
-        targetWidth /
-        containerRatio;
+      targetHeight = targetWidth / containerRatio;
     }
 
-    const x =
-      bounds.centerX -
-      targetWidth / 2;
+    const x = bounds.centerX - targetWidth / 2;
+    const y = bounds.centerY - targetHeight / 2;
 
-    const y =
-      bounds.centerY -
-      targetHeight / 2;
-
-    return {
-      x,
-      y,
-      width: targetWidth,
-      height: targetHeight
-    };
+    return { x, y, width: targetWidth, height: targetHeight };
   }
 
 
   // ============================================================
-  // CONFIGURAR MAPA
+  // SET UP THE MAP VIEW
   // ============================================================
 
   function setupMapView() {
-    const mapArea =
-      document.getElementById(
-        "map-area"
-      );
+    const mapArea = document.getElementById("map-area");
 
     if (!mapArea) {
-      console.error(
-        "No existe #map-area"
-      );
-
+      console.error("#map-area does not exist");
       return;
     }
 
-    const width =
-      mapArea.clientWidth ||
-      960;
+    const width = mapArea.clientWidth || 960;
+    const height = mapArea.clientHeight || 620;
 
-    const height =
-      mapArea.clientHeight ||
-      620;
-
-    const bounds =
-      getRegionsBounds();
+    const bounds = getRegionsBounds();
 
     if (!bounds) {
-      console.warn(
-        "Could not compute the actual bounding box of the country."
-      );
-
+      console.warn("Could not compute the actual bounding box of the country.");
       return;
     }
 
-    const fitted =
-      calculateFittedViewBox(
-        bounds,
-        width,
-        height
-      );
+    const fitted = calculateFittedViewBox(bounds, width, height);
 
-    if (!fitted) {
-      return;
-    }
+    if (!fitted) return;
 
 
     // ----------------------------------------------------------
     // VIEWBOX
     // ----------------------------------------------------------
 
-    const viewBoxString =
-      [
-        fitted.x,
-        fitted.y,
-        fitted.width,
-        fitted.height
-      ].join(" ");
+    const viewBoxString = [fitted.x, fitted.y, fitted.width, fitted.height].join(" ");
 
-    svg.attr(
-      "viewBox",
-      viewBoxString
-    );
+    svg.attr("viewBox", viewBoxString);
+    svg.attr("preserveAspectRatio", "xMidYMid meet");
+    svg.attr("x", 0);
+    svg.attr("y", 0);
 
-    svg.attr(
-      "preserveAspectRatio",
-      "xMidYMid meet"
-    );
-
-    svg.attr(
-      "x",
-      0
-    );
-
-    svg.attr(
-      "y",
-      0
-    );
-
-    initialViewBox = {
-      ...fitted
-    };
+    initialViewBox = { ...fitted };
 
 
     // ----------------------------------------------------------
     // ZOOM
     // ----------------------------------------------------------
     //
-    // translateExtent coincide exactamente con el viewBox.
-    //
-    // Esto hace que el movimiento sea simétrico.
-    //
+    // translateExtent matches the viewBox exactly, which keeps panning
+    // symmetric.
 
-    zoomBehavior =
-      d3.zoom()
-        .scaleExtent([
-          1,
-          10
-        ])
+    zoomBehavior = d3
+      .zoom()
+      .scaleExtent([1, 10])
+      .extent([
+        [0, 0],
+        [width, height],
+      ])
+      .translateExtent([
+        [fitted.x, fitted.y],
+        [fitted.x + fitted.width, fitted.y + fitted.height],
+      ])
+      .on("zoom", (e) => {
+        svg.select(".regions").attr("transform", e.transform);
+      });
 
-        .extent([
-          [0, 0],
-          [width, height]
-        ])
+    svg.call(zoomBehavior);
 
-        .translateExtent([
-          [
-            fitted.x,
-            fitted.y
-          ],
-          [
-            fitted.x +
-              fitted.width,
-            fitted.y +
-              fitted.height
-          ]
-        ])
-
-        .on(
-          "zoom",
-          (e) => {
-            svg
-              .select(
-                ".regions"
-              )
-              .attr(
-                "transform",
-                e.transform
-              );
-          }
-        );
-
-
-    svg.call(
-      zoomBehavior
-    );
-
-
-    // Vista inicial.
-    svg.call(
-      zoomBehavior.transform,
-      d3.zoomIdentity
-    );
+    // Initial view.
+    svg.call(zoomBehavior.transform, d3.zoomIdentity);
 
 
     // ----------------------------------------------------------
@@ -1309,16 +717,9 @@
     // ----------------------------------------------------------
 
     if (zoomInBtn) {
-      zoomInBtn.onclick =
-        () => {
-          svg
-            .transition()
-            .duration(180)
-            .call(
-              zoomBehavior.scaleBy,
-              1.45
-            );
-        };
+      zoomInBtn.onclick = () => {
+        svg.transition().duration(ZOOM_TRANSITION_MS).call(zoomBehavior.scaleBy, 1.45);
+      };
     }
 
 
@@ -1327,16 +728,9 @@
     // ----------------------------------------------------------
 
     if (zoomOutBtn) {
-      zoomOutBtn.onclick =
-        () => {
-          svg
-            .transition()
-            .duration(180)
-            .call(
-              zoomBehavior.scaleBy,
-              1 / 1.45
-            );
-        };
+      zoomOutBtn.onclick = () => {
+        svg.transition().duration(ZOOM_TRANSITION_MS).call(zoomBehavior.scaleBy, 1 / 1.45);
+      };
     }
 
 
@@ -1345,30 +739,24 @@
     // ----------------------------------------------------------
 
     if (resetViewBtn) {
-      resetViewBtn.onclick =
-        () => {
-          resetMapView();
-        };
+      resetViewBtn.onclick = () => {
+        resetMapView();
+      };
     }
   }
 
 
   // ============================================================
-  // RESET MAPA
+  // RESET THE MAP VIEW
   // ============================================================
 
   function resetMapView() {
-    if (!zoomBehavior) {
-      return;
-    }
+    if (!zoomBehavior) return;
 
     svg
       .transition()
-      .duration(220)
-      .call(
-        zoomBehavior.transform,
-        d3.zoomIdentity
-      );
+      .duration(RESET_TRANSITION_MS)
+      .call(zoomBehavior.transform, d3.zoomIdentity);
   }
 
 
@@ -1388,261 +776,129 @@
     // ----------------------------------------------------------
 
     svg
-      .selectAll(
-        ".country"
-      )
+      .selectAll(".country")
 
-      .on(
-        "click",
-        () => {}
-      )
+      .on("click", () => {})
 
-      .on(
-        "mouseenter",
-        function (e) {
-          const id =
-            this.getAttribute(
-              "data-region-id"
-            );
+      .on("mouseenter", function (e) {
+        const id = this.getAttribute("data-region-id");
 
-          if (!id) {
-            return;
-          }
+        if (!id) return;
+        if (!quizEnded && !solved.has(id)) return;
 
-          if (
-            !quizEnded &&
-            !solved.has(id)
-          ) {
-            return;
-          }
+        const r = regions.find((x) => x.id === id);
 
-          const r =
-            regions.find(
-              (x) =>
-                x.id === id
-            );
+        if (r) showMapTooltip(r.display, e);
+      })
 
-          if (r) {
-            showMapTooltip(
-              r.display,
-              e
-            );
-          }
+      .on("mousemove", function (e) {
+        const id = this.getAttribute("data-region-id");
+
+        if (quizEnded || (id && solved.has(id))) {
+          moveMapTooltip(e);
         }
-      )
+      })
 
-      .on(
-        "mousemove",
-        function (e) {
-          const id =
-            this.getAttribute(
-              "data-region-id"
-            );
-
-          if (
-            quizEnded ||
-            (
-              id &&
-              solved.has(id)
-            )
-          ) {
-            moveMapTooltip(e);
-          }
-        }
-      )
-
-      .on(
-        "mouseleave",
-        hideMapTooltip
-      );
+      .on("mouseleave", hideMapTooltip);
   }
 
+
   // ============================================================
-  // REGIÓN ACERTADA
+  // REGION SOLVED
   // ============================================================
 
   function addSolved(region) {
-    if (
-      !region ||
-      solved.has(
-        region.id
-      )
-    ) {
-      return;
-    }
+    if (!region || solved.has(region.id)) return;
 
-    solved.add(
-      region.id
-    );
+    solved.add(region.id);
 
-    const el =
-      featureByRegion.get(
-        region.id
-      );
+    const el = featureByRegion.get(region.id);
 
     if (el) {
-      el
-        .classed(
-          "found",
-          true
-        )
-        .classed(
-          "revealed-missing",
-          false
-        );
+      el.classed("found", true).classed("revealed-missing", false);
     }
 
     updateFoundList();
     updateCount();
 
-    showToast(
-      "✓ " +
-        (
-          region.display ||
-          "Correcto"
-        )
-    );
+    showToast("✓ " + (region.display || "Correct"));
 
     setFeedback(
-      (
-        country.correctPrefix ||
-        "Correct! "
-      ) +
-        (
-          region.display ||
-          ""
-        ),
+      (country.correctPrefix || "Correct! ") + (region.display || ""),
       "ok"
     );
 
-    guessEl.value =
-      "";
-
+    guessEl.value = "";
     guessEl.focus();
   }
 
 
   // ============================================================
-  // CARGAR REGIONES
+  // LOAD REGIONS (from the backend)
   // ============================================================
 
   async function loadRegions() {
     try {
-      const data =
-        await api.getRegionsNames(
-          country.slug
+      const data = await api.getRegionsNames(country.slug);
+
+      let matchedCount = 0;
+
+      data.forEach((backendRegion) => {
+        const backendKeys = (backendRegion.names || []).map(normalizeSafe);
+
+        const local = regions.find((r) =>
+          (r.names || []).some((n) => backendKeys.includes(normalizeSafe(n)))
         );
 
-      let emparejadas =
-        0;
-
-      data.forEach(
-        (backendRegion) => {
-          const backendKeys =
-            (
-              backendRegion.names ||
-              []
-            ).map(
-              normalizeSafe
-            );
-
-          const local =
-            regions.find(
-              (r) =>
-                (
-                  r.names ||
-                  []
-                ).some(
-                  (n) =>
-                    backendKeys.includes(
-                      normalizeSafe(
-                        n
-                      )
-                    )
-                )
-            );
-
-          if (local) {
-            local.region_id =
-              backendRegion.region_id;
-
-            emparejadas++;
-          }
+        if (local) {
+          local.region_id = backendRegion.region_id;
+          matchedCount++;
         }
-      );
+      });
 
       localMode = false;
 
-      setFeedback(
-        `Conectado — ${emparejadas} región(es) cargada(s) desde la base de datos`
-      );
+      setFeedback(`Connected — ${matchedCount} region(s) loaded from the database`);
     } catch (err) {
-      console.warn(
-        "Backend unavailable or country not seeded, using local mode",
-        err
-      );
-
+      console.warn("Backend unavailable or country not seeded, using local mode", err);
       localMode = true;
     }
   }
 
 
   // ============================================================
-  // COMPROBAR RESPUESTA
+  // CHECK A GUESS
   // ============================================================
 
   async function submitGuess() {
-    if (
-      quizEnded ||
-      paused
-    ) {
-      return;
-    }
+    if (quizEnded || paused) return;
 
-    const raw =
-      guessEl.value.trim();
+    const raw = guessEl.value.trim();
 
-    if (!raw) {
-      return;
-    }
+    if (!raw) return;
 
     startOnFirstInput();
 
-    let region =
-      null;
+    let region = null;
 
-    // Comprobamos SIEMPRE en local primero (instantáneo, sin red): los
-    // nombres válidos ya están cargados en `regions` desde loadRegions(),
-    // así que no hay que esperar a un roundtrip contra el backend/Neon en
-    // cada intento (eso era lo que hacía la partida sentirse lenta, a
-    // diferencia de JetPunk, que valida 100% en el cliente).
-    region =
-      findLocalGuess(
-        regions,
-        raw
-      );
+    // Always check locally first (instant, no network): the valid names
+    // are already loaded into `regions` from loadRegions(), so there's no
+    // need to wait on a backend/DB round trip for every attempt (that
+    // used to make the game feel slow, unlike a fully client-side
+    // validated quiz).
+    region = findLocalGuess(regions, raw);
 
-    // Solo si el local NO encuentra nada, preguntamos al backend por si
-    // conoce un nombre/idioma que el JSON local no contempla (red de
-    // seguridad, no el camino habitual). No ralentiza los aciertos, que
-    // son el caso común: solo se dispara cuando el local ya ha fallado.
+    // Only ask the backend if the local match found nothing, in case it
+    // knows a name/language the local JSON doesn't cover (a safety net,
+    // not the common path). This never slows down correct guesses, which
+    // are the common case: it only fires once the local check has
+    // already failed.
     if (!region && !localMode) {
       try {
-        const data =
-          await api.checkRegionName(
-            country.slug,
-            raw
-          );
+        const data = await api.checkRegionName(country.slug, raw);
 
-        if (
-          data.encontrado
-        ) {
-          region =
-            regions.find(
-              (r) =>
-                r.region_id ===
-                data.region_id
-            ) || null;
+        if (data.encontrado) {
+          region = regions.find((r) => r.region_id === data.region_id) || null;
         }
       } catch (err) {
         localMode = true;
@@ -1650,425 +906,259 @@
     }
 
     if (!region) {
-      setFeedback(
-        country.notFoundMessage ||
-          "No encontrado o nombre ambiguo.",
-        "no"
-      );
-
+      setFeedback(country.notFoundMessage || "Not found or ambiguous name.", "no");
       guessEl.select();
-
       return;
     }
 
-    if (
-      solved.has(
-        region.id
-      )
-    ) {
-      setFeedback(
-        country.alreadyFoundMessage ||
-          "Already found."
-      );
-
+    if (solved.has(region.id)) {
+      setFeedback(country.alreadyFoundMessage || "Already found.");
       guessEl.select();
-
       return;
     }
 
-    addSolved(
-      region
-    );
+    addSolved(region);
   }
 
 
   // ============================================================
-  // LISTA DE REGIONES
+  // FOUND-REGIONS LIST / DRAWER
   // ============================================================
 
   function updateFoundList() {
-    if (
-      !foundListWrap ||
-      !foundList
-    ) {
-      return;
-    }
+    if (!foundListWrap || !foundList) return;
 
-    const found =
-      regions
-        .filter(
-          (r) =>
-            solved.has(
-              r.id
-            )
-        )
-        .sort(
-          (a, b) =>
-            a.display.localeCompare(
-              b.display,
-              country.lang ||
-                "es"
-            )
-        );
+    const found = regions
+      .filter((r) => solved.has(r.id))
+      .sort((a, b) => a.display.localeCompare(b.display, country.lang || "en"));
 
-    foundList.innerHTML =
-      found
-        .map(
-          (r) =>
-            `<span class="chip">${r.display}</span>`
-        )
-        .join("");
+    foundList.innerHTML = found
+      .map((r) => `<span class="chip">${r.display}</span>`)
+      .join("");
+  }
+
+
+  function openFoundDrawer() {
+    if (!foundListWrap) return;
+
+    foundListWrap.classList.add("open");
+    if (foundScrim) foundScrim.classList.add("open");
+  }
+
+
+  function closeFoundDrawer() {
+    if (!foundListWrap) return;
+
+    foundListWrap.classList.remove("open");
+    if (foundScrim) foundScrim.classList.remove("open");
   }
 
 
   function toggleFoundList() {
-    if (!foundListWrap) {
-      return;
-    }
+    if (!foundListWrap) return;
 
     if (!solved.size) {
-      setFeedback(
-        country.noneFoundMessage ||
-          "You haven't got any right yet."
-      );
-
+      setFeedback(country.noneFoundMessage || "You haven't guessed any yet.");
       return;
     }
 
     updateFoundList();
 
-    foundListWrap.classList.toggle(
-      "open"
-    );
+    if (foundListWrap.classList.contains("open")) {
+      closeFoundDrawer();
+    } else {
+      openFoundDrawer();
+    }
   }
 
 
   // ============================================================
-  // VOLVER AL MAPA MUNDIAL
+  // BACK TO WORLD MAP BUTTON
   // ============================================================
+  // pages/country.html already ships a real <a id="back-to-world"> link
+  // inside the header, laid out in normal document flow, so under normal
+  // circumstances there's nothing to do here. This only builds a
+  // fallback link — appended to the header, never a floating element
+  // that could sit on top of other content — for an older cached copy
+  // of the page that doesn't have it yet.
 
   function setupBackToWorldButton() {
-    let button =
-      document.getElementById(
-        "back-to-world"
-      );
+    if (backBtn) return;
 
-    if (!button) {
-      button =
-        document.createElement(
-          "button"
-        );
+    const header = document.querySelector(".game-header") || document.querySelector("header");
+    if (!header) return;
 
-      button.id =
-        "back-to-world";
+    const link = document.createElement("a");
+    link.id = "back-to-world";
+    link.className = "back-btn";
+    link.href = "mapa-mundial.html";
+    link.textContent = "← World map";
 
-      button.type =
-        "button";
-
-      button.textContent =
-        "← Volver al mapa mundial";
-
-      button.style.cssText =
-        [
-          "position:fixed",
-          "top:16px",
-          "left:16px",
-          "z-index:1000",
-          "padding:9px 14px",
-          "border:1px solid var(--accent, #7dd3fc)",
-          "border-radius:8px",
-          "background:var(--panel, #0e2233)",
-          "color:var(--ink, #fff)",
-          "font:inherit",
-          "font-weight:600",
-          "cursor:pointer",
-          "box-shadow:0 4px 12px rgba(0,0,0,.18)"
-        ].join(";");
-
-      document.body.appendChild(
-        button
-      );
-    }
-
-    button.onclick =
-      () => {
-        window.location.href =
-          "mapa-mundial.html";
-      };
+    header.prepend(link);
   }
 
 
   // ============================================================
-  // CONTROLES
+  // CONTROLS
   // ============================================================
 
-  pauseBtn.onclick =
-    () => {
-      if (quizEnded) {
-        return;
-      }
+  pauseBtn.onclick = () => {
+    if (quizEnded) return;
 
-      paused =
-        !paused;
+    paused = !paused;
 
-      timerEl.classList.toggle(
-        "paused",
-        paused
-      );
+    timerEl.classList.toggle("paused", paused);
 
-      pauseBtn.textContent =
-        paused
-          ? country.resumeLabel ||
-            "Reanudar"
-          : country.pauseLabel ||
-            "Pausa";
+    pauseBtn.textContent = paused
+      ? country.resumeLabel || "Resume"
+      : country.pauseLabel || "Pause";
 
-      setFeedback(
-        paused
-          ? country.pausedMessage ||
-            "Pausado."
-          : ""
-      );
+    setFeedback(paused ? country.pausedMessage || "Paused." : "");
 
-      if (paused) {
-        guessEl.blur();
-      } else {
-        guessEl.focus();
-      }
-    };
+    if (paused) {
+      guessEl.blur();
+    } else {
+      guessEl.focus();
+    }
+  };
 
 
   if (submitBtn) {
-    submitBtn.onclick =
-      submitGuess;
+    submitBtn.onclick = submitGuess;
   }
 
 
   if (missingBtn) {
-    missingBtn.onclick =
-      toggleFoundList;
+    missingBtn.onclick = toggleFoundList;
+  }
+
+
+  if (foundDrawerClose) {
+    foundDrawerClose.onclick = closeFoundDrawer;
+  }
+
+
+  if (foundScrim) {
+    foundScrim.onclick = closeFoundDrawer;
   }
 
 
   if (giveUpBtn) {
-    giveUpBtn.onclick =
-      () => {
-        if (quizEnded) {
-          return;
-        }
+    giveUpBtn.onclick = () => {
+      if (quizEnded) return;
 
-        endQuiz(
-          (
-            country.giveUpMessage ||
-            "Quiz terminado: {count}/{total}."
-          )
-            .replace(
-              "{count}",
-              solved.size
-            )
-            .replace(
-              "{total}",
-              regions.length
-            ),
-          "no"
-        );
-      };
+      endQuiz(
+        (country.giveUpMessage || "Quiz finished: {count}/{total}.")
+          .replace("{count}", solved.size)
+          .replace("{total}", regions.length),
+        "no"
+      );
+    };
   }
 
 
   if (resetBtn) {
-    resetBtn.onclick =
-      resetQuiz;
+    resetBtn.onclick = resetQuiz;
   }
 
 
-  guessEl.addEventListener(
-    "keydown",
-    (e) => {
-      if (
-        e.key ===
-        "Enter"
-      ) {
-        e.preventDefault();
-
-        submitGuess();
-      }
+  guessEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      submitGuess();
     }
-  );
+  });
 
 
-  // A diferencia de findLocalGuess() (que también acepta prefijos de >= 3
-  // letras cuando identifican una única región — pensado para cuando el
-  // usuario ya ha terminado de escribir y pulsa Enter/Comprobar), esta
-  // variante SOLO acepta el nombre completo. Es la que usa el chequeo en
-  // vivo de abajo: si aceptara prefijos, escribir por ejemplo "juj" ya
-  // marcaría "Jujuy" como acertado antes de que el usuario termine de
-  // escribirlo.
-  function findExactLocalMatch(
-    regionsList,
-    raw
-  ) {
-    const q =
-      normalizeSafe(raw);
+  // Unlike findLocalGuess() (which also accepts prefixes of 3+ letters
+  // when they identify a single region — meant for when the player has
+  // finished typing and presses Enter/Check), this variant ONLY accepts
+  // the full name. It's what the live check below uses: if it accepted
+  // prefixes, typing e.g. "kab" would already mark "Kabul" as solved
+  // before the player finished typing it.
+  function findExactLocalMatch(regionsList, raw) {
+    const q = normalizeSafe(raw);
 
-    if (!q) {
-      return null;
-    }
+    if (!q) return null;
 
-    const exact =
-      regionsList.filter(
-        (r) =>
-          (r.names || []).some(
-            (n) =>
-              normalizeSafe(n) ===
-              q
-          )
-      );
+    const exact = regionsList.filter((r) =>
+      (r.names || []).some((n) => normalizeSafe(n) === q)
+    );
 
-    return exact.length === 1
-      ? exact[0]
-      : null;
+    return exact.length === 1 ? exact[0] : null;
   }
 
 
-  // Comprobación instantánea mientras se escribe: en cuanto el texto
-  // coincide EXACTAMENTE con el nombre completo de una región, se acierta
-  // al momento, sin necesidad de pulsar Enter ni el botón "Comprobar".
-  // Aquí no se usa el matching parcial/por prefijos de findLocalGuess()
-  // (ese se reserva para el envío manual): en cada tecla ese matching
-  // parcial daría por buena una región en cuanto se escribieran solo sus
-  // primeras 3 letras, antes de que el usuario terminara de escribir.
-  guessEl.addEventListener(
-    "input",
-    () => {
-      if (
-        quizEnded ||
-        paused
-      ) {
-        return;
-      }
+  // Instant check while typing: as soon as the text matches EXACTLY the
+  // full name of a region, it's marked correct right away, with no need
+  // to press Enter or the "Check" button. This doesn't use
+  // findLocalGuess()'s partial/prefix matching (that's reserved for
+  // manual submission): on every keystroke, partial matching would
+  // accept a region as soon as its first 3 letters were typed, before
+  // the player finished typing it.
+  guessEl.addEventListener("input", () => {
+    if (quizEnded || paused) return;
 
-      const raw =
-        guessEl.value.trim();
+    const raw = guessEl.value.trim();
 
-      if (!raw) {
-        return;
-      }
+    if (!raw) return;
 
-      const region =
-        findExactLocalMatch(
-          regions,
-          raw
-        );
+    const region = findExactLocalMatch(regions, raw);
 
-      if (
-        region &&
-        !solved.has(
-          region.id
-        )
-      ) {
-        startOnFirstInput();
-
-        addSolved(
-          region
-        );
-      }
+    if (region && !solved.has(region.id)) {
+      startOnFirstInput();
+      addSolved(region);
     }
-  );
+  });
 
 
   // ============================================================
-  // CARGAR GEOMETRÍA
+  // LOAD GEOMETRY
   // ============================================================
 
   async function loadGeometry() {
-    // Sin { cache: "no-store" }: dejamos que el navegador use su caché
-    // HTTP normal para el SVG. Antes se forzaba una descarga completa por
-    // red en cada visita, que era buena parte de los "segundos" de espera;
-    // así, la segunda vez que se carga el mismo país, el SVG puede salir
-    // de caché casi al instante.
-    const res =
-      await fetch(
-        country.geoFile
-      );
+    // No { cache: "no-store" }: we let the browser use its normal HTTP
+    // cache for the SVG. This used to force a full network download on
+    // every visit, which was a big part of the wait; now, the second
+    // time the same country is loaded, the SVG can come from cache
+    // almost instantly.
+    const res = await fetch(country.geoFile);
 
     if (!res.ok) {
-      throw new Error(
-        "Could not load the geometry: HTTP " +
-          res.status
-      );
+      throw new Error("Could not load the geometry: HTTP " + res.status);
     }
 
-    const svgText =
-      await res.text();
+    const svgText = await res.text();
 
-    const doc =
-      new DOMParser().parseFromString(
-        svgText,
-        "image/svg+xml"
-      );
+    const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
 
-    if (
-      doc.querySelector(
-        "parsererror"
-      )
-    ) {
-      throw new Error(
-        "The geometry SVG is not valid"
-      );
+    if (doc.querySelector("parsererror")) {
+      throw new Error("The geometry SVG is not valid");
     }
 
-    const sourceSvg =
-      doc.documentElement;
+    const sourceSvg = doc.documentElement;
 
-    const regionsGroup =
-      document.querySelector(
-        "#map .regions"
-      );
+    const regionsGroup = document.querySelector("#map .regions");
 
     if (!regionsGroup) {
-      throw new Error(
-        "No existe #map .regions"
-      );
+      throw new Error("#map .regions does not exist");
     }
 
-    regionsGroup.innerHTML =
-      "";
+    regionsGroup.innerHTML = "";
 
     sourceSvg
-      .querySelectorAll(
-        "path, polygon, polyline, circle, ellipse"
-      )
-      .forEach(
-        (shape) => {
-          if (
-            shape.closest(
-              "#points, #label_points"
-            )
-          ) {
-            return;
-          }
+      .querySelectorAll("path, polygon, polyline, circle, ellipse")
+      .forEach((shape) => {
+        if (shape.closest("#points, #label_points")) return;
 
-          const imported =
-            document.importNode(
-              shape,
-              true
-            );
+        const imported = document.importNode(shape, true);
 
-          imported.classList.add(
-            "country"
-          );
+        imported.classList.add("country");
 
-          regionsGroup.appendChild(
-            imported
-          );
-        }
-      );
+        regionsGroup.appendChild(imported);
+      });
 
-    svg.attr(
-      "preserveAspectRatio",
-      "xMidYMid meet"
-    );
+    svg.attr("preserveAspectRatio", "xMidYMid meet");
   }
 
 
@@ -2076,55 +1166,40 @@
   // RESPONSIVE
   // ============================================================
 
-  let resizeTimer =
-    null;
+  let resizeTimer = null;
 
-  window.addEventListener(
-    "resize",
-    () => {
-      clearTimeout(
-        resizeTimer
-      );
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
 
-      resizeTimer =
-        setTimeout(
-          () => {
-            if (
-              !svg.node()
-            ) {
-              return;
-            }
+    resizeTimer = setTimeout(() => {
+      if (!svg.node()) return;
 
-            renderMap();
-          },
-          150
-        );
-    }
-  );
+      renderMap();
+    }, 150);
+  });
 
 
   // ============================================================
-  // INICIO
+  // BOOTSTRAP
   // ============================================================
 
   async function bootstrap() {
     setupBackToWorldButton();
 
     if (totalEl) {
-      totalEl.textContent =
-        Number.isFinite(Number(country.total))
-          ? Number(country.total)
-          : regions.length;
+      totalEl.textContent = Number.isFinite(Number(country.total))
+        ? Number(country.total)
+        : regions.length;
     }
 
     try {
-      // Solo esperamos la geometría del SVG, que es lo único que
-      // renderMap() necesita de verdad para dibujar el mapa. loadRegions()
-      // y loadPreviousBest() son llamadas al backend (con su propia
-      // latencia de red/BD) que solo hacen falta más tarde, al terminar la
-      // partida (guardar progreso / celebrar récord) — así que se lanzan
-      // en paralelo, en segundo plano, y ya NO retrasan que el mapa
-      // aparezca y se pueda jugar.
+      // We only wait for the SVG geometry, which is the only thing
+      // renderMap() truly needs to draw the map. loadRegions() and
+      // loadPreviousBest() are backend calls (with their own
+      // network/DB latency) that are only needed later, once the game
+      // ends (saving progress / celebrating a record) — so they run in
+      // parallel, in the background, and no longer delay the map from
+      // appearing and becoming playable.
       await loadGeometry();
 
       renderMap();
@@ -2133,40 +1208,26 @@
 
       startTimer();
 
-      timerEl.textContent =
-        fmtTime(
-          QUIZ_SECONDS
-        );
+      timerEl.textContent = fmtTime(QUIZ_SECONDS);
 
-      guessEl.disabled =
-        false;
+      guessEl.disabled = false;
 
       if (submitBtn) {
-        submitBtn.disabled =
-          false;
+        submitBtn.disabled = false;
       }
 
       if (loadingOverlay) {
-        loadingOverlay.classList.add(
-          "hidden"
-        );
+        loadingOverlay.classList.add("hidden");
       }
 
-      setFeedback(
-        country.readyMessage ||
-          "Mapa listo."
-      );
+      setFeedback(country.readyMessage || "Map ready.");
 
       guessEl.focus();
 
-      Promise.all([
-        loadRegions(),
-        loadPreviousBest()
-      ]).then(() => {
+      Promise.all([loadRegions(), loadPreviousBest()]).then(() => {
         if (localMode) {
           showToast(
-            country.readyLocalMessage ||
-              "Modo local (sin conexión con el servidor)."
+            country.readyLocalMessage || "Local mode (no connection to the server)."
           );
         }
       });
@@ -2174,14 +1235,16 @@
       console.error(err);
 
       if (loadingOverlay) {
-        loadingOverlay.textContent =
-          country.loadErrorMessage ||
-          "Could not load the map.";
+        loadingOverlay.classList.add("error");
+
+        const loadingText = document.getElementById("loading-text");
+        if (loadingText) {
+          loadingText.textContent = country.loadErrorMessage || "Could not load the map.";
+        }
       }
 
       setFeedback(
-        country.loadErrorMessage ||
-          "Could not load the map. Check your connection.",
+        country.loadErrorMessage || "Could not load the map. Check your connection.",
         "no"
       );
     }
