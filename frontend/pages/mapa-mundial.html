@@ -93,7 +93,7 @@
   svg#worldmap.grabbing{ cursor:grabbing; }
 
   .sphere{ fill:url(#oceanGlow); }
-  .graticule{ fill:none; stroke:#1c4363; stroke-width:0.5; shape-rendering:geometricPrecision; }
+  .graticule{ fill:none; stroke:#1c4363; stroke-width:0.5; shape-rendering:geometricPrecision; vector-effect:non-scaling-stroke; }
 
   .country{
     fill:var(--land);
@@ -101,6 +101,11 @@
     stroke:var(--ocean-deep);
     stroke-width:0.5;
     shape-rendering:geometricPrecision;
+    /* Sin esto, el navegador recalcula el grosor real del trazo de los
+       241 países cada vez que cambia la escala del pinch-zoom. Con esto,
+       el trazo mantiene su grosor en píxeles de pantalla pase lo que
+       pase con el zoom, así que no hay ese recálculo por fotograma. */
+    vector-effect:non-scaling-stroke;
     transition:fill 0.15s ease, fill-opacity 0.15s ease;
     cursor:pointer;
   }
@@ -642,7 +647,16 @@
   // siempre con la transformación más reciente.
   let pendingTransform = null, rafScheduled = false;
   function flushTransform(){
-    if(pendingTransform) g.attr('transform', pendingTransform);
+    // Se aplica como propiedad CSS (style), no como atributo SVG: solo así
+    // se garantiza que el navegador trate esto como una animación de
+    // "transform" normal y pueda promocionar el <g> a su propia capa de
+    // composición (ver will-change más arriba). El atributo SVG puro no
+    // siempre entra por esa vía en WebViews de Android de gama media/baja,
+    // y entonces cada frame se re-rasteriza el vector entero en vez de
+    // solo desplazar un mapa de bits ya pintado. El "translateZ(0)" es un
+    // empujón extra para forzar esa promoción en los navegadores más
+    // remisos a hacerlo solo con transforms 2D.
+    if(pendingTransform) g.style('transform', `${pendingTransform} translateZ(0)`);
     rafScheduled = false;
   }
 
