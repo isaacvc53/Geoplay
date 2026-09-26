@@ -651,25 +651,6 @@
     rafScheduled = false;
   }
 
-  // Restaurar sombra + antialiasing de golpe justo al soltar el dedo era
-  // el propio causante del tirón: es una operación pesada (241 países a la
-  // vez) y ocurría exactamente en el peor momento, el frame del soltar.
-  // En vez de eso, se espera a que el hilo principal esté libre (o, si el
-  // navegador no soporta requestIdleCallback como Safari, un pequeño
-  // retraso) para reactivarlo cuando ya no hay nada en movimiento y nadie
-  // nota que tarde unos milisegundos más.
-  let restoreHandle = null;
-  const cancelRestore = window.cancelIdleCallback || clearTimeout;
-  function scheduleRestore(){
-    cancelRestore(restoreHandle);
-    const restore = () => {
-      countriesG.attr('filter', 'url(#landShadow)');
-    };
-    restoreHandle = window.requestIdleCallback
-      ? requestIdleCallback(restore, { timeout: 300 })
-      : setTimeout(restore, 200);
-  }
-
   let countryPaths = null;   // d3 selection, set once the map is drawn
 
   const zoom = d3.zoom()
@@ -678,14 +659,6 @@
     // ratón: sin esto, el mínimo temblor del dedo hacía que d3 lo
     // interpretase como un arrastre y cancelara la selección del país.
     .clickDistance(12)
-    // Mientras se hace pinch/arrastre se quita la sombra (cara de
-    // recalcular). Al soltar, la restauración se retrasa (ver
-    // scheduleRestore) para no coincidir con el frame del soltar.
-    .on('start.perf', ()=>{
-      cancelRestore(restoreHandle);
-      countriesG.attr('filter', null);
-    })
-    .on('end.perf', scheduleRestore)
     .on('zoom', (event)=>{
       pendingTransform = event.transform;
       if(!rafScheduled){ rafScheduled = true; requestAnimationFrame(flushTransform); }
