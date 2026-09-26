@@ -112,15 +112,6 @@
   .country:hover{ fill:var(--land-hover); fill-opacity:1; }
   .country.active{ fill:var(--land-active); fill-opacity:1; }
 
-  /* Mientras se hace pinch/arrastre (clase puesta por d3-zoom en start/end)
-     se baja la calidad de antialiasing: es la diferencia entre un gesto
-     fluido y uno a tirones en móviles de gama media/baja. En reposo se usa
-     de nuevo geometricPrecision, así que no se pierde nitidez. */
-  svg#worldmap.interacting .country,
-  svg#worldmap.interacting .graticule{
-    shape-rendering:optimizeSpeed;
-  }
-
   #fpsMeter{
     position:fixed; top:10px; right:10px; z-index:100;
     background:rgba(5,14,22,0.75); color:#8fe388;
@@ -673,60 +664,13 @@
     cancelRestore(restoreHandle);
     const restore = () => {
       countriesG.attr('filter', 'url(#landShadow)');
-      svg.classed('interacting', false);
-      // Swap the outlines back to full detail now that nothing is moving.
-      if(countryPaths) countryPaths.attr('d', path);
     };
     restoreHandle = window.requestIdleCallback
       ? requestIdleCallback(restore, { timeout: 300 })
       : setTimeout(restore, 200);
   }
 
-  // --- Level-of-detail swap while a gesture is in progress -------------
-  // The filter/antialiasing tweaks above help, but the real cost of a
-  // pinch or drag on a mid-range phone is that the browser still has to
-  // rasterize ~241 country outlines — some (Canada, Indonesia, Russia...)
-  // with thousands of vertices — on every single frame of the gesture,
-  // even though only the <g> transform is changing. Swapping every
-  // outline for a much lighter, pre-simplified version for the duration
-  // of the gesture (and back to full detail once it's idle, via
-  // scheduleRestore above) cuts that per-frame geometry dramatically.
-  // The overall silhouette barely changes since only the least
-  // significant vertices are dropped.
   let countryPaths = null;   // d3 selection, set once the map is drawn
-  let lowFeatures = null;    // simplified GeoJSON features, same order as countryPaths' data
-  // Fraction of vertices to KEEP while interacting. Lower = lighter/faster
-  // but blockier outlines during the gesture; raise it if the simplified
-  // shapes look too rough on your target devices.
-  const LOW_DETAIL_KEEP_RATIO = 0.35;
-
-  function buildLowDetailGeometry(worldData){
-    if(typeof topojson.presimplify !== 'function' || typeof topojson.simplify !== 'function'){
-      // topojson-simplify didn't load (offline copy without the CDN
-      // script, ad-blocker, etc.) — interaction just keeps full detail.
-      return;
-    }
-    try{
-      const presimplified = topojson.presimplify(worldData);
-      // Collect the significance topojson assigned to every vertex and
-      // keep only the most significant ones. Percentile-based instead of
-      // a fixed magic number so it adapts to this dataset's coordinate
-      // scale (and keeps working if the topojson file is ever swapped).
-      const weights = [];
-      for(const arc of presimplified.arcs){
-        for(const point of arc){
-          if(point.length > 2 && isFinite(point[2])) weights.push(point[2]);
-        }
-      }
-      if(!weights.length) return;
-      weights.sort((a,b)=> a - b);
-      const threshold = weights[Math.floor(weights.length * (1 - LOW_DETAIL_KEEP_RATIO))];
-      const simplifiedTopology = topojson.simplify(presimplified, threshold);
-      lowFeatures = topojson.feature(simplifiedTopology, simplifiedTopology.objects.countries).features;
-    }catch(err){
-      console.warn('Could not build low-detail geometry; interaction will keep using full detail.', err);
-    }
-  }
 
   const zoom = d3.zoom()
     .scaleExtent([1, 8])
@@ -734,17 +678,12 @@
     // ratón: sin esto, el mínimo temblor del dedo hacía que d3 lo
     // interpretase como un arrastre y cancelara la selección del país.
     .clickDistance(12)
-    // Mientras se hace pinch/arrastre: se quita la sombra (cara de
-    // recalcular) y se baja la calidad del trazado de geometricPrecision a
-    // optimizeSpeed, para que el navegador no intente antialiasing de
-    // máxima calidad en cada frame. Al soltar, la restauración se retrasa
-    // (ver scheduleRestore) para no coincidir con el frame del soltar.
+    // Mientras se hace pinch/arrastre se quita la sombra (cara de
+    // recalcular). Al soltar, la restauración se retrasa (ver
+    // scheduleRestore) para no coincidir con el frame del soltar.
     .on('start.perf', ()=>{
       cancelRestore(restoreHandle);
       countriesG.attr('filter', null);
-      svg.classed('interacting', true);
-      // Swap to the lightweight outlines for the duration of the gesture.
-      if(countryPaths && lowFeatures) countryPaths.attr('d', (d,i)=> path(lowFeatures[i]));
     })
     .on('end.perf', scheduleRestore)
     .on('zoom', (event)=>{
@@ -934,14 +873,6 @@
     // it, without waiting on the availability check below.
     if(loadingEl) loadingEl.style.display = 'none';
     resize();
-
-    // Build the low-detail outlines used during pan/zoom in the
-    // background too — it's a bit of work (simplifying ~241 countries)
-    // and must never delay the first paint or compete with it.
-    (window.requestIdleCallback
-      ? requestIdleCallback
-      : (fn)=> setTimeout(fn, 250)
-    )(() => buildLowDetailGeometry(worldData));
 
     // Check in the background which countries actually have their
     // data/countries/*.js and data/geo/*.svg files (see the functions
