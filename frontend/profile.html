@@ -172,6 +172,16 @@
   .weak-acc{ font-weight:700; text-align:right; }
   .weak-row.single-country{ grid-template-columns:1fr auto; }
 
+  .spot-toggle{ display:flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; flex:none; }
+  .spot-toggle-btn{
+    background:transparent; border:none; margin:0; width:auto;
+    padding:4px 9px; font-family:'Space Mono',monospace; font-size:9.5px; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase; color:var(--brass-dim); cursor:pointer;
+  }
+  .spot-toggle-btn + .spot-toggle-btn{ border-left:1px solid var(--line); }
+  .spot-toggle-btn.active{ background:rgba(198,160,91,0.14); color:var(--brass-bright); }
+  .spot-toggle-btn:hover{ color:var(--brass-bright); }
+
   /* --- Racha / heatmap de actividad --- */
   .heat-wrap{ display:flex; gap:3px; overflow-x:auto; padding-bottom:2px; }
   .heat-col{ display:flex; flex-direction:column; gap:3px; flex:none; }
@@ -188,9 +198,7 @@
   .log-row:first-child{ border-top:none; }
   .log-date{ color:var(--brass-dim); font-size:10px; }
   .log-country{ color:var(--parchment); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .log-right{ display:flex; align-items:center; gap:10px; }
-  .log-pct{ font-weight:700; }
-  .log-time{ color:var(--parchment-dim); font-size:10px; }
+  .log-pct{ font-weight:700; text-align:right; }
 
   /* --- Mapa mundial --- */
   .world-map-wrap{
@@ -239,14 +247,35 @@
   .lr-bar-fill{ display:block; height:100%; border-radius:3px; }
   .lr-pct{ text-align:right; font-weight:700; }
   .lr-games{ text-align:right; color:var(--parchment-dim); }
-  .lr-time{ text-align:right; color:var(--parchment-dim); }
+  .lr-mastered{ text-align:right; color:var(--parchment-dim); }
   .lr-last{ text-align:right; color:var(--brass-dim); }
   .ledger-note{ margin-top:14px; font-size:11px; color:var(--parchment-dim); line-height:1.6; }
 
   @media (max-width:560px){
-    .ledger-header span:nth-child(5), .ledger-row .lr-time{ display:none; }
+    .ledger-header span:nth-child(5), .ledger-row .lr-mastered{ display:none; }
     .ledger-header, .ledger-row{ grid-template-columns:minmax(70px,1.2fr) 46px 34px 30px 54px; }
   }
+
+  /* --- Continentes explorados --- */
+  .continent-list{ display:flex; flex-direction:column; }
+  .continent-row{
+    display:grid; grid-template-columns:minmax(80px,1fr) minmax(70px,140px) 44px;
+    gap:12px; align-items:center;
+    padding:8px 0; border-top:1px solid var(--line-soft); font-size:11px;
+  }
+  .continent-row:first-child{ border-top:none; }
+  .cr-name{ color:var(--parchment); }
+  .cr-bar{ display:block; height:5px; border-radius:3px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .cr-bar-fill{ display:block; height:100%; border-radius:3px; }
+  .cr-frac{ text-align:right; color:var(--parchment-dim); font-size:10.5px; }
+
+  /* --- Insignias / logros --- */
+  .badge-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(78px,1fr)); gap:16px 10px; }
+  .badge{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
+  .badge-seal{ width:38px; height:38px; }
+  .badge-title{ font-size:9.5px; line-height:1.3; color:var(--parchment); }
+  .badge.locked .badge-title{ color:var(--brass-dim); opacity:.65; }
+  .badge.locked .badge-seal{ opacity:.55; }
 
   button, .btn{
     display:inline-block; width:100%; text-align:center;
@@ -302,53 +331,53 @@
   // name directly from the backend, making this table unnecessary.
   // Keep this in sync with the seed_*.py scripts whenever a country is added.
   const COUNTRY_INFO = {
-    "espana":          { en: "Spain",          slug: "espana",        topo: "spain" },
-    "francia":         { en: "France",         slug: "francia",       topo: "france" },
-    "alemania":        { en: "Germany",        slug: "alemania",      topo: "germany" },
-    "italia":          { en: "Italy",          slug: "italia",        topo: "italy" },
-    "portugal":        { en: "Portugal",       slug: "portugal",      topo: "portugal" },
-    "reino unido":     { en: "United Kingdom", slug: "reino-unido",   topo: "united kingdom" },
-    "paises bajos":    { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands" },
-    "holanda":         { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands" },
-    "belgica":         { en: "Belgium",        slug: "belgica",       topo: "belgium" },
-    "suiza":           { en: "Switzerland",    slug: "suiza",         topo: "switzerland" },
-    "austria":         { en: "Austria",        slug: "austria",       topo: "austria" },
-    "polonia":         { en: "Poland",         slug: "polonia",       topo: "poland" },
-    "grecia":          { en: "Greece",         slug: "grecia",        topo: "greece" },
-    "turquia":         { en: "Turkey",         slug: "turquia",       topo: "turkey" },
-    "rusia":           { en: "Russia",         slug: "rusia",         topo: "russia" },
-    "china":           { en: "China",          slug: "china",         topo: "china" },
-    "japon":           { en: "Japan",          slug: "japon",         topo: "japan" },
-    "india":           { en: "India",          slug: "india",         topo: "india" },
-    "australia":       { en: "Australia",      slug: "australia",     topo: "australia" },
-    "marruecos":       { en: "Morocco",        slug: "marruecos",     topo: "morocco" },
-    "egipto":          { en: "Egypt",          slug: "egipto",        topo: "egypt" },
-    "sudafrica":       { en: "South Africa",   slug: "sudafrica",     topo: "south africa" },
+    "espana":          { en: "Spain",          slug: "espana",        topo: "spain",                  continent: "Europe" },
+    "francia":         { en: "France",         slug: "francia",       topo: "france",                 continent: "Europe" },
+    "alemania":        { en: "Germany",        slug: "alemania",      topo: "germany",                continent: "Europe" },
+    "italia":          { en: "Italy",          slug: "italia",        topo: "italy",                  continent: "Europe" },
+    "portugal":        { en: "Portugal",       slug: "portugal",      topo: "portugal",               continent: "Europe" },
+    "reino unido":     { en: "United Kingdom", slug: "reino-unido",   topo: "united kingdom",          continent: "Europe" },
+    "paises bajos":    { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands",             continent: "Europe" },
+    "holanda":         { en: "Netherlands",    slug: "paises-bajos",  topo: "netherlands",             continent: "Europe" },
+    "belgica":         { en: "Belgium",        slug: "belgica",       topo: "belgium",                 continent: "Europe" },
+    "suiza":           { en: "Switzerland",    slug: "suiza",         topo: "switzerland",             continent: "Europe" },
+    "austria":         { en: "Austria",        slug: "austria",       topo: "austria",                 continent: "Europe" },
+    "polonia":         { en: "Poland",         slug: "polonia",       topo: "poland",                  continent: "Europe" },
+    "grecia":          { en: "Greece",         slug: "grecia",        topo: "greece",                  continent: "Europe" },
+    "turquia":         { en: "Turkey",         slug: "turquia",       topo: "turkey",                  continent: "Asia" },
+    "rusia":           { en: "Russia",         slug: "rusia",         topo: "russia",                  continent: "Asia" },
+    "china":           { en: "China",          slug: "china",         topo: "china",                   continent: "Asia" },
+    "japon":           { en: "Japan",          slug: "japon",         topo: "japan",                   continent: "Asia" },
+    "india":           { en: "India",          slug: "india",         topo: "india",                   continent: "Asia" },
+    "australia":       { en: "Australia",      slug: "australia",     topo: "australia",               continent: "Oceania" },
+    "marruecos":       { en: "Morocco",        slug: "marruecos",     topo: "morocco",                 continent: "Africa" },
+    "egipto":          { en: "Egypt",          slug: "egipto",        topo: "egypt",                   continent: "Africa" },
+    "sudafrica":       { en: "South Africa",   slug: "sudafrica",     topo: "south africa",             continent: "Africa" },
 
-    "argentina":       { en: "Argentina",      slug: "argentina",     topo: "argentina" },
-    "chile":           { en: "Chile",          slug: "chile",         topo: "chile" },
-    "colombia":        { en: "Colombia",       slug: "colombia",      topo: "colombia" },
-    "brasil":          { en: "Brazil",         slug: "brazil",        topo: "brazil" },
-    "peru":            { en: "Peru",           slug: "peru",          topo: "peru" },
-    "bolivia":         { en: "Bolivia",        slug: "bolivia",       topo: "bolivia" },
-    "ecuador":         { en: "Ecuador",        slug: "ecuador",       topo: "ecuador" },
-    "paraguay":        { en: "Paraguay",       slug: "paraguay",      topo: "paraguay" },
-    "uruguay":         { en: "Uruguay",        slug: "uruguay",       topo: "uruguay" },
-    "venezuela":       { en: "Venezuela",      slug: "venezuela",     topo: "venezuela" },
-    "guyana":          { en: "Guyana",         slug: "guyana",        topo: "guyana" },
-    "surinam":         { en: "Suriname",       slug: "suriname",      topo: "suriname" },
+    "argentina":       { en: "Argentina",      slug: "argentina",     topo: "argentina",               continent: "Americas" },
+    "chile":           { en: "Chile",          slug: "chile",         topo: "chile",                   continent: "Americas" },
+    "colombia":        { en: "Colombia",       slug: "colombia",      topo: "colombia",                continent: "Americas" },
+    "brasil":          { en: "Brazil",         slug: "brazil",        topo: "brazil",                  continent: "Americas" },
+    "peru":            { en: "Peru",           slug: "peru",          topo: "peru",                    continent: "Americas" },
+    "bolivia":         { en: "Bolivia",        slug: "bolivia",       topo: "bolivia",                 continent: "Americas" },
+    "ecuador":         { en: "Ecuador",        slug: "ecuador",       topo: "ecuador",                 continent: "Americas" },
+    "paraguay":        { en: "Paraguay",       slug: "paraguay",      topo: "paraguay",                continent: "Americas" },
+    "uruguay":         { en: "Uruguay",        slug: "uruguay",       topo: "uruguay",                 continent: "Americas" },
+    "venezuela":       { en: "Venezuela",      slug: "venezuela",     topo: "venezuela",                continent: "Americas" },
+    "guyana":          { en: "Guyana",         slug: "guyana",        topo: "guyana",                  continent: "Americas" },
+    "surinam":         { en: "Suriname",       slug: "suriname",      topo: "suriname",                continent: "Americas" },
 
-    "guatemala":       { en: "Guatemala",      slug: "guatemala",     topo: "guatemala" },
-    "belice":          { en: "Belize",         slug: "belize",        topo: "belize" },
-    "honduras":        { en: "Honduras",       slug: "honduras",      topo: "honduras" },
-    "el salvador":     { en: "El Salvador",    slug: "el-salvador",   topo: "el salvador" },
-    "nicaragua":       { en: "Nicaragua",      slug: "nicaragua",     topo: "nicaragua" },
-    "costa rica":      { en: "Costa Rica",     slug: "costa-rica",    topo: "costa rica" },
-    "panama":          { en: "Panama",         slug: "panama",        topo: "panama" },
+    "guatemala":       { en: "Guatemala",      slug: "guatemala",     topo: "guatemala",                continent: "Americas" },
+    "belice":          { en: "Belize",         slug: "belize",        topo: "belize",                  continent: "Americas" },
+    "honduras":        { en: "Honduras",       slug: "honduras",      topo: "honduras",                 continent: "Americas" },
+    "el salvador":     { en: "El Salvador",    slug: "el-salvador",   topo: "el salvador",              continent: "Americas" },
+    "nicaragua":       { en: "Nicaragua",      slug: "nicaragua",     topo: "nicaragua",                continent: "Americas" },
+    "costa rica":      { en: "Costa Rica",     slug: "costa-rica",    topo: "costa rica",               continent: "Americas" },
+    "panama":          { en: "Panama",         slug: "panama",        topo: "panama",                  continent: "Americas" },
 
-    "mexico":          { en: "Mexico",         slug: "mexico",        topo: "mexico" },
-    "estados unidos":  { en: "United States",  slug: "united-states", topo: "united states of america" },
-    "canada":          { en: "Canada",         slug: "canada",        topo: "canada" },
+    "mexico":          { en: "Mexico",         slug: "mexico",        topo: "mexico",                  continent: "Americas" },
+    "estados unidos":  { en: "United States",  slug: "united-states", topo: "united states of america", continent: "Americas" },
+    "canada":          { en: "Canada",         slug: "canada",        topo: "canada",                  continent: "Americas" },
   };
 
   function normalizeName(str) {
@@ -385,11 +414,8 @@
     return getCountryInfo(countryName).topo;
   }
 
-  function formatTime(totalSeconds) {
-    if (totalSeconds == null) return '—';
-    const m = Math.floor(totalSeconds / 60);
-    const s = totalSeconds % 60;
-    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  function resolveContinent(countryName) {
+    return getCountryInfo(countryName).continent || "Other";
   }
 
   // Fecha relativa estilo "entrada de bitácora": hoy / ayer / hace N días...
@@ -481,6 +507,55 @@
     `;
   }
 
+  // --- Insignias: pequeños sellos de cera, dorados cuando se han
+  // desbloqueado y apagados/bloqueados cuando no. Reutiliza el mismo motivo
+  // (rombo + cruz + punto) que el sello de rango junto al avatar. ---
+  function badgeSealSvg(unlocked) {
+    const ring    = unlocked ? '#c6a05b' : 'rgba(198,160,91,0.25)';
+    const bg      = unlocked ? '#170c0a' : 'rgba(255,255,255,0.03)';
+    const diamond = unlocked ? '#e0bd7d' : 'rgba(168,155,129,0.35)';
+    const cross   = unlocked ? '#b1483a' : 'rgba(168,155,129,0.22)';
+    const dot     = unlocked ? '#f2ecda' : 'rgba(168,155,129,0.35)';
+    return `
+      <svg class="badge-seal" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="16" cy="16" r="15" fill="${bg}" stroke="${ring}" stroke-width="1"/>
+        <path d="M16 4 L19 16 L16 28 L13 16 Z" fill="${diamond}"/>
+        <path d="M4 16 L16 13 L28 16 L16 19 Z" fill="${cross}"/>
+        <circle cx="16" cy="16" r="2" fill="${dot}"/>
+      </svg>
+    `;
+  }
+
+  // Cada logro se evalúa contra un objeto de stats agregadas (nunca contra
+  // tiempo de partida). `streak` y `continentsPlayed` llegan como 0/valor
+  // provisional en el primer render y se recalculan cuando terminan de
+  // llegar las partidas recientes (ver hydration al final del archivo).
+  const ACHIEVEMENTS = [
+    { title: "First Landing",      desc: "Complete your first expedition.",          check: (s) => s.totalGames >= 1 },
+    { title: "Cartographer",       desc: "Chart 5 territories.",                     check: (s) => s.territoriesCharted >= 5 },
+    { title: "Globetrotter",       desc: "Chart 15 territories.",                    check: (s) => s.territoriesCharted >= 15 },
+    { title: "Flawless Run",       desc: "Score 100% in a single expedition.",       check: (s) => s.masteredCount >= 1 },
+    { title: "Full Mastery",       desc: "Get every region of a territory right, every time you've been asked.", check: (s) => s.fullyMasteredCount >= 1 },
+    { title: "World Wanderer",     desc: "Play territories on 4 different continents.", check: (s) => s.continentsPlayed >= 4 },
+    { title: "On a Roll",          desc: "Play 3 days in a row.",                    check: (s) => s.streak >= 3 },
+    { title: "Dedicated Explorer", desc: "Log 20 expeditions.",                      check: (s) => s.totalGames >= 20 },
+    { title: "Sharp Eye",          desc: "Hold a 90%+ overall accuracy across at least 5 expeditions.", check: (s) => s.totalGames >= 5 && s.overallAccuracy != null && s.overallAccuracy >= 90 },
+  ];
+
+  function renderAchievements(stats) {
+    const badges = ACHIEVEMENTS.map((a) => {
+      const unlocked = a.check(stats);
+      return `
+        <div class="badge${unlocked ? '' : ' locked'}" title="${escapeHtml(a.desc)}">
+          ${badgeSealSvg(unlocked)}
+          <span class="badge-title">${escapeHtml(a.title)}</span>
+        </div>
+      `;
+    }).join('');
+    const unlockedCount = ACHIEVEMENTS.filter((a) => a.check(stats)).length;
+    return { html: `<div class="badge-grid">${badges}</div>`, unlockedCount };
+  }
+
   // --- Estadísticas agregadas, calculadas a partir de /progress/countries ---
 
   // Precisión global real: de todos los intentos de acierto de región
@@ -495,55 +570,106 @@
     return attempts > 0 ? Math.round((correct / attempts) * 1000) / 10 : null;
   }
 
+  // Sin estadísticas de tiempo: el resumen de cabecera se centra en dominio
+  // (mejor país, países al 100%, regiones 100% dominadas y continentes
+  // pisados), que es lo que alimenta tanto los ledger-tile de arriba como
+  // el panel de logros más abajo.
   function computeHighlights(playedCountries) {
-    let fastest = null;
     let bestCountry = null;
+    let masteredCount = 0;      // países cuya MEJOR partida fue perfecta
+    let fullyMasteredCount = 0; // países con TODAS sus regiones al 100% acumulado
+    const continents = new Set();
+
     for (const c of playedCountries) {
-      const bs = c.best_score;
-      if (bs && bs.time_seconds != null && (!fastest || bs.time_seconds < fastest.time)) {
-        fastest = { time: bs.time_seconds, country: resolveDisplayName(c.country_name) };
-      }
       if (!bestCountry || c.percentage > bestCountry.percentage) bestCountry = c;
+      if (c.percentage === 100) masteredCount++;
+      const regiones = c.regions || [];
+      if (regiones.length > 0 && regiones.every((r) => r.accuracy === 100)) fullyMasteredCount++;
+      continents.add(resolveContinent(c.country_name));
     }
-    return { fastest, bestCountry };
+
+    return { bestCountry, masteredCount, fullyMasteredCount, continentsPlayed: continents.size };
   }
 
-  // --- Puntos débiles: regiones con peor % de acierto acumulado, cruzando
-  // todos los países. Solo cuentan regiones con al menos 2 intentos, para
-  // no destacar un fallo puntual como si fuera un patrón. ---
-  // `countryId` es null/undefined para el cruce entre todos los países
-  // (comportamiento original) o el country_id de un único país para ver
-  // solo sus regiones más flojas. Con un solo país de por medio hay muchas
-  // menos regiones candidatas, así que relajamos el mínimo de intentos a 1
-  // y subimos el límite, para que el filtro por país no se quede vacío.
-  function computeWeakSpots(countries, { countryId = null, limit = 5 } = {}) {
+  // --- Continentes: cuántos territorios de cada continente están
+  // pisados (>=1 partida) sobre el total de territorios de ese continente
+  // disponibles en el juego. ---
+  const CONTINENT_ORDER = ["Europe", "Americas", "Asia", "Africa", "Oceania"];
+
+  function computeContinents(countries) {
+    const byContinent = {};
+    countries.forEach((c) => {
+      const cont = resolveContinent(c.country_name);
+      if (!byContinent[cont]) byContinent[cont] = { total: 0, played: 0 };
+      byContinent[cont].total++;
+      if (c.games_played > 0) byContinent[cont].played++;
+    });
+    const order = CONTINENT_ORDER.filter((k) => byContinent[k])
+      .concat(Object.keys(byContinent).filter((k) => !CONTINENT_ORDER.includes(k)));
+    return order.map((name) => ({ name, ...byContinent[name] }));
+  }
+
+  function renderContinents(countries) {
+    const rows = computeContinents(countries);
+    if (!rows.length) return `<div class="log-empty">No territories loaded yet.</div>`;
+    const items = rows.map((r) => {
+      const pct = r.total ? Math.round((r.played / r.total) * 100) : 0;
+      return `
+        <div class="continent-row">
+          <span class="cr-name">${escapeHtml(r.name)}</span>
+          <span class="cr-bar"><span class="cr-bar-fill" style="width:${pct}%;background:${colorForPercentage(Math.max(pct, r.played ? 8 : 0))}"></span></span>
+          <span class="cr-frac">${r.played}/${r.total}</span>
+        </div>
+      `;
+    }).join('');
+    return `<div class="continent-list">${items}</div>`;
+  }
+
+  // --- Puntos débiles / fuertes: regiones con peor (o mejor) % de acierto
+  // acumulado, cruzando todos los países. Solo cuentan regiones con al
+  // menos 2 intentos, para no destacar un fallo o acierto puntual como si
+  // fuera un patrón. ---
+  // `countryId` es null/undefined para el cruce entre todos los países o el
+  // country_id de un único país para ver solo sus regiones. Con un solo país
+  // de por medio hay muchas menos regiones candidatas, así que relajamos el
+  // mínimo de intentos a 1 y subimos el límite, para que el filtro por país
+  // no se quede vacío. `mode` es 'weak' (peor % primero, excluye el 100%) o
+  // 'strong' (mejor % primero, empatando por más intentos = más fiable).
+  function computeSpots(countries, { countryId = null, mode = 'weak', limit = 5 } = {}) {
     const rows = [];
     countries.forEach((c) => {
       if (countryId && String(c.country_id) !== String(countryId)) return;
       const minAttempts = countryId ? 1 : 2;
       (c.regions || []).forEach((r) => {
-        if (r.attempts >= minAttempts && r.accuracy < 100) {
-          rows.push({
-            region_name: r.region_name,
-            accuracy: r.accuracy,
-            attempts: r.attempts,
-            country_name: c.country_name,
-            country_slug: c.country_slug || resolveSlug(c.country_name),
-          });
-        }
+        if (r.attempts < minAttempts) return;
+        if (mode === 'weak' && r.accuracy >= 100) return;
+        rows.push({
+          region_name: r.region_name,
+          accuracy: r.accuracy,
+          attempts: r.attempts,
+          country_name: c.country_name,
+          country_slug: c.country_slug || resolveSlug(c.country_name),
+        });
       });
     });
-    rows.sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts);
+    rows.sort((a, b) => (
+      mode === 'weak'
+        ? (a.accuracy - b.accuracy || b.attempts - a.attempts)
+        : (b.accuracy - a.accuracy || b.attempts - a.attempts)
+    ));
     return rows.slice(0, countryId ? 12 : limit);
   }
 
-  function renderWeakSpots(countries, countryId) {
-    const weak = computeWeakSpots(countries, { countryId });
-    if (!weak.length) {
+  function renderSpots(countries, countryId, mode) {
+    const spots = computeSpots(countries, { countryId, mode });
+    if (!spots.length) {
       const scope = countryId ? ' for this territory' : '';
-      return `<div class="log-empty">No weak spots${scope} yet — keep playing to surface patterns.</div>`;
+      const msg = mode === 'weak'
+        ? `No weak spots${scope} yet — keep playing to surface patterns.`
+        : `No standout regions${scope} yet — keep playing to surface patterns.`;
+      return `<div class="log-empty">${msg}</div>`;
     }
-    const rows = weak.map((r) => `
+    const rows = spots.map((r) => `
       <a class="weak-row${countryId ? ' single-country' : ''}" href="pages/country.html?pais=${encodeURIComponent(r.country_slug)}">
         <span class="weak-region">${escapeHtml(r.region_name)}</span>
         ${countryId ? '' : `<span class="weak-country">${escapeHtml(resolveDisplayName(r.country_name))}</span>`}
@@ -702,7 +828,7 @@
       dot.addEventListener('mousemove', (event) => {
         if (!rect) rect = wrap.getBoundingClientRect();
         tooltip.style.transform =
-          `translate3d(${event.clientX - containerRect.left}px,${event.clientY - containerRect.top}px,0) translate(-50%,-120%)`;
+          `translate3d(${event.clientX - rect.left}px,${event.clientY - rect.top}px,0) translate(-50%,-120%)`;
       });
       dot.addEventListener('mouseleave', () => {
         tooltip.style.opacity = '0';
@@ -806,10 +932,7 @@
         <a class="log-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
           <span class="log-date">${formatRelative(s.played_at)}</span>
           <span class="log-country">${escapeHtml(resolveDisplayName(s.country_name))}</span>
-          <span class="log-right">
-            <span class="log-pct" style="color:${color}">${s.percentage}%</span>
-            <span class="log-time">${formatTime(s.time_seconds)}</span>
-          </span>
+          <span class="log-pct" style="color:${color}">${s.percentage}%</span>
         </a>
       `;
     }).join('');
@@ -823,7 +946,8 @@
       .map((c) => {
         const color = colorForPercentage(c.percentage);
         const slug = c.country_slug || resolveSlug(c.country_name);
-        const bestTime = c.best_score ? formatTime(c.best_score.time_seconds) : '—';
+        const regiones = c.regions || [];
+        const masteredRegions = regiones.filter((r) => r.accuracy === 100).length;
         const lastPlayed = formatRelative(c.last_played_at);
         return `
           <a class="ledger-row" href="pages/country.html?pais=${encodeURIComponent(slug)}">
@@ -831,7 +955,7 @@
             <span class="lr-bar"><span class="lr-bar-fill" style="width:${c.percentage}%;background:${color}"></span></span>
             <span class="lr-pct" style="color:${color}">${c.percentage}%</span>
             <span class="lr-games">${c.games_played}×</span>
-            <span class="lr-time">${bestTime}</span>
+            <span class="lr-mastered">${masteredRegions}/${regiones.length}</span>
             <span class="lr-last">${lastPlayed}</span>
           </a>
         `;
@@ -845,7 +969,7 @@
 
     return `
       <div class="ledger-header">
-        <span>Territory</span><span>Mastery</span><span></span><span>Games</span><span>Best</span><span>Last</span>
+        <span>Territory</span><span>Mastery</span><span></span><span>Games</span><span>Mastered</span><span>Last</span>
       </div>
       ${rows}
       ${note}
@@ -1024,6 +1148,8 @@
 
   let recentSessions = [];
   let selectedTrendCountryId = '';
+  let selectedSpotCountryId = '';
+  let spotMode = 'weak';
 
   Promise.all([
     api.getCurrentUser(),
@@ -1035,8 +1161,21 @@
     const played = countries.filter((c) => c.games_played > 0);
     const totalGames = countries.reduce((sum, c) => sum + c.games_played, 0);
     const overallAccuracy = computeOverallAccuracy(countries);
-    const { fastest, bestCountry } = computeHighlights(played);
+    const { bestCountry, masteredCount, fullyMasteredCount, continentsPlayed } = computeHighlights(played);
     const rankTitle = computeRank(played.length);
+
+    // Stats de logros en el primer render: `streak` todavía no se conoce
+    // (las partidas recientes llegan después), así que se trata como 0 y el
+    // panel de logros se recalcula/reinyecta en cuanto hydrata más abajo.
+    const achievementStats = {
+      totalGames,
+      territoriesCharted: played.length,
+      overallAccuracy,
+      masteredCount,
+      fullyMasteredCount,
+      continentsPlayed,
+      streak: 0,
+    };
 
     let bodyHtml;
     if (totalGames === 0) {
@@ -1047,13 +1186,20 @@
         </div>`;
     } else {
       document.getElementById('profileCard').classList.add('wide');
+      const { html: achievementsHtml, unlockedCount } = renderAchievements(achievementStats);
       bodyHtml = `
         <div class="ledger-grid">
           <div class="ledger-tile"><span class="t-num">${played.length}<span class="t-num-sub">/${countries.length}</span></span><span class="t-label">Territories charted</span></div>
           <div class="ledger-tile"><span class="t-num">${totalGames}</span><span class="t-label">Expeditions logged</span></div>
           <div class="ledger-tile"><span class="t-num">${overallAccuracy != null ? overallAccuracy + '%' : '—'}</span><span class="t-label">Guess accuracy</span></div>
           <div class="ledger-tile"><span class="t-num">${bestCountry ? bestCountry.percentage + '%' : '—'}</span><span class="t-label">Best territory</span>${bestCountry ? `<span class="t-sub">${escapeHtml(resolveDisplayName(bestCountry.country_name))}</span>` : ''}</div>
-          <div class="ledger-tile"><span class="t-num">${fastest ? formatTime(fastest.time) : '—'}</span><span class="t-label">Fastest expedition</span>${fastest ? `<span class="t-sub">${escapeHtml(fastest.country)}</span>` : ''}</div>
+          <div class="ledger-tile"><span class="t-num">${masteredCount}</span><span class="t-label">Territories mastered</span></div>
+          <div class="ledger-tile"><span class="t-num" id="streakTileNum">–</span><span class="t-label">Current streak</span></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Continents charted</h2></div>
+          <div id="continentsContainer">${renderContinents(countries)}</div>
         </div>
 
         <div class="panel">
@@ -1077,13 +1223,16 @@
 
         <div class="panel">
           <div class="panel-head">
-            <h2>Weak spots</h2>
+            <h2>Weak &amp; strong spots</h2>
             <div class="panel-head-right">
-              <span class="panel-sub" id="weakSpotsSub">Regions worth another look</span>
-              ${played.length > 1 ? `<div class="country-picker" id="weakCountryPicker"><input type="text" class="country-picker-input" autocomplete="off" aria-label="Filter weak spots by country"><div class="country-picker-list" hidden></div></div>` : ''}
+              <div class="spot-toggle" id="spotToggle">
+                <button type="button" class="spot-toggle-btn active" data-mode="weak">Weakest</button>
+                <button type="button" class="spot-toggle-btn" data-mode="strong">Strongest</button>
+              </div>
+              ${played.length > 1 ? `<div class="country-picker" id="weakCountryPicker"><input type="text" class="country-picker-input" autocomplete="off" aria-label="Filter by country"><div class="country-picker-list" hidden></div></div>` : ''}
             </div>
           </div>
-          <div id="weakSpotsContainer">${renderWeakSpots(countries, null)}</div>
+          <div id="weakSpotsContainer">${renderSpots(countries, null, 'weak')}</div>
           <div class="world-map-wrap" id="weakCountryMapWrap" style="display:none;margin-top:14px;"></div>
           <div class="map-legend" id="weakCountryMapLegend" style="display:none;"><span>0%</span><span class="swatch"></span><span>100%</span></div>
         </div>
@@ -1097,6 +1246,11 @@
         <div class="panel">
           <div class="panel-head"><h2>Country ledger</h2></div>
           ${renderCountryLedger(played, countries.length)}
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h2>Achievements</h2><span class="panel-sub" id="achievementsSub">${unlockedCount}/${ACHIEVEMENTS.length} unlocked</span></div>
+          <div id="achievementsContainer">${achievementsHtml}</div>
         </div>`;
     }
 
@@ -1150,37 +1304,53 @@
       });
     }
 
+    const refreshSpots = () => {
+      const container = document.getElementById('weakSpotsContainer');
+      const mapWrap = document.getElementById('weakCountryMapWrap');
+      const legend = document.getElementById('weakCountryMapLegend');
+      if (container) container.innerHTML = renderSpots(countries, selectedSpotCountryId || null, spotMode);
+
+      if (!selectedSpotCountryId) {
+        if (mapWrap) { mapWrap.style.display = 'none'; mapWrap.innerHTML = ''; }
+        if (legend) legend.style.display = 'none';
+        return;
+      }
+
+      const country = countries.find((c) => String(c.country_id) === selectedSpotCountryId);
+      if (!mapWrap || !country) return;
+      mapWrap.style.display = 'block';
+      if (legend) legend.style.display = 'flex';
+      mapWrap.innerHTML = '<div class="log-empty">Loading province map…</div>';
+
+      loadCountryTopology(country)
+        .then(({ topology, objectKey }) => renderCountryProvinceMap(mapWrap, topology, objectKey, country.regions))
+        .catch((err) => {
+          console.error(err);
+          mapWrap.innerHTML = '<div class="log-empty">Province map for this territory isn\'t wired up yet.</div>';
+        });
+    };
+
+    const spotToggleEl = document.getElementById('spotToggle');
+    if (spotToggleEl) {
+      const toggleBtns = Array.from(spotToggleEl.querySelectorAll('.spot-toggle-btn'));
+      toggleBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.mode === spotMode) return;
+          spotMode = btn.dataset.mode;
+          toggleBtns.forEach((b) => b.classList.toggle('active', b === btn));
+          refreshSpots();
+        });
+      });
+    }
+
     const weakPickerEl = document.getElementById('weakCountryPicker');
     if (weakPickerEl) {
       wireCountryPicker(weakPickerEl, {
         options: playedCountryOptions(played),
         allLabel: 'All territories',
         onSelect: (countryId) => {
-          document.getElementById('weakSpotsContainer').innerHTML = renderWeakSpots(countries, countryId);
-          const sub = document.getElementById('weakSpotsSub');
-          const mapWrap = document.getElementById('weakCountryMapWrap');
-          const legend = document.getElementById('weakCountryMapLegend');
-
-          if (!countryId) {
-            sub.textContent = 'Regions worth another look';
-            mapWrap.style.display = 'none';
-            legend.style.display = 'none';
-            mapWrap.innerHTML = '';
-            return;
-          }
-
-          const country = countries.find((c) => String(c.country_id) === countryId);
-          sub.textContent = country ? `Weakest regions in ${resolveDisplayName(country.country_name)}` : 'Regions worth another look';
-          mapWrap.style.display = 'block';
-          legend.style.display = 'flex';
-          mapWrap.innerHTML = '<div class="log-empty">Loading province map…</div>';
-
-          loadCountryTopology(country)
-            .then(({ topology, objectKey }) => renderCountryProvinceMap(mapWrap, topology, objectKey, country.regions))
-            .catch((err) => {
-              console.error(err);
-              mapWrap.innerHTML = '<div class="log-empty">Province map for this territory isn\'t wired up yet.</div>';
-            });
+          selectedSpotCountryId = countryId;
+          refreshSpots();
         },
       });
     }
@@ -1212,6 +1382,22 @@
       if (heat) heat.innerHTML = renderStreakHeatmap(recentSessions);
       if (log) log.innerHTML = renderRecentLog(recentSessions);
       refreshTrend();
+
+      // La racha solo se conoce una vez que llegan las partidas recientes:
+      // rellena el ledger-tile y recalcula los logros que dependen de ella
+      // (p.ej. "On a Roll"), reinyectando el panel de insignias.
+      const streak = computeStreak(recentSessions);
+      const streakTile = document.getElementById('streakTileNum');
+      if (streakTile) streakTile.textContent = streak > 0 ? String(streak) : '0';
+
+      achievementStats.streak = streak;
+      const achievementsContainer = document.getElementById('achievementsContainer');
+      const achievementsSub = document.getElementById('achievementsSub');
+      if (achievementsContainer) {
+        const { html, unlockedCount } = renderAchievements(achievementStats);
+        achievementsContainer.innerHTML = html;
+        if (achievementsSub) achievementsSub.textContent = `${unlockedCount}/${ACHIEVEMENTS.length} unlocked`;
+      }
     });
   }).catch((err) => {
     console.error('No se pudo cargar el perfil', err);

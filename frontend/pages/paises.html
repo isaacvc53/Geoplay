@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas World — Países</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ocean-deep:#0b1c2c;
+    --ocean-mid:#123049;
+    --paper:#f6f1e4;
+    --land-hover:#f3c667;
+    --ink:#0e2233;
+    --ink-soft:#6b6250;
+    --brass:#c9a24b;
+    --brass-bright:#e6c273;
+    --brass-dim:#8a774a;
+    --hairline:rgba(201,162,75,0.22);
+    --shadow:rgba(4,10,16,0.5);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:radial-gradient(ellipse at 28% 6%, var(--ocean-mid) 0%, var(--ocean-deep) 62%);
+    font-family:'Space Mono',monospace;
+    color:var(--paper);
+  }
+  a{ color:inherit; }
+  :focus-visible{ outline:2px solid var(--brass-bright); outline-offset:3px; }
+
+  header{ padding:36px 40px 26px 40px; max-width:1100px; margin:0 auto; border-bottom:1px solid var(--hairline); }
+  .btn-back{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:8px 14px; margin-bottom:22px;
+    border:1px solid var(--brass-dim); background:transparent; color:var(--paper);
+    font-size:12px; letter-spacing:0.04em; text-decoration:none;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .btn-back:hover{ border-color:var(--brass); color:var(--brass-bright); }
+  h1{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(26px,4vw,40px); margin:0 0 6px 0; }
+  .subtitle{ font-size:12.5px; color:var(--brass-dim); letter-spacing:0.03em; margin:0; }
+
+  main{ max-width:1100px; margin:0 auto; padding:30px 40px 70px 40px; }
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
+    gap:12px;
+  }
+  .tile{
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--paper); color:var(--ink);
+    padding:16px 16px;
+    text-decoration:none;
+    border:1px solid var(--hairline);
+    box-shadow:0 8px 20px var(--shadow);
+    transition:transform 0.16s cubic-bezier(.16,.84,.32,1), box-shadow 0.16s ease, background 0.16s ease;
+  }
+  .tile:hover, .tile:focus-visible{
+    transform:translateY(-3px);
+    background:var(--land-hover);
+    box-shadow:0 12px 26px var(--shadow);
+  }
+  .tile .t-name{ font-family:'Fraunces',serif; font-weight:600; font-size:15.5px; line-height:1.2; }
+  .tile .t-go{
+    font-size:14px; color:var(--brass-dim);
+    transform:translateX(0); transition:transform 0.16s ease, color 0.16s ease;
+  }
+  .tile:hover .t-go, .tile:focus-visible .t-go{ transform:translateX(3px); color:var(--ink); }
+
+  .empty{
+    font-size:13px; color:rgba(246,241,228,0.6); line-height:1.7;
+  }
+  .empty a{ color:var(--brass-bright); }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="btn-back" href="seleccionar-modo.html"><span>←</span> Elegir modo</a>
+  <h1 id="titulo">Países</h1>
+  <p class="subtitle" id="subtitulo">Elige un país para explorarlo</p>
+</header>
+
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none;"></div>
+</main>
+
+<script>
+  const CONTINENTES = {
+    europa: {
+      nombre: "Europa",
+      paises: ["Albania","Alemania","Andorra","Austria","Bélgica","Bielorrusia","Bosnia y Herzegovina","Bulgaria","Chipre","Croacia","Dinamarca","Eslovaquia","Eslovenia","España","Estonia","Finlandia","Francia","Grecia","Hungría","Irlanda","Islandia","Italia","Kosovo","Letonia","Liechtenstein","Lituania","Luxemburgo","Macedonia del Norte","Malta","Moldavia","Mónaco","Montenegro","Noruega","Países Bajos","Polonia","Portugal","Reino Unido","República Checa","Rumanía","Rusia","San Marino","Serbia","Suecia","Suiza","Ucrania","Vaticano"]
+    },
+    asia: {
+      nombre: "Asia",
+      paises: ["Afganistán","Arabia Saudita","Armenia","Azerbaiyán","Baréin","Bangladés","Bután","Brunéi","Camboya","Catar","China","Corea del Norte","Corea del Sur","Emiratos Árabes Unidos","Filipinas","Georgia","India","Indonesia","Irak","Irán","Israel","Japón","Jordania","Kazajistán","Kirguistán","Kuwait","Laos","Líbano","Malasia","Maldivas","Mongolia","Myanmar","Nepal","Omán","Pakistán","Palestina","Singapur","Siria","Sri Lanka","Tailandia","Taiwán","Tayikistán","Timor Oriental","Turkmenistán","Turquía","Uzbekistán","Vietnam","Yemen"]
+    },
+    africa: {
+      nombre: "África",
+      paises: ["Angola","Argelia","Benín","Botsuana","Burkina Faso","Burundi","Cabo Verde","Camerún","Chad","Comoras","Costa de Marfil","Egipto","Eritrea","Esuatini","Etiopía","Gabón","Gambia","Ghana","Guinea","Guinea-Bisáu","Guinea Ecuatorial","Kenia","Lesoto","Liberia","Libia","Madagascar","Malaui","Malí","Marruecos","Mauricio","Mauritania","Mozambique","Namibia","Níger","Nigeria","República Centroafricana","República del Congo","República Democrática del Congo","Ruanda","Santo Tomé y Príncipe","Senegal","Seychelles","Sierra Leona","Somalia","Sudáfrica","Sudán","Sudán del Sur","Tanzania","Togo","Túnez","Uganda","Yibuti","Zambia","Zimbabue"]
+    },
+    america: {
+      nombre: "América",
+      paises: ["Antigua y Barbuda","Argentina","Bahamas","Barbados","Belice","Bolivia","Brasil","Canadá","Chile","Colombia","Costa Rica","Cuba","Dominica","Ecuador","El Salvador","Estados Unidos","Granada","Guatemala","Guyana","Haití","Honduras","Jamaica","México","Nicaragua","Panamá","Paraguay","Perú","República Dominicana","San Cristóbal y Nieves","San Vicente y las Granadinas","Santa Lucía","Surinam","Trinidad y Tobago","Uruguay","Venezuela"]
+    },
+    oceania: {
+      nombre: "Oceanía",
+      paises: ["Australia","Fiyi","Islas Marshall","Islas Salomón","Kiribati","Micronesia","Nauru","Nueva Zelanda","Palaos","Papúa Nueva Guinea","Samoa","Tonga","Tuvalu","Vanuatu"]
+    }
+  };
+
+  function slug(nombre){
+    return nombre
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+  }
+
+  const params = new URLSearchParams(location.search);
+  const zonaKey = params.get("zona");
+  const zona = CONTINENTES[zonaKey];
+
+  const grid = document.getElementById("grid");
+  const empty = document.getElementById("empty");
+
+  if(zona){
+    document.getElementById("titulo").textContent = zona.nombre;
+    document.getElementById("subtitulo").textContent = `${zona.paises.length} países — elige uno para explorarlo`;
+    document.title = `Atlas World — ${zona.nombre}`;
+
+    const paisesOrdenados = [...zona.paises].sort((a,b) => a.localeCompare(b, "es"));
+    paisesOrdenados.forEach(pais => {
+      const a = document.createElement("a");
+      a.className = "tile";
+      a.href = `country.html?pais=${slug(pais)}`;
+      a.innerHTML = `<span class="t-name">${pais}</span><span class="t-go">→</span>`;
+      grid.appendChild(a);
+    });
+  } else {
+    document.getElementById("titulo").textContent = "Zona no reconocida";
+    document.getElementById("subtitulo").textContent = "";
+    grid.style.display = "none";
+    empty.style.display = "block";
+    empty.innerHTML = `No se reconoce esta zona. Vuelve a <a href="seleccionar-modo.html">elegir modo</a>.`;
+  }
+</script>
+
+</body>
+</html>
