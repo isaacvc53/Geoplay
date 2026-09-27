@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Geotaria — learn world geography by naming countries, regions and divisions on an interactive atlas.">
+<meta name="theme-color" content="#0c1e2f">
 <title>Geotaria — Main Menu</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -213,7 +214,6 @@
     nav.mainnav{ order:3; flex:0 0 100%; justify-content:center; flex-wrap:wrap; row-gap:8px; gap:16px; }
   }
   @media (max-width:460px){
-    .icon-btn{ width:28px; height:28px; }
     nav.social-icons{ gap:8px; }
   }
 
@@ -230,12 +230,19 @@
   }
   @media (max-width:1180px){
     .layout{ grid-template-columns:repeat(3, 1fr); }
+    /* Content you can actually play (map, countries, stats) comes
+       first; the two "coming soon" placeholders drop to the end. */
+    .layout > *:nth-child(3){ order:1; }
+    .layout > *:nth-child(4){ order:2; }
+    .layout > *:nth-child(5){ order:3; }
+    .layout > *:nth-child(1){ order:4; }
+    .layout > *:nth-child(2){ order:5; }
   }
   @media (max-width:760px){
     .layout{ grid-template-columns:repeat(2, 1fr); }
   }
   @media (max-width:460px){
-    .layout{ grid-template-columns:1fr; }
+    .layout{ grid-template-columns:1fr; min-height:auto; }
   }
 
   /* ---------- shared panel ---------- */
@@ -340,7 +347,7 @@
   .hero-sub{ padding:6px 14px 0; font-size:10.5px; color:#9fb0bf; line-height:1.5; }
 
   .map-wrap{
-    position:relative; flex:1; min-height:0;
+    position:relative; flex:1; min-height:200px;
     display:flex; align-items:center; justify-content:center;
     border-top:1px solid var(--line-soft); margin-top:10px; padding:8px 12px;
     overflow:hidden;
@@ -439,6 +446,11 @@
     .layout{ padding:14px 20px 24px; }
     footer{ margin:0 20px; flex-direction:column; align-items:flex-start; }
     .footer-status{ text-align:left; }
+  }
+
+  @media (hover:none){
+    a.panel:active, .hero:active{ transform:scale(.985); }
+    .icon-btn:active{ border-color:var(--brass-bright); color:var(--brass-bright); }
   }
 
   @media (prefers-reduced-motion:reduce){

@@ -105,6 +105,7 @@
 
   .chips{ display:flex; flex-wrap:wrap; gap:8px; }
   .chip{
+    display:inline-flex; align-items:center; gap:6px;
     font-size:11.5px;
     padding:6px 10px;
     border:1px solid var(--hairline);
@@ -118,7 +119,16 @@
     border-color:var(--paper);
     animation:pop 0.28s ease;
   }
+  .chip .bandera{
+    width:14px; height:10px; flex:none;
+    object-fit:cover;
+    border:1px solid rgba(14,34,51,0.25);
+  }
   @keyframes pop{ from{ transform:scale(0.85); opacity:0.4; } to{ transform:scale(1); opacity:1; } }
+  .visually-hidden{
+    position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+    overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0;
+  }
 
   .win{
     display:none;
@@ -131,6 +141,19 @@
   .win.show{ display:block; }
   .win h2{ font-family:'Fraunces',serif; font-size:22px; margin:0 0 6px 0; color:var(--brass-bright); }
   .win p{ font-size:12.5px; color:rgba(246,241,228,0.7); margin:0; }
+  .btn-again{
+    margin-top:18px;
+    font-family:'Space Mono',monospace;
+    font-size:12.5px;
+    padding:10px 22px;
+    background:transparent;
+    color:var(--brass-bright);
+    border:1px solid var(--brass);
+    cursor:pointer;
+    letter-spacing:0.04em;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  .btn-again:hover{ background:var(--brass); color:var(--ink); }
 
   @media (prefers-reduced-motion: reduce){
     *{ animation-duration:0.01ms !important; }
@@ -156,16 +179,18 @@
   </div>
 
   <form id="form">
+    <label for="entrada" class="visually-hidden">Escribe el nombre de un país</label>
     <input type="text" id="entrada" placeholder="Escribe un país y pulsa Intro…" autocomplete="off" autofocus>
     <button class="submit" type="submit">Añadir</button>
   </form>
-  <div class="feedback" id="feedback"></div>
+  <div class="feedback" id="feedback" aria-live="polite"></div>
 
   <div id="continentes"></div>
 
   <div class="win" id="win">
     <h2>Los 197, completos</h2>
     <p id="win-tiempo"></p>
+    <button class="btn-again" id="btn-again" type="button">Jugar de nuevo</button>
   </div>
 </main>
 
@@ -178,12 +203,14 @@
     oceania: { nombre: "Oceanía", paises: ["Australia","Fiyi","Islas Marshall","Islas Salomón","Kiribati","Micronesia","Nauru","Nueva Zelanda","Palaos","Papúa Nueva Guinea","Samoa","Tonga","Tuvalu","Vanuatu"] }
   };
 
-  // Alias comunes -> nombre exacto tal y como aparece en las listas de arriba
+  // Alias comunes -> nombre exacto tal y como aparece en las listas de arriba.
+  // Importante: las claves deben escribirse ya SIN tildes/ñ, porque lo que se
+  // compara aquí (candidato) ha pasado por normalizar() y nunca lleva acentos.
   const ALIAS = {
-    "eeuu":"estados unidos", "usa":"estados unidos", "ee.uu":"estados unidos", "ee uu":"estados unidos",
-    "uk":"reino unido", "gran bretaña":"reino unido",
+    "eeuu":"estados unidos", "usa":"estados unidos", "ee uu":"estados unidos",
+    "uk":"reino unido", "gran bretana":"reino unido", "inglaterra":"reino unido",
     "holanda":"paises bajos",
-    "chequia":"republica checa", "republica checa":"republica checa",
+    "chequia":"republica checa",
     "birmania":"myanmar",
     "suazilandia":"esuatini", "swazilandia":"esuatini",
     "macedonia":"macedonia del norte",
@@ -192,10 +219,46 @@
     "congo kinshasa":"republica democratica del congo", "rd congo":"republica democratica del congo", "rdc":"republica democratica del congo",
     "timor este":"timor oriental", "timor leste":"timor oriental",
     "bosnia":"bosnia y herzegovina",
-    "cabo verde":"cabo verde",
-    "vaticano":"vaticano", "santa sede":"vaticano",
-    "corea del sur":"corea del sur", "corea sur":"corea del sur",
-    "corea del norte":"corea del norte", "corea norte":"corea del norte"
+    "santa sede":"vaticano",
+    "corea sur":"corea del sur",
+    "corea norte":"corea del norte"
+  };
+
+  // Código ISO-2 de cada país (mismo criterio de normalización que arriba),
+  // usado solo para mostrar una pequeña bandera junto a los países acertados.
+  const ISO_POR_PAIS = {
+    "albania":"al","alemania":"de","andorra":"ad","austria":"at","belgica":"be","bielorrusia":"by",
+    "bosnia y herzegovina":"ba","bulgaria":"bg","chipre":"cy","croacia":"hr","dinamarca":"dk","eslovaquia":"sk",
+    "eslovenia":"si","espana":"es","estonia":"ee","finlandia":"fi","francia":"fr","grecia":"gr","hungria":"hu",
+    "irlanda":"ie","islandia":"is","italia":"it","kosovo":"xk","letonia":"lv","liechtenstein":"li","lituania":"lt",
+    "luxemburgo":"lu","macedonia del norte":"mk","malta":"mt","moldavia":"md","monaco":"mc","montenegro":"me",
+    "noruega":"no","paises bajos":"nl","polonia":"pl","portugal":"pt","reino unido":"gb","republica checa":"cz",
+    "rumania":"ro","rusia":"ru","san marino":"sm","serbia":"rs","suecia":"se","suiza":"ch","ucrania":"ua",
+    "vaticano":"va","afganistan":"af","arabia saudita":"sa","armenia":"am","azerbaiyan":"az","barein":"bh",
+    "banglades":"bd","butan":"bt","brunei":"bn","camboya":"kh","catar":"qa","china":"cn","corea del norte":"kp",
+    "corea del sur":"kr","emiratos arabes unidos":"ae","filipinas":"ph","georgia":"ge","india":"in","indonesia":"id",
+    "irak":"iq","iran":"ir","israel":"il","japon":"jp","jordania":"jo","kazajistan":"kz","kirguistan":"kg",
+    "kuwait":"kw","laos":"la","libano":"lb","malasia":"my","maldivas":"mv","mongolia":"mn","myanmar":"mm",
+    "nepal":"np","oman":"om","pakistan":"pk","palestina":"ps","singapur":"sg","siria":"sy","sri lanka":"lk",
+    "tailandia":"th","taiwan":"tw","tayikistan":"tj","timor oriental":"tl","turkmenistan":"tm","turquia":"tr",
+    "uzbekistan":"uz","vietnam":"vn","yemen":"ye","angola":"ao","argelia":"dz","benin":"bj","botsuana":"bw",
+    "burkina faso":"bf","burundi":"bi","cabo verde":"cv","camerun":"cm","chad":"td","comoras":"km",
+    "costa de marfil":"ci","egipto":"eg","eritrea":"er","esuatini":"sz","etiopia":"et","gabon":"ga","gambia":"gm",
+    "ghana":"gh","guinea":"gn","guineabisau":"gw","guinea ecuatorial":"gq","kenia":"ke","lesoto":"ls","liberia":"lr",
+    "libia":"ly","madagascar":"mg","malaui":"mw","mali":"ml","marruecos":"ma","mauricio":"mu","mauritania":"mr",
+    "mozambique":"mz","namibia":"na","niger":"ne","nigeria":"ng","republica centroafricana":"cf",
+    "republica del congo":"cg","republica democratica del congo":"cd","ruanda":"rw","santo tome y principe":"st",
+    "senegal":"sn","seychelles":"sc","sierra leona":"sl","somalia":"so","sudafrica":"za","sudan":"sd",
+    "sudan del sur":"ss","tanzania":"tz","togo":"tg","tunez":"tn","uganda":"ug","yibuti":"dj","zambia":"zm",
+    "zimbabue":"zw","antigua y barbuda":"ag","argentina":"ar","bahamas":"bs","barbados":"bb","belice":"bz",
+    "bolivia":"bo","brasil":"br","canada":"ca","chile":"cl","colombia":"co","costa rica":"cr","cuba":"cu",
+    "dominica":"dm","ecuador":"ec","el salvador":"sv","estados unidos":"us","granada":"gd","guatemala":"gt",
+    "guyana":"gy","haiti":"ht","honduras":"hn","jamaica":"jm","mexico":"mx","nicaragua":"ni","panama":"pa",
+    "paraguay":"py","peru":"pe","republica dominicana":"do","san cristobal y nieves":"kn",
+    "san vicente y las granadinas":"vc","santa lucia":"lc","surinam":"sr","trinidad y tobago":"tt","uruguay":"uy",
+    "venezuela":"ve","australia":"au","fiyi":"fj","islas marshall":"mh","islas salomon":"sb","kiribati":"ki",
+    "micronesia":"fm","nauru":"nr","nueva zelanda":"nz","palaos":"pw","papua nueva guinea":"pg","samoa":"ws",
+    "tonga":"to","tuvalu":"tv","vanuatu":"vu"
   };
 
   function normalizar(str){
@@ -262,8 +325,19 @@
 
     const chip = document.querySelector(`.chip[data-norm="${CSS.escape(pais.norm)}"]`);
     if(chip){
-      chip.textContent = pais.nombre;
+      chip.textContent = "";
       chip.classList.add("found");
+      const iso = ISO_POR_PAIS[pais.norm];
+      if(iso){
+        const bandera = document.createElement("img");
+        bandera.className = "bandera";
+        bandera.loading = "lazy";
+        bandera.alt = "";
+        bandera.src = `https://flagcdn.com/${iso}.svg`;
+        bandera.onerror = () => bandera.remove();
+        chip.appendChild(bandera);
+      }
+      chip.appendChild(document.createTextNode(pais.nombre));
     }
     const contKey = pais.continente;
     const encontradosContinente = TODOS.filter(p => p.continente === contKey && p.encontrado).length;
@@ -307,6 +381,8 @@
       feedback(`${pais.nombre} — ${TOTAL - encontrados} por descubrir.`, "ok");
     }
   });
+
+  document.getElementById("btn-again").addEventListener("click", () => location.reload());
 </script>
 
 </body>
