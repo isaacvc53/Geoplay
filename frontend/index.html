@@ -185,6 +185,13 @@
     padding:0 16px; color:var(--brass-dim); cursor:not-allowed;
   }
 
+  .badge-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:8px; }
+  .badge-slot{
+    aspect-ratio:1; border:1px dashed var(--line); border-radius:50%;
+    display:grid; place-items:center; color:var(--brass-dim);
+  }
+  .badge-slot svg{ width:18px; height:18px; }
+
   .drawer-empty{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; gap:12px; padding:0 12px 60px;
@@ -457,7 +464,7 @@
       <a href="#" onclick="return false;" class="disabled">Roadmap</a>
       <a href="#" onclick="return false;" class="disabled">Multiplayer</a>
       <a href="pages/mapa-mundial.html">World map</a>
-      <a href="pages/countries.html">Countries</a>
+      <a href="pages/seleccionar-modo.html">Countries</a>
       <a href="profile.html">Statistics</a>
     </nav>
     <nav class="social-icons" aria-label="Coming soon">
@@ -476,12 +483,12 @@
           <circle cx="12" cy="12" r="1" fill="currentColor"/>
         </svg>
       </a>
-      <a href="#" onclick="return false;" class="icon-btn disabled" title="Achievements — coming soon">
+      <button type="button" class="icon-btn" id="achievementsToggle" title="Achievements" aria-haspopup="dialog" aria-controls="achievementsDrawer" aria-expanded="false">
         <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path d="M7 4h10v3.2c0 3-2.2 5.3-5 5.3s-5-2.3-5-5.3V4z" stroke="currentColor" stroke-width="1.4"/>
           <path d="M12 12.5V17m-3 3h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
-      </a>
+      </button>
     </nav>
     <nav id="authNav">
       <a href="login.html" class="signin">Sign in</a>
@@ -514,6 +521,31 @@
       </div>
       <p class="drawer-empty-title">Friends are on the way</p>
       <p class="drawer-empty-desc">Soon you'll be able to add friends, see their progress and race them on timed challenges.</p>
+    </div>
+  </aside>
+
+  <div class="drawer-overlay" id="achievementsOverlay"></div>
+  <aside class="drawer" id="achievementsDrawer" aria-hidden="true" aria-label="Achievements">
+    <div class="drawer-head">
+      <h2>Achievements</h2>
+      <span class="pill soon">Coming soon</span>
+      <button type="button" class="drawer-close" id="achievementsClose" aria-label="Close achievements panel">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="badge-grid">
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      <div class="badge-slot"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+    </div>
+
+    <div class="drawer-empty">
+      <p class="drawer-empty-title">Badges are on the way</p>
+      <p class="drawer-empty-desc">Unlock badges as you master maps, build streaks and beat your best times.</p>
     </div>
   </aside>
 
@@ -839,7 +871,7 @@
         </a>
 
     <!-- 4: countries list -->
-      <a class="panel side-card" href="pages/countries.html">
+      <a class="panel side-card" href="pages/seleccionar-modo.html">
           <div>
             <div class="head">
               <div class="icon-circle">
@@ -923,35 +955,47 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
-  // Panel de amigos: se abre dentro de esta misma página (sin funcionalidad
-  // real todavía, solo la interfaz — ver drawer-empty para el placeholder).
+  // Paneles laterales (amigos, logros): se abren dentro de esta misma página,
+  // sin funcionalidad real todavía — solo la interfaz (ver drawer-empty).
   (function () {
-    const toggle = document.getElementById('friendsToggle');
-    const drawer = document.getElementById('friendsDrawer');
-    const overlay = document.getElementById('friendsOverlay');
-    const closeBtn = document.getElementById('friendsClose');
-    if (!toggle || !drawer || !overlay || !closeBtn) return;
+    const drawers = [
+      { toggleId: 'friendsToggle', drawerId: 'friendsDrawer', overlayId: 'friendsOverlay', closeId: 'friendsClose' },
+      { toggleId: 'achievementsToggle', drawerId: 'achievementsDrawer', overlayId: 'achievementsOverlay', closeId: 'achievementsClose' }
+    ].map(d => ({
+      toggle: document.getElementById(d.toggleId),
+      drawer: document.getElementById(d.drawerId),
+      overlay: document.getElementById(d.overlayId),
+      closeBtn: document.getElementById(d.closeId)
+    })).filter(d => d.toggle && d.drawer && d.overlay && d.closeBtn);
 
-    function openDrawer() {
-      drawer.classList.add('open');
-      overlay.classList.add('open');
-      drawer.setAttribute('aria-hidden', 'false');
-      toggle.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-    }
-    function closeDrawer() {
-      drawer.classList.remove('open');
-      overlay.classList.remove('open');
-      drawer.setAttribute('aria-hidden', 'true');
-      toggle.setAttribute('aria-expanded', 'false');
+    function closeAll() {
+      drawers.forEach(d => {
+        d.drawer.classList.remove('open');
+        d.overlay.classList.remove('open');
+        d.drawer.setAttribute('aria-hidden', 'true');
+        d.toggle.setAttribute('aria-expanded', 'false');
+      });
       document.body.style.overflow = '';
     }
 
-    toggle.addEventListener('click', openDrawer);
-    closeBtn.addEventListener('click', closeDrawer);
-    overlay.addEventListener('click', closeDrawer);
+    drawers.forEach(d => {
+      d.toggle.addEventListener('click', () => {
+        const wasOpen = d.drawer.classList.contains('open');
+        closeAll();
+        if (!wasOpen) {
+          d.drawer.classList.add('open');
+          d.overlay.classList.add('open');
+          d.drawer.setAttribute('aria-hidden', 'false');
+          d.toggle.setAttribute('aria-expanded', 'true');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+      d.closeBtn.addEventListener('click', closeAll);
+      d.overlay.addEventListener('click', closeAll);
+    });
+
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && drawer.classList.contains('open')) closeDrawer();
+      if (e.key === 'Escape') closeAll();
     });
   })();
 

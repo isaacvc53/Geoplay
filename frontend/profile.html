@@ -271,11 +271,23 @@
 
   /* --- Insignias / logros --- */
   .badge-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(78px,1fr)); gap:16px 10px; }
-  .badge{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; }
-  .badge-seal{ width:38px; height:38px; }
-  .badge-title{ font-size:9.5px; line-height:1.3; color:var(--parchment); }
+  .badge{ display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center; cursor:pointer; border-radius:6px; }
+  .badge-seal{ width:38px; height:38px; transition:filter var(--ease); }
+  .badge-title{ font-size:9.5px; line-height:1.3; color:var(--parchment); transition:color var(--ease); }
   .badge.locked .badge-title{ color:var(--brass-dim); opacity:.65; }
   .badge.locked .badge-seal{ opacity:.55; }
+  .badge:hover .badge-seal, .badge:focus-visible .badge-seal{ filter:drop-shadow(0 0 4px rgba(224,189,125,.4)); }
+  .badge:focus-visible{ outline:1px solid var(--brass-bright); outline-offset:3px; }
+  .badge.selected .badge-seal{ filter:drop-shadow(0 0 6px rgba(224,189,125,.6)); }
+  .badge.selected .badge-title{ color:var(--brass-bright); }
+  .badge-detail{
+    margin-top:14px; padding:11px 13px;
+    border:1px solid var(--line); border-radius:var(--radius);
+    background:rgba(198,160,91,0.06);
+    font-size:11px; color:var(--parchment-dim); line-height:1.55;
+  }
+  .badge-detail strong{ display:block; margin-bottom:3px; font-size:12.5px; color:var(--brass-bright); font-family:'Fraunces',Georgia,serif; font-style:italic; font-weight:600; }
+  .badge-detail .lock-note{ display:block; margin-top:5px; font-size:10px; color:var(--brass-dim); }
 
   button, .btn{
     display:inline-block; width:100%; text-align:center;
@@ -543,10 +555,12 @@
   ];
 
   function renderAchievements(stats) {
-    const badges = ACHIEVEMENTS.map((a) => {
+    const badges = ACHIEVEMENTS.map((a, i) => {
       const unlocked = a.check(stats);
       return `
-        <div class="badge${unlocked ? '' : ' locked'}" title="${escapeHtml(a.desc)}">
+        <div class="badge${unlocked ? '' : ' locked'}" role="button" tabindex="0"
+             data-idx="${i}" data-title="${escapeHtml(a.title)}" data-desc="${escapeHtml(a.desc)}" data-unlocked="${unlocked ? '1' : '0'}"
+             title="${escapeHtml(a.desc)}">
           ${badgeSealSvg(unlocked)}
           <span class="badge-title">${escapeHtml(a.title)}</span>
         </div>
@@ -1251,6 +1265,7 @@
         <div class="panel">
           <div class="panel-head"><h2>Achievements</h2><span class="panel-sub" id="achievementsSub">${unlockedCount}/${ACHIEVEMENTS.length} unlocked</span></div>
           <div id="achievementsContainer">${achievementsHtml}</div>
+          <div class="badge-detail" id="badgeDetail" hidden></div>
         </div>`;
     }
 
@@ -1277,6 +1292,44 @@
       api.logout();
       window.location.href = 'index.html';
     });
+
+    // Insignias: tocar/clicar una la selecciona y muestra su descripción en
+    // el recuadro de debajo (el title="" sigue ahí como bonus en desktop,
+    // pero en móvil no hay hover, así que esto es lo que realmente informa
+    // de qué trata cada logro). Delegado sobre el contenedor, que sobrevive
+    // a los re-renders (solo se reemplaza su innerHTML al hidratar la racha).
+    const achievementsContainer = document.getElementById('achievementsContainer');
+    const badgeDetail = document.getElementById('badgeDetail');
+    if (achievementsContainer && badgeDetail) {
+      let selectedBadgeIdx = null;
+      const selectBadge = (badgeEl) => {
+        const idx = badgeEl.dataset.idx;
+        achievementsContainer.querySelectorAll('.badge.selected').forEach((b) => b.classList.remove('selected'));
+        if (selectedBadgeIdx === idx) {
+          selectedBadgeIdx = null;
+          badgeDetail.hidden = true;
+          return;
+        }
+        selectedBadgeIdx = idx;
+        badgeEl.classList.add('selected');
+        const unlocked = badgeEl.dataset.unlocked === '1';
+        badgeDetail.innerHTML = `
+          <strong>${escapeHtml(badgeEl.dataset.title)}</strong>
+          ${escapeHtml(badgeEl.dataset.desc)}
+          ${unlocked ? '' : '<span class="lock-note">🔒 Not unlocked yet — keep exploring to earn it.</span>'}
+        `;
+        badgeDetail.hidden = false;
+      };
+      achievementsContainer.addEventListener('click', (e) => {
+        const badgeEl = e.target.closest('.badge');
+        if (badgeEl) selectBadge(badgeEl);
+      });
+      achievementsContainer.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const badgeEl = e.target.closest('.badge');
+        if (badgeEl) { e.preventDefault(); selectBadge(badgeEl); }
+      });
+    }
 
     const trendContainer = document.getElementById('trendContainer');
     const refreshTrend = () => {

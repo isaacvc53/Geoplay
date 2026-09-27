@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Atlas World — Países</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --ocean-deep:#0b1c2c;
@@ -30,7 +30,7 @@
   a{ color:inherit; }
   :focus-visible{ outline:2px solid var(--brass-bright); outline-offset:3px; }
 
-  header{ padding:36px 40px 26px 40px; max-width:1100px; margin:0 auto; border-bottom:1px solid var(--hairline); }
+  header{ padding:36px 40px 26px 40px; max-width:1120px; margin:0 auto; border-bottom:1px solid var(--hairline); }
   .btn-back{
     display:inline-flex; align-items:center; gap:8px;
     padding:8px 14px; margin-bottom:22px;
@@ -42,38 +42,80 @@
   h1{ font-family:'Fraunces',serif; font-weight:600; font-size:clamp(26px,4vw,40px); margin:0 0 6px 0; }
   .subtitle{ font-size:12.5px; color:var(--brass-dim); letter-spacing:0.03em; margin:0; }
 
-  main{ max-width:1100px; margin:0 auto; padding:30px 40px 70px 40px; }
+  main{ max-width:1120px; margin:0 auto; padding:26px 40px 70px 40px; }
+
+  .panel{
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    background:rgba(246,241,228,0.05);
+    border:1px solid var(--hairline);
+    padding:16px 20px;
+    margin-bottom:28px;
+  }
+  .stat{ display:flex; flex-direction:column; gap:2px; white-space:nowrap; }
+  .stat .num{ font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--brass-bright); }
+  .stat .lbl{ font-size:10px; color:var(--brass-dim); letter-spacing:0.04em; }
+  .buscador-wrap{ flex:1 1 200px; min-width:180px; }
+  #buscador{
+    width:100%;
+    font-family:'Space Mono',monospace;
+    font-size:14px;
+    padding:11px 14px;
+    background:var(--paper);
+    color:var(--ink);
+    border:1px solid var(--hairline);
+  }
+  #buscador:focus{ outline:2px solid var(--brass-bright); outline-offset:2px; }
 
   .grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(160px, 1fr));
-    gap:12px;
+    grid-template-columns:repeat(auto-fill, minmax(172px, 1fr));
+    gap:16px;
   }
   .tile{
-    display:flex; align-items:center; justify-content:space-between;
-    background:var(--paper); color:var(--ink);
-    padding:16px 16px;
+    position:relative;
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    padding:24px 14px 16px 14px;
     text-decoration:none;
+    background:var(--paper);
     border:1px solid var(--hairline);
-    box-shadow:0 8px 20px var(--shadow);
-    transition:transform 0.16s cubic-bezier(.16,.84,.32,1), box-shadow 0.16s ease, background 0.16s ease;
+    box-shadow:0 10px 22px var(--shadow);
+    transition:transform 0.18s cubic-bezier(.16,.84,.32,1), box-shadow 0.18s ease, border-color 0.18s ease;
   }
   .tile:hover, .tile:focus-visible{
-    transform:translateY(-3px);
-    background:var(--land-hover);
-    box-shadow:0 12px 26px var(--shadow);
+    transform:translateY(-4px);
+    border-color:var(--brass);
+    box-shadow:0 18px 34px var(--shadow);
   }
-  .tile .t-name{ font-family:'Fraunces',serif; font-weight:600; font-size:15.5px; line-height:1.2; }
-  .tile .t-go{
-    font-size:14px; color:var(--brass-dim);
-    transform:translateX(0); transition:transform 0.16s ease, color 0.16s ease;
+  .tile .bandera{
+    position:absolute; top:-8px; right:12px;
+    width:34px; height:24px;
+    object-fit:cover;
+    background:#fff;
+    border:1px solid rgba(14,34,51,0.18);
+    box-shadow:0 3px 8px rgba(4,10,16,0.35);
+    transform:rotate(3deg);
+    transition:transform 0.18s ease;
   }
-  .tile:hover .t-go, .tile:focus-visible .t-go{ transform:translateX(3px); color:var(--ink); }
+  .tile:hover .bandera{ transform:rotate(0deg) scale(1.05); }
+  .silueta-wrap{
+    width:100%; height:78px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .silueta{
+    max-width:100%; max-height:100%;
+    filter:grayscale(1) opacity(0.8);
+    transition:filter 0.18s ease, transform 0.18s ease;
+  }
+  .silueta.fallback{ width:30px; height:30px; opacity:0.55; }
+  .tile:hover .silueta{ filter:grayscale(0.3) opacity(1); transform:scale(1.04); }
+  .t-name{
+    font-family:'Fraunces',serif; font-weight:600; font-size:14px; line-height:1.25;
+    color:var(--ink); text-align:center;
+  }
 
-  .empty{
-    font-size:13px; color:rgba(246,241,228,0.6); line-height:1.7;
-  }
+  .empty{ font-size:13px; color:rgba(246,241,228,0.6); line-height:1.7; }
   .empty a{ color:var(--brass-bright); }
+  .sin-resultados{ display:none; font-size:12.5px; color:rgba(246,241,228,0.55); padding:20px 0; }
 </style>
 </head>
 <body>
@@ -85,32 +127,103 @@
 </header>
 
 <main>
+  <div class="panel" id="panel" style="display:none;">
+    <div class="stat"><span class="num" id="contador">0</span><span class="lbl">países</span></div>
+    <div class="buscador-wrap">
+      <input type="text" id="buscador" placeholder="Buscar país…" autocomplete="off">
+    </div>
+  </div>
+
   <div class="grid" id="grid"></div>
+  <p class="sin-resultados" id="sin-resultados">Ningún país coincide con tu búsqueda.</p>
   <div class="empty" id="empty" style="display:none;"></div>
 </main>
 
 <script>
+  // Ruta a los SVG de silueta de cada país (nombres en inglés, ej. "albania.svg").
+  // Ajusta este prefijo según dónde coloques este archivo respecto a data/geo.
+  const GEO_PATH = "data/geo/";
+
+  // [nombre en español, nombre de archivo en inglés, código ISO-2 para la bandera]
   const CONTINENTES = {
-    europa: {
-      nombre: "Europa",
-      paises: ["Albania","Alemania","Andorra","Austria","Bélgica","Bielorrusia","Bosnia y Herzegovina","Bulgaria","Chipre","Croacia","Dinamarca","Eslovaquia","Eslovenia","España","Estonia","Finlandia","Francia","Grecia","Hungría","Irlanda","Islandia","Italia","Kosovo","Letonia","Liechtenstein","Lituania","Luxemburgo","Macedonia del Norte","Malta","Moldavia","Mónaco","Montenegro","Noruega","Países Bajos","Polonia","Portugal","Reino Unido","República Checa","Rumanía","Rusia","San Marino","Serbia","Suecia","Suiza","Ucrania","Vaticano"]
-    },
-    asia: {
-      nombre: "Asia",
-      paises: ["Afganistán","Arabia Saudita","Armenia","Azerbaiyán","Baréin","Bangladés","Bután","Brunéi","Camboya","Catar","China","Corea del Norte","Corea del Sur","Emiratos Árabes Unidos","Filipinas","Georgia","India","Indonesia","Irak","Irán","Israel","Japón","Jordania","Kazajistán","Kirguistán","Kuwait","Laos","Líbano","Malasia","Maldivas","Mongolia","Myanmar","Nepal","Omán","Pakistán","Palestina","Singapur","Siria","Sri Lanka","Tailandia","Taiwán","Tayikistán","Timor Oriental","Turkmenistán","Turquía","Uzbekistán","Vietnam","Yemen"]
-    },
-    africa: {
-      nombre: "África",
-      paises: ["Angola","Argelia","Benín","Botsuana","Burkina Faso","Burundi","Cabo Verde","Camerún","Chad","Comoras","Costa de Marfil","Egipto","Eritrea","Esuatini","Etiopía","Gabón","Gambia","Ghana","Guinea","Guinea-Bisáu","Guinea Ecuatorial","Kenia","Lesoto","Liberia","Libia","Madagascar","Malaui","Malí","Marruecos","Mauricio","Mauritania","Mozambique","Namibia","Níger","Nigeria","República Centroafricana","República del Congo","República Democrática del Congo","Ruanda","Santo Tomé y Príncipe","Senegal","Seychelles","Sierra Leona","Somalia","Sudáfrica","Sudán","Sudán del Sur","Tanzania","Togo","Túnez","Uganda","Yibuti","Zambia","Zimbabue"]
-    },
-    america: {
-      nombre: "América",
-      paises: ["Antigua y Barbuda","Argentina","Bahamas","Barbados","Belice","Bolivia","Brasil","Canadá","Chile","Colombia","Costa Rica","Cuba","Dominica","Ecuador","El Salvador","Estados Unidos","Granada","Guatemala","Guyana","Haití","Honduras","Jamaica","México","Nicaragua","Panamá","Paraguay","Perú","República Dominicana","San Cristóbal y Nieves","San Vicente y las Granadinas","Santa Lucía","Surinam","Trinidad y Tobago","Uruguay","Venezuela"]
-    },
-    oceania: {
-      nombre: "Oceanía",
-      paises: ["Australia","Fiyi","Islas Marshall","Islas Salomón","Kiribati","Micronesia","Nauru","Nueva Zelanda","Palaos","Papúa Nueva Guinea","Samoa","Tonga","Tuvalu","Vanuatu"]
-    }
+    europa: { nombre:"Europa", paises:[
+      ["Albania","albania","al"],["Alemania","germany","de"],["Andorra","andorra","ad"],
+      ["Austria","austria","at"],["Bélgica","belgium","be"],["Bielorrusia","belarus","by"],
+      ["Bosnia y Herzegovina","bosnia-and-herzegovina","ba"],["Bulgaria","bulgaria","bg"],
+      ["Chipre","cyprus","cy"],["Croacia","croatia","hr"],["Dinamarca","denmark","dk"],
+      ["Eslovaquia","slovakia","sk"],["Eslovenia","slovenia","si"],["España","spain","es"],
+      ["Estonia","estonia","ee"],["Finlandia","finland","fi"],["Francia","france","fr"],
+      ["Grecia","greece","gr"],["Hungría","hungary","hu"],["Irlanda","ireland","ie"],
+      ["Islandia","iceland","is"],["Italia","italy","it"],["Kosovo","kosovo","xk"],
+      ["Letonia","latvia","lv"],["Liechtenstein","liechtenstein","li"],["Lituania","lithuania","lt"],
+      ["Luxemburgo","luxembourg","lu"],["Macedonia del Norte","north-macedonia","mk"],["Malta","malta","mt"],
+      ["Moldavia","moldova","md"],["Mónaco","monaco","mc"],["Montenegro","montenegro","me"],
+      ["Noruega","norway","no"],["Países Bajos","netherlands","nl"],["Polonia","poland","pl"],
+      ["Portugal","portugal","pt"],["Reino Unido","united-kingdom","gb"],["República Checa","czech-republic","cz"],
+      ["Rumanía","romania","ro"],["Rusia","russia","ru"],["San Marino","san-marino","sm"],
+      ["Serbia","serbia","rs"],["Suecia","sweden","se"],["Suiza","switzerland","ch"],
+      ["Ucrania","ukraine","ua"],["Vaticano","vatican-city","va"]
+    ]},
+    asia: { nombre:"Asia", paises:[
+      ["Afganistán","afghanistan","af"],["Arabia Saudita","saudi-arabia","sa"],["Armenia","armenia","am"],
+      ["Azerbaiyán","azerbaijan","az"],["Baréin","bahrain","bh"],["Bangladés","bangladesh","bd"],
+      ["Bután","bhutan","bt"],["Brunéi","brunei","bn"],["Camboya","cambodia","kh"],
+      ["Catar","qatar","qa"],["China","china","cn"],["Corea del Norte","north-korea","kp"],
+      ["Corea del Sur","south-korea","kr"],["Emiratos Árabes Unidos","united-arab-emirates","ae"],
+      ["Filipinas","philippines","ph"],["Georgia","georgia","ge"],["India","india","in"],
+      ["Indonesia","indonesia","id"],["Irak","iraq","iq"],["Irán","iran","ir"],
+      ["Israel","israel","il"],["Japón","japan","jp"],["Jordania","jordan","jo"],
+      ["Kazajistán","kazakhstan","kz"],["Kirguistán","kyrgyzstan","kg"],["Kuwait","kuwait","kw"],
+      ["Laos","laos","la"],["Líbano","lebanon","lb"],["Malasia","malaysia","my"],
+      ["Maldivas","maldives","mv"],["Mongolia","mongolia","mn"],["Myanmar","myanmar","mm"],
+      ["Nepal","nepal","np"],["Omán","oman","om"],["Pakistán","pakistan","pk"],
+      ["Palestina","palestine","ps"],["Singapur","singapore","sg"],["Siria","syria","sy"],
+      ["Sri Lanka","sri-lanka","lk"],["Tailandia","thailand","th"],["Taiwán","taiwan","tw"],
+      ["Tayikistán","tajikistan","tj"],["Timor Oriental","timor-leste","tl"],["Turkmenistán","turkmenistan","tm"],
+      ["Turquía","turkey","tr"],["Uzbekistán","uzbekistan","uz"],["Vietnam","vietnam","vn"],["Yemen","yemen","ye"]
+    ]},
+    africa: { nombre:"África", paises:[
+      ["Angola","angola","ao"],["Argelia","algeria","dz"],["Benín","benin","bj"],
+      ["Botsuana","botswana","bw"],["Burkina Faso","burkina-faso","bf"],["Burundi","burundi","bi"],
+      ["Cabo Verde","cape-verde","cv"],["Camerún","cameroon","cm"],["Chad","chad","td"],
+      ["Comoras","comoros","km"],["Costa de Marfil","ivory-coast","ci"],["Egipto","egypt","eg"],
+      ["Eritrea","eritrea","er"],["Esuatini","eswatini","sz"],["Etiopía","ethiopia","et"],
+      ["Gabón","gabon","ga"],["Gambia","gambia","gm"],["Ghana","ghana","gh"],
+      ["Guinea","guinea","gn"],["Guinea-Bisáu","guinea-bissau","gw"],["Guinea Ecuatorial","equatorial-guinea","gq"],
+      ["Kenia","kenya","ke"],["Lesoto","lesotho","ls"],["Liberia","liberia","lr"],
+      ["Libia","libya","ly"],["Madagascar","madagascar","mg"],["Malaui","malawi","mw"],
+      ["Malí","mali","ml"],["Marruecos","morocco","ma"],["Mauricio","mauritius","mu"],
+      ["Mauritania","mauritania","mr"],["Mozambique","mozambique","mz"],["Namibia","namibia","na"],
+      ["Níger","niger","ne"],["Nigeria","nigeria","ng"],["República Centroafricana","central-african-republic","cf"],
+      ["República del Congo","republic-of-the-congo","cg"],["República Democrática del Congo","democratic-republic-of-the-congo","cd"],
+      ["Ruanda","rwanda","rw"],["Santo Tomé y Príncipe","sao-tome-and-principe","st"],["Senegal","senegal","sn"],
+      ["Seychelles","seychelles","sc"],["Sierra Leona","sierra-leone","sl"],["Somalia","somalia","so"],
+      ["Sudáfrica","south-africa","za"],["Sudán","sudan","sd"],["Sudán del Sur","south-sudan","ss"],
+      ["Tanzania","tanzania","tz"],["Togo","togo","tg"],["Túnez","tunisia","tn"],
+      ["Uganda","uganda","ug"],["Yibuti","djibouti","dj"],["Zambia","zambia","zm"],["Zimbabue","zimbabwe","zw"]
+    ]},
+    america: { nombre:"América", paises:[
+      ["Antigua y Barbuda","antigua-and-barbuda","ag"],["Argentina","argentina","ar"],["Bahamas","bahamas","bs"],
+      ["Barbados","barbados","bb"],["Belice","belize","bz"],["Bolivia","bolivia","bo"],
+      ["Brasil","brazil","br"],["Canadá","canada","ca"],["Chile","chile","cl"],
+      ["Colombia","colombia","co"],["Costa Rica","costa-rica","cr"],["Cuba","cuba","cu"],
+      ["Dominica","dominica","dm"],["Ecuador","ecuador","ec"],["El Salvador","el-salvador","sv"],
+      ["Estados Unidos","united-states","us"],["Granada","grenada","gd"],["Guatemala","guatemala","gt"],
+      ["Guyana","guyana","gy"],["Haití","haiti","ht"],["Honduras","honduras","hn"],
+      ["Jamaica","jamaica","jm"],["México","mexico","mx"],["Nicaragua","nicaragua","ni"],
+      ["Panamá","panama","pa"],["Paraguay","paraguay","py"],["Perú","peru","pe"],
+      ["República Dominicana","dominican-republic","do"],["San Cristóbal y Nieves","saint-kitts-and-nevis","kn"],
+      ["San Vicente y las Granadinas","saint-vincent-and-the-grenadines","vc"],["Santa Lucía","saint-lucia","lc"],
+      ["Surinam","suriname","sr"],["Trinidad y Tobago","trinidad-and-tobago","tt"],["Uruguay","uruguay","uy"],
+      ["Venezuela","venezuela","ve"]
+    ]},
+    oceania: { nombre:"Oceanía", paises:[
+      ["Australia","australia","au"],["Fiyi","fiji","fj"],["Islas Marshall","marshall-islands","mh"],
+      ["Islas Salomón","solomon-islands","sb"],["Kiribati","kiribati","ki"],["Micronesia","micronesia","fm"],
+      ["Nauru","nauru","nr"],["Nueva Zelanda","new-zealand","nz"],["Palaos","palau","pw"],
+      ["Papúa Nueva Guinea","papua-new-guinea","pg"],["Samoa","samoa","ws"],["Tonga","tonga","to"],
+      ["Tuvalu","tuvalu","tv"],["Vanuatu","vanuatu","vu"]
+    ]}
   };
 
   function slug(nombre){
@@ -120,6 +233,16 @@
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
   }
+  function normalizar(str){
+    return str
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  const FALLBACK_SILUETA = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a774a" stroke-width="1.4"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>'
+  );
 
   const params = new URLSearchParams(location.search);
   const zonaKey = params.get("zona");
@@ -127,20 +250,68 @@
 
   const grid = document.getElementById("grid");
   const empty = document.getElementById("empty");
+  const panel = document.getElementById("panel");
+  const contadorEl = document.getElementById("contador");
+  const sinResultados = document.getElementById("sin-resultados");
 
   if(zona){
     document.getElementById("titulo").textContent = zona.nombre;
     document.getElementById("subtitulo").textContent = `${zona.paises.length} países — elige uno para explorarlo`;
     document.title = `Atlas World — ${zona.nombre}`;
+    panel.style.display = "flex";
+    contadorEl.textContent = zona.paises.length;
 
-    const paisesOrdenados = [...zona.paises].sort((a,b) => a.localeCompare(b, "es"));
-    paisesOrdenados.forEach(pais => {
+    const ordenados = [...zona.paises].sort((a,b) => a[0].localeCompare(b[0], "es"));
+
+    ordenados.forEach(([es, en, iso]) => {
       const a = document.createElement("a");
       a.className = "tile";
-      a.href = `country.html?pais=${slug(pais)}`;
-      a.innerHTML = `<span class="t-name">${pais}</span><span class="t-go">→</span>`;
+      a.href = `country.html?pais=${slug(es)}`;
+      a.dataset.norm = normalizar(es);
+
+      const bandera = document.createElement("img");
+      bandera.className = "bandera";
+      bandera.loading = "lazy";
+      bandera.alt = "";
+      bandera.src = `https://flagcdn.com/${iso}.svg`;
+      bandera.onerror = () => { bandera.style.display = "none"; };
+
+      const siluetaWrap = document.createElement("div");
+      siluetaWrap.className = "silueta-wrap";
+      const silueta = document.createElement("img");
+      silueta.className = "silueta";
+      silueta.loading = "lazy";
+      silueta.alt = "";
+      silueta.src = `${GEO_PATH}${en}.svg`;
+      silueta.onerror = () => {
+        silueta.onerror = null;
+        silueta.src = FALLBACK_SILUETA;
+        silueta.classList.add("fallback");
+      };
+      siluetaWrap.appendChild(silueta);
+
+      const nombre = document.createElement("span");
+      nombre.className = "t-name";
+      nombre.textContent = es;
+
+      a.appendChild(bandera);
+      a.appendChild(siluetaWrap);
+      a.appendChild(nombre);
       grid.appendChild(a);
     });
+
+    document.getElementById("buscador").addEventListener("input", e => {
+      const q = normalizar(e.target.value);
+      let visibles = 0;
+      grid.querySelectorAll(".tile").forEach(tile => {
+        const coincide = tile.dataset.norm.includes(q);
+        tile.style.display = coincide ? "" : "none";
+        if(coincide) visibles++;
+      });
+      contadorEl.textContent = visibles;
+      sinResultados.style.display = visibles === 0 ? "block" : "none";
+    });
+
   } else {
     document.getElementById("titulo").textContent = "Zona no reconocida";
     document.getElementById("subtitulo").textContent = "";
