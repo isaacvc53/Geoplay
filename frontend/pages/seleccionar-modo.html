@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas World — Choose how to play</title>
+<title>Atlas World — Elige cómo jugar</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -142,7 +142,7 @@
 <body>
 
 <header>
-  <a class="btn-back" href="../index.html"><span>←</span> Main menu</a>
+  <a class="btn-back" href="../index.html"><span>←</span> Menú principal</a>
   <div class="title-row">
     <svg class="compass-mark" viewBox="0 0 40 40" aria-hidden="true">
       <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
@@ -151,7 +151,7 @@
     </svg>
     <div>
       <h1>Atlas World</h1>
-      <p class="subtitle">Choose how to start your game</p>
+      <p class="subtitle">Elige cómo empezar tu partida</p>
     </div>
   </div>
   <hr class="rule">
@@ -160,13 +160,13 @@
 <main>
 
   <section class="mode-section" aria-labelledby="mapa-heading">
-    <h2 id="mapa-heading" class="section-title">Play on the map</h2>
+    <h2 id="mapa-heading" class="section-title">Jugar sobre el mapa</h2>
     <div class="grid">
       <a class="tile featured" href="mapa-mundial.html">
         <div class="featured-content">
-          <span class="tile-code">MAP</span>
-          <div class="t-title">Interactive map</div>
-          <div class="t-desc">Explore the whole globe, zoom in, and pick a country by tapping directly on the map.</div>
+          <span class="tile-code">MAPA</span>
+          <div class="t-title">Mapa interactivo</div>
+          <div class="t-desc">Explora el globo completo, haz zoom y elige un país tocando directamente sobre el mapa.</div>
         </div>
         <div class="t-arrow">→</div>
       </a>
@@ -174,36 +174,36 @@
   </section>
 
   <section class="mode-section" aria-labelledby="zonas-heading">
-    <h2 id="zonas-heading" class="section-title">Play by choosing a region</h2>
+    <h2 id="zonas-heading" class="section-title">Jugar eligiendo una región</h2>
     <div class="grid" id="zonas">
-      <a class="tile" data-zona="mundo" href="mapa-mundial.html" style="--rot:0deg">
+      <a class="tile" data-zona="mundo" href="paises-del-mundo.html" style="--rot:0deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">WLD</span><div class="t-title">World</div><div class="t-desc">All available countries.</div></div>
+        <div><span class="tile-code">MUN</span><div class="t-title">Mundo</div><div class="t-desc">Escribe de memoria los 197 países del mundo.</div></div>
         <div class="t-arrow">→</div>
       </a>
-      <a class="tile" data-zona="europa" href="mapa-mundial.html?zona=europa" style="--rot:15deg">
+      <a class="tile" data-zona="europa" href="paises.html?zona=europa" style="--rot:15deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">EUR</span><div class="t-title">Europe</div><div class="t-desc">Countries of the European continent.</div></div>
+        <div><span class="tile-code">EUR</span><div class="t-title">Europa</div><div class="t-desc">Países del continente europeo.</div></div>
         <div class="t-arrow">→</div>
       </a>
-      <a class="tile" data-zona="asia" href="mapa-mundial.html?zona=asia" style="--rot:30deg">
+      <a class="tile" data-zona="asia" href="paises.html?zona=asia" style="--rot:30deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">ASI</span><div class="t-title">Asia</div><div class="t-desc">Countries of the Asian continent.</div></div>
+        <div><span class="tile-code">ASI</span><div class="t-title">Asia</div><div class="t-desc">Países del continente asiático.</div></div>
         <div class="t-arrow">→</div>
       </a>
-      <a class="tile" data-zona="africa" href="mapa-mundial.html?zona=africa" style="--rot:-15deg">
+      <a class="tile" data-zona="africa" href="paises.html?zona=africa" style="--rot:-15deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">AFR</span><div class="t-title">Africa</div><div class="t-desc">Countries of the African continent.</div></div>
+        <div><span class="tile-code">AFR</span><div class="t-title">África</div><div class="t-desc">Países del continente africano.</div></div>
         <div class="t-arrow">→</div>
       </a>
-      <a class="tile" data-zona="america" href="mapa-mundial.html?zona=america" style="--rot:45deg">
+      <a class="tile" data-zona="america" href="paises.html?zona=america" style="--rot:45deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">AME</span><div class="t-title">Americas</div><div class="t-desc">North, Central, and South America.</div></div>
+        <div><span class="tile-code">AME</span><div class="t-title">América</div><div class="t-desc">Norteamérica, Centroamérica y Sudamérica.</div></div>
         <div class="t-arrow">→</div>
       </a>
-      <a class="tile" data-zona="oceania" href="mapa-mundial.html?zona=oceania" style="--rot:-30deg">
+      <a class="tile" data-zona="oceania" href="paises.html?zona=oceania" style="--rot:-30deg">
         <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
-        <div><span class="tile-code">OCE</span><div class="t-title">Oceania</div><div class="t-desc">Australia and the Pacific islands.</div></div>
+        <div><span class="tile-code">OCE</span><div class="t-title">Oceanía</div><div class="t-desc">Australia y las islas del Pacífico.</div></div>
         <div class="t-arrow">→</div>
       </a>
     </div>
