@@ -113,13 +113,13 @@
     transition:color var(--ease), border-color var(--ease);
   }
   .topbar nav a:hover{ color:var(--parchment); border-color:var(--line); }
-  .topbar nav a.signin{
+  a.signin{
     color:var(--ocean-deep); background:var(--brass);
     padding:9px 18px; border-radius:var(--radius);
     border-bottom:none; font-weight:700;
     transition:background var(--ease), transform var(--ease), box-shadow var(--ease);
   }
-  .topbar nav a.signin:hover{ background:var(--land-hover); transform:translateY(-1px); box-shadow:0 6px 16px -6px rgba(198,160,91,.55); }
+  a.signin:hover{ background:var(--land-hover); transform:translateY(-1px); box-shadow:0 6px 16px -6px rgba(198,160,91,.55); }
 
   nav.mainnav{ flex:1; justify-content:center; gap:30px; }
   .topbar nav a.disabled{ opacity:.4; cursor:default; }
@@ -197,10 +197,18 @@
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
     text-align:center; gap:12px; padding:0 12px 60px;
   }
+  #authNav{ display:flex; flex-direction:column; flex:1; min-height:0; }
   .icon-circle.big{ width:52px; height:52px; }
   .icon-circle.big .icon{ width:22px; height:22px; }
   .drawer-empty-title{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:15px; color:var(--parchment); }
   .drawer-empty-desc{ font-size:11.5px; line-height:1.65; color:var(--parchment-dim); max-width:260px; }
+  .account-logout{
+    font-size:10.5px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--brass-dim); text-decoration:none;
+    border-bottom:1px solid var(--line); padding-bottom:2px;
+    transition:color var(--ease), border-color var(--ease);
+  }
+  .account-logout:hover{ color:var(--brass-bright); border-color:var(--brass-bright); }
 
   @media (max-width:460px){
     .drawer{ width:100vw; max-width:100vw; padding:20px 18px; }
@@ -479,7 +487,7 @@
       <a href="pages/seleccionar-modo.html">Countries</a>
       <a href="profile.html">Statistics</a>
     </nav>
-    <nav class="social-icons" aria-label="Coming soon">
+    <nav class="social-icons" aria-label="More">
       <button type="button" class="icon-btn" id="friendsToggle" title="Friends" aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded="false">
         <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/>
@@ -501,9 +509,12 @@
           <path d="M12 12.5V17m-3 3h6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
         </svg>
       </button>
-    </nav>
-    <nav id="authNav">
-      <a href="login.html" class="signin">Sign in</a>
+      <button type="button" class="icon-btn" id="accountToggle" title="Account" aria-haspopup="dialog" aria-controls="accountDrawer" aria-expanded="false">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="8.6" r="3.4" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M5 19.4c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </button>
     </nav>
   </div>
 
@@ -558,6 +569,30 @@
     <div class="drawer-empty">
       <p class="drawer-empty-title">Badges are on the way</p>
       <p class="drawer-empty-desc">Unlock badges as you master maps, build streaks and beat your best times.</p>
+    </div>
+  </aside>
+
+  <div class="drawer-overlay" id="accountOverlay"></div>
+  <aside class="drawer" id="accountDrawer" aria-hidden="true" aria-label="Account">
+    <div class="drawer-head">
+      <h2>Account</h2>
+      <button type="button" class="drawer-close" id="accountClose" aria-label="Close account panel">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div id="authNav">
+      <div class="drawer-empty">
+        <div class="icon-circle big">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="8.6" r="3.4" stroke="currentColor" stroke-width="1.4"/>
+            <path d="M5 19.4c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <p class="drawer-empty-title">You're not signed in</p>
+        <p class="drawer-empty-desc">Sign in to save your progress, track your stats and pick up where you left off.</p>
+        <a href="login.html" class="signin account-cta">Sign in</a>
+      </div>
     </div>
   </aside>
 
@@ -967,12 +1002,14 @@
 <script src="js/config.js"></script>
 <script src="js/api.js"></script>
 <script>
-  // Paneles laterales (amigos, logros): se abren dentro de esta misma página,
-  // sin funcionalidad real todavía — solo la interfaz (ver drawer-empty).
+  // Paneles laterales (amigos, logros, cuenta): se abren dentro de esta misma
+  // página. Amigos/logros son solo interfaz (ver drawer-empty); cuenta sí
+  // tiene funcionalidad real (sign in / perfil / logout).
   (function () {
     const drawers = [
       { toggleId: 'friendsToggle', drawerId: 'friendsDrawer', overlayId: 'friendsOverlay', closeId: 'friendsClose' },
-      { toggleId: 'achievementsToggle', drawerId: 'achievementsDrawer', overlayId: 'achievementsOverlay', closeId: 'achievementsClose' }
+      { toggleId: 'achievementsToggle', drawerId: 'achievementsDrawer', overlayId: 'achievementsOverlay', closeId: 'achievementsClose' },
+      { toggleId: 'accountToggle', drawerId: 'accountDrawer', overlayId: 'accountOverlay', closeId: 'accountClose' }
     ].map(d => ({
       toggle: document.getElementById(d.toggleId),
       drawer: document.getElementById(d.drawerId),
@@ -1015,8 +1052,18 @@
     api.getCurrentUser()
       .then(user => {
         document.getElementById('authNav').innerHTML = `
-          <a href="profile.html">${user.username}</a>
-          <a href="#" class="signin" id="logoutBtn">Log out</a>
+          <div class="drawer-empty">
+            <div class="icon-circle big">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="8.6" r="3.4" stroke="currentColor" stroke-width="1.4"/>
+                <path d="M5 19.4c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <p class="drawer-empty-title">${user.username}</p>
+            <p class="drawer-empty-desc">Signed in to Geotaria.</p>
+            <a href="profile.html" class="signin">View profile</a>
+            <a href="#" id="logoutBtn" class="account-logout">Log out</a>
+          </div>
         `;
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
           e.preventDefault();
