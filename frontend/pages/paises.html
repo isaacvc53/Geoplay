@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas World — Países</title>
+<title>Atlas World — Countries</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -54,8 +54,8 @@
   .stat{ display:flex; flex-direction:column; gap:2px; white-space:nowrap; }
   .stat .num{ font-family:'Fraunces',serif; font-size:22px; font-weight:600; color:var(--brass-bright); }
   .stat .lbl{ font-size:10px; color:var(--brass-dim); letter-spacing:0.04em; }
-  .buscador-wrap{ flex:1 1 200px; min-width:180px; }
-  #buscador{
+  .search-wrap{ flex:1 1 200px; min-width:180px; }
+  #search{
     width:100%;
     font-family:'Space Mono',monospace;
     font-size:14px;
@@ -64,7 +64,7 @@
     color:var(--ink);
     border:1px solid var(--hairline);
   }
-  #buscador:focus{ outline:2px solid var(--brass-bright); outline-offset:2px; }
+  #search:focus{ outline:2px solid var(--brass-bright); outline-offset:2px; }
 
   .grid{
     display:grid;
@@ -86,7 +86,7 @@
     border-color:var(--brass);
     box-shadow:0 18px 34px var(--shadow);
   }
-  .tile .bandera{
+  .tile .flag{
     position:absolute; top:-8px; right:12px;
     width:34px; height:24px;
     object-fit:cover;
@@ -96,18 +96,18 @@
     transform:rotate(3deg);
     transition:transform 0.18s ease;
   }
-  .tile:hover .bandera{ transform:rotate(0deg) scale(1.05); }
-  .silueta-wrap{
+  .tile:hover .flag{ transform:rotate(0deg) scale(1.05); }
+  .silhouette-wrap{
     width:100%; height:78px;
     display:flex; align-items:center; justify-content:center;
   }
-  .silueta{
+  .silhouette{
     max-width:100%; max-height:100%;
     filter:grayscale(1) opacity(0.8);
     transition:filter 0.18s ease, transform 0.18s ease;
   }
-  .silueta.fallback{ width:30px; height:30px; opacity:0.55; }
-  .tile:hover .silueta{ filter:grayscale(0.3) opacity(1); transform:scale(1.04); }
+  .silhouette.fallback{ width:30px; height:30px; opacity:0.55; }
+  .tile:hover .silhouette{ filter:grayscale(0.3) opacity(1); transform:scale(1.04); }
   .t-name{
     font-family:'Fraunces',serif; font-weight:600; font-size:14px; line-height:1.25;
     color:var(--ink); text-align:center;
@@ -115,209 +115,209 @@
 
   .empty{ font-size:13px; color:rgba(246,241,228,0.6); line-height:1.7; }
   .empty a{ color:var(--brass-bright); }
-  .sin-resultados{ display:none; font-size:12.5px; color:rgba(246,241,228,0.55); padding:20px 0; }
+  .no-results{ display:none; font-size:12.5px; color:rgba(246,241,228,0.55); padding:20px 0; }
 </style>
 </head>
 <body>
 
 <header>
-  <a class="btn-back" href="seleccionar-modo.html"><span>←</span> Elegir modo</a>
-  <h1 id="titulo">Países</h1>
-  <p class="subtitle" id="subtitulo">Elige un país para explorarlo</p>
+  <a class="btn-back" href="seleccionar-modo.html"><span>←</span> Choose mode</a>
+  <h1 id="title">Countries</h1>
+  <p class="subtitle" id="subtitle">Choose a country to explore</p>
 </header>
 
 <main>
   <div class="panel" id="panel" style="display:none;">
-    <div class="stat"><span class="num" id="contador">0</span><span class="lbl">países</span></div>
-    <div class="buscador-wrap">
-      <input type="text" id="buscador" placeholder="Buscar país…" autocomplete="off">
+    <div class="stat"><span class="num" id="counter">0</span><span class="lbl">countries</span></div>
+    <div class="search-wrap">
+      <input type="text" id="search" placeholder="Search country…" autocomplete="off">
     </div>
   </div>
 
   <div class="grid" id="grid"></div>
-  <p class="sin-resultados" id="sin-resultados">Ningún país coincide con tu búsqueda.</p>
+  <p class="no-results" id="no-results">No country matches your search.</p>
   <div class="empty" id="empty" style="display:none;"></div>
 </main>
 
 <script>
-  // Ruta a los SVG de silueta de cada país (nombres en inglés, ej. "albania.svg").
-  // Ajusta este prefijo según dónde coloques este archivo respecto a data/geo.
-  const GEO_PATH = "data/geo/";
+  // Path to each country's silhouette SVG (English file names, e.g. "albania.svg").
+  // Adjust this prefix depending on where this file sits relative to data/geo.
+  const GEO_PATH = "../data/geo/";
 
-  // [nombre en español, nombre de archivo en inglés, código ISO-2 para la bandera]
-  const CONTINENTES = {
-    europa: { nombre:"Europa", paises:[
-      ["Albania","albania","al"],["Alemania","germany","de"],["Andorra","andorra","ad"],
-      ["Austria","austria","at"],["Bélgica","belgium","be"],["Bielorrusia","belarus","by"],
-      ["Bosnia y Herzegovina","bosnia-and-herzegovina","ba"],["Bulgaria","bulgaria","bg"],
-      ["Chipre","cyprus","cy"],["Croacia","croatia","hr"],["Dinamarca","denmark","dk"],
-      ["Eslovaquia","slovakia","sk"],["Eslovenia","slovenia","si"],["España","spain","es"],
-      ["Estonia","estonia","ee"],["Finlandia","finland","fi"],["Francia","france","fr"],
-      ["Grecia","greece","gr"],["Hungría","hungary","hu"],["Irlanda","ireland","ie"],
-      ["Islandia","iceland","is"],["Italia","italy","it"],["Kosovo","kosovo","xk"],
-      ["Letonia","latvia","lv"],["Liechtenstein","liechtenstein","li"],["Lituania","lithuania","lt"],
-      ["Luxemburgo","luxembourg","lu"],["Macedonia del Norte","north-macedonia","mk"],["Malta","malta","mt"],
-      ["Moldavia","moldova","md"],["Mónaco","monaco","mc"],["Montenegro","montenegro","me"],
-      ["Noruega","norway","no"],["Países Bajos","netherlands","nl"],["Polonia","poland","pl"],
-      ["Portugal","portugal","pt"],["Reino Unido","united-kingdom","gb"],["República Checa","czech-republic","cz"],
-      ["Rumanía","romania","ro"],["Rusia","russia","ru"],["San Marino","san-marino","sm"],
-      ["Serbia","serbia","rs"],["Suecia","sweden","se"],["Suiza","switzerland","ch"],
-      ["Ucrania","ukraine","ua"],["Vaticano","vatican-city","va"]
+  // [English display name, English silhouette filename, ISO-2 code for the flag, original Spanish name used to build the country.html link]
+  const CONTINENTS = {
+    europa: { name:"Europe", countries:[
+      ["Albania","albania","al","Albania"],["Germany","germany","de","Alemania"],["Andorra","andorra","ad","Andorra"],
+      ["Austria","austria","at","Austria"],["Belgium","belgium","be","Bélgica"],["Belarus","belarus","by","Bielorrusia"],
+      ["Bosnia and Herzegovina","bosnia-and-herzegovina","ba","Bosnia y Herzegovina"],["Bulgaria","bulgaria","bg","Bulgaria"],
+      ["Cyprus","cyprus","cy","Chipre"],["Croatia","croatia","hr","Croacia"],["Denmark","denmark","dk","Dinamarca"],
+      ["Slovakia","slovakia","sk","Eslovaquia"],["Slovenia","slovenia","si","Eslovenia"],["Spain","spain","es","España"],
+      ["Estonia","estonia","ee","Estonia"],["Finland","finland","fi","Finlandia"],["France","france","fr","Francia"],
+      ["Greece","greece","gr","Grecia"],["Hungary","hungary","hu","Hungría"],["Ireland","ireland","ie","Irlanda"],
+      ["Iceland","iceland","is","Islandia"],["Italy","italy","it","Italia"],["Kosovo","kosovo","xk","Kosovo"],
+      ["Latvia","latvia","lv","Letonia"],["Liechtenstein","liechtenstein","li","Liechtenstein"],["Lithuania","lithuania","lt","Lituania"],
+      ["Luxembourg","luxembourg","lu","Luxemburgo"],["North Macedonia","north-macedonia","mk","Macedonia del Norte"],["Malta","malta","mt","Malta"],
+      ["Moldova","moldova","md","Moldavia"],["Monaco","monaco","mc","Mónaco"],["Montenegro","montenegro","me","Montenegro"],
+      ["Norway","norway","no","Noruega"],["Netherlands","netherlands","nl","Países Bajos"],["Poland","poland","pl","Polonia"],
+      ["Portugal","portugal","pt","Portugal"],["United Kingdom","united-kingdom","gb","Reino Unido"],["Czech Republic","czech-republic","cz","República Checa"],
+      ["Romania","romania","ro","Rumanía"],["Russia","russia","ru","Rusia"],["San Marino","san-marino","sm","San Marino"],
+      ["Serbia","serbia","rs","Serbia"],["Sweden","sweden","se","Suecia"],["Switzerland","switzerland","ch","Suiza"],
+      ["Ukraine","ukraine","ua","Ucrania"],["Vatican City","vatican-city","va","Vaticano"]
     ]},
-    asia: { nombre:"Asia", paises:[
-      ["Afganistán","afghanistan","af"],["Arabia Saudita","saudi-arabia","sa"],["Armenia","armenia","am"],
-      ["Azerbaiyán","azerbaijan","az"],["Baréin","bahrain","bh"],["Bangladés","bangladesh","bd"],
-      ["Bután","bhutan","bt"],["Brunéi","brunei","bn"],["Camboya","cambodia","kh"],
-      ["Catar","qatar","qa"],["China","china","cn"],["Corea del Norte","north-korea","kp"],
-      ["Corea del Sur","south-korea","kr"],["Emiratos Árabes Unidos","united-arab-emirates","ae"],
-      ["Filipinas","philippines","ph"],["Georgia","georgia","ge"],["India","india","in"],
-      ["Indonesia","indonesia","id"],["Irak","iraq","iq"],["Irán","iran","ir"],
-      ["Israel","israel","il"],["Japón","japan","jp"],["Jordania","jordan","jo"],
-      ["Kazajistán","kazakhstan","kz"],["Kirguistán","kyrgyzstan","kg"],["Kuwait","kuwait","kw"],
-      ["Laos","laos","la"],["Líbano","lebanon","lb"],["Malasia","malaysia","my"],
-      ["Maldivas","maldives","mv"],["Mongolia","mongolia","mn"],["Myanmar","myanmar","mm"],
-      ["Nepal","nepal","np"],["Omán","oman","om"],["Pakistán","pakistan","pk"],
-      ["Palestina","palestine","ps"],["Singapur","singapore","sg"],["Siria","syria","sy"],
-      ["Sri Lanka","sri-lanka","lk"],["Tailandia","thailand","th"],["Taiwán","taiwan","tw"],
-      ["Tayikistán","tajikistan","tj"],["Timor Oriental","timor-leste","tl"],["Turkmenistán","turkmenistan","tm"],
-      ["Turquía","turkey","tr"],["Uzbekistán","uzbekistan","uz"],["Vietnam","vietnam","vn"],["Yemen","yemen","ye"]
+    asia: { name:"Asia", countries:[
+      ["Afghanistan","afghanistan","af","Afganistán"],["Saudi Arabia","saudi-arabia","sa","Arabia Saudita"],["Armenia","armenia","am","Armenia"],
+      ["Azerbaijan","azerbaijan","az","Azerbaiyán"],["Bahrain","bahrain","bh","Baréin"],["Bangladesh","bangladesh","bd","Bangladés"],
+      ["Bhutan","bhutan","bt","Bután"],["Brunei","brunei","bn","Brunéi"],["Cambodia","cambodia","kh","Camboya"],
+      ["Qatar","qatar","qa","Catar"],["China","china","cn","China"],["North Korea","north-korea","kp","Corea del Norte"],
+      ["South Korea","south-korea","kr","Corea del Sur"],["United Arab Emirates","united-arab-emirates","ae","Emiratos Árabes Unidos"],
+      ["Philippines","philippines","ph","Filipinas"],["Georgia","georgia","ge","Georgia"],["India","india","in","India"],
+      ["Indonesia","indonesia","id","Indonesia"],["Iraq","iraq","iq","Irak"],["Iran","iran","ir","Irán"],
+      ["Israel","israel","il","Israel"],["Japan","japan","jp","Japón"],["Jordan","jordan","jo","Jordania"],
+      ["Kazakhstan","kazakhstan","kz","Kazajistán"],["Kyrgyzstan","kyrgyzstan","kg","Kirguistán"],["Kuwait","kuwait","kw","Kuwait"],
+      ["Laos","laos","la","Laos"],["Lebanon","lebanon","lb","Líbano"],["Malaysia","malaysia","my","Malasia"],
+      ["Maldives","maldives","mv","Maldivas"],["Mongolia","mongolia","mn","Mongolia"],["Myanmar","myanmar","mm","Myanmar"],
+      ["Nepal","nepal","np","Nepal"],["Oman","oman","om","Omán"],["Pakistan","pakistan","pk","Pakistán"],
+      ["Palestine","palestine","ps","Palestina"],["Singapore","singapore","sg","Singapur"],["Syria","syria","sy","Siria"],
+      ["Sri Lanka","sri-lanka","lk","Sri Lanka"],["Thailand","thailand","th","Tailandia"],["Taiwan","taiwan","tw","Taiwán"],
+      ["Tajikistan","tajikistan","tj","Tayikistán"],["Timor-Leste","timor-leste","tl","Timor Oriental"],["Turkmenistan","turkmenistan","tm","Turkmenistán"],
+      ["Turkey","turkey","tr","Turquía"],["Uzbekistan","uzbekistan","uz","Uzbekistán"],["Vietnam","vietnam","vn","Vietnam"],["Yemen","yemen","ye","Yemen"]
     ]},
-    africa: { nombre:"África", paises:[
-      ["Angola","angola","ao"],["Argelia","algeria","dz"],["Benín","benin","bj"],
-      ["Botsuana","botswana","bw"],["Burkina Faso","burkina-faso","bf"],["Burundi","burundi","bi"],
-      ["Cabo Verde","cape-verde","cv"],["Camerún","cameroon","cm"],["Chad","chad","td"],
-      ["Comoras","comoros","km"],["Costa de Marfil","ivory-coast","ci"],["Egipto","egypt","eg"],
-      ["Eritrea","eritrea","er"],["Esuatini","eswatini","sz"],["Etiopía","ethiopia","et"],
-      ["Gabón","gabon","ga"],["Gambia","gambia","gm"],["Ghana","ghana","gh"],
-      ["Guinea","guinea","gn"],["Guinea-Bisáu","guinea-bissau","gw"],["Guinea Ecuatorial","equatorial-guinea","gq"],
-      ["Kenia","kenya","ke"],["Lesoto","lesotho","ls"],["Liberia","liberia","lr"],
-      ["Libia","libya","ly"],["Madagascar","madagascar","mg"],["Malaui","malawi","mw"],
-      ["Malí","mali","ml"],["Marruecos","morocco","ma"],["Mauricio","mauritius","mu"],
-      ["Mauritania","mauritania","mr"],["Mozambique","mozambique","mz"],["Namibia","namibia","na"],
-      ["Níger","niger","ne"],["Nigeria","nigeria","ng"],["República Centroafricana","central-african-republic","cf"],
-      ["República del Congo","republic-of-the-congo","cg"],["República Democrática del Congo","democratic-republic-of-the-congo","cd"],
-      ["Ruanda","rwanda","rw"],["Santo Tomé y Príncipe","sao-tome-and-principe","st"],["Senegal","senegal","sn"],
-      ["Seychelles","seychelles","sc"],["Sierra Leona","sierra-leone","sl"],["Somalia","somalia","so"],
-      ["Sudáfrica","south-africa","za"],["Sudán","sudan","sd"],["Sudán del Sur","south-sudan","ss"],
-      ["Tanzania","tanzania","tz"],["Togo","togo","tg"],["Túnez","tunisia","tn"],
-      ["Uganda","uganda","ug"],["Yibuti","djibouti","dj"],["Zambia","zambia","zm"],["Zimbabue","zimbabwe","zw"]
+    africa: { name:"Africa", countries:[
+      ["Angola","angola","ao","Angola"],["Algeria","algeria","dz","Argelia"],["Benin","benin","bj","Benín"],
+      ["Botswana","botswana","bw","Botsuana"],["Burkina Faso","burkina-faso","bf","Burkina Faso"],["Burundi","burundi","bi","Burundi"],
+      ["Cape Verde","cape-verde","cv","Cabo Verde"],["Cameroon","cameroon","cm","Camerún"],["Chad","chad","td","Chad"],
+      ["Comoros","comoros","km","Comoras"],["Ivory Coast","ivory-coast","ci","Costa de Marfil"],["Egypt","egypt","eg","Egipto"],
+      ["Eritrea","eritrea","er","Eritrea"],["Eswatini","eswatini","sz","Esuatini"],["Ethiopia","ethiopia","et","Etiopía"],
+      ["Gabon","gabon","ga","Gabón"],["Gambia","gambia","gm","Gambia"],["Ghana","ghana","gh","Ghana"],
+      ["Guinea","guinea","gn","Guinea"],["Guinea-Bissau","guinea-bissau","gw","Guinea-Bisáu"],["Equatorial Guinea","equatorial-guinea","gq","Guinea Ecuatorial"],
+      ["Kenya","kenya","ke","Kenia"],["Lesotho","lesotho","ls","Lesoto"],["Liberia","liberia","lr","Liberia"],
+      ["Libya","libya","ly","Libia"],["Madagascar","madagascar","mg","Madagascar"],["Malawi","malawi","mw","Malaui"],
+      ["Mali","mali","ml","Malí"],["Morocco","morocco","ma","Marruecos"],["Mauritius","mauritius","mu","Mauricio"],
+      ["Mauritania","mauritania","mr","Mauritania"],["Mozambique","mozambique","mz","Mozambique"],["Namibia","namibia","na","Namibia"],
+      ["Niger","niger","ne","Níger"],["Nigeria","nigeria","ng","Nigeria"],["Central African Republic","central-african-republic","cf","República Centroafricana"],
+      ["Republic of the Congo","republic-of-the-congo","cg","República del Congo"],["Democratic Republic of the Congo","democratic-republic-of-the-congo","cd","República Democrática del Congo"],
+      ["Rwanda","rwanda","rw","Ruanda"],["São Tomé and Príncipe","sao-tome-and-principe","st","Santo Tomé y Príncipe"],["Senegal","senegal","sn","Senegal"],
+      ["Seychelles","seychelles","sc","Seychelles"],["Sierra Leone","sierra-leone","sl","Sierra Leona"],["Somalia","somalia","so","Somalia"],
+      ["South Africa","south-africa","za","Sudáfrica"],["Sudan","sudan","sd","Sudán"],["South Sudan","south-sudan","ss","Sudán del Sur"],
+      ["Tanzania","tanzania","tz","Tanzania"],["Togo","togo","tg","Togo"],["Tunisia","tunisia","tn","Túnez"],
+      ["Uganda","uganda","ug","Uganda"],["Djibouti","djibouti","dj","Yibuti"],["Zambia","zambia","zm","Zambia"],["Zimbabwe","zimbabwe","zw","Zimbabue"]
     ]},
-    america: { nombre:"América", paises:[
-      ["Antigua y Barbuda","antigua-and-barbuda","ag"],["Argentina","argentina","ar"],["Bahamas","bahamas","bs"],
-      ["Barbados","barbados","bb"],["Belice","belize","bz"],["Bolivia","bolivia","bo"],
-      ["Brasil","brazil","br"],["Canadá","canada","ca"],["Chile","chile","cl"],
-      ["Colombia","colombia","co"],["Costa Rica","costa-rica","cr"],["Cuba","cuba","cu"],
-      ["Dominica","dominica","dm"],["Ecuador","ecuador","ec"],["El Salvador","el-salvador","sv"],
-      ["Estados Unidos","united-states","us"],["Granada","grenada","gd"],["Guatemala","guatemala","gt"],
-      ["Guyana","guyana","gy"],["Haití","haiti","ht"],["Honduras","honduras","hn"],
-      ["Jamaica","jamaica","jm"],["México","mexico","mx"],["Nicaragua","nicaragua","ni"],
-      ["Panamá","panama","pa"],["Paraguay","paraguay","py"],["Perú","peru","pe"],
-      ["República Dominicana","dominican-republic","do"],["San Cristóbal y Nieves","saint-kitts-and-nevis","kn"],
-      ["San Vicente y las Granadinas","saint-vincent-and-the-grenadines","vc"],["Santa Lucía","saint-lucia","lc"],
-      ["Surinam","suriname","sr"],["Trinidad y Tobago","trinidad-and-tobago","tt"],["Uruguay","uruguay","uy"],
-      ["Venezuela","venezuela","ve"]
+    america: { name:"Americas", countries:[
+      ["Antigua and Barbuda","antigua-and-barbuda","ag","Antigua y Barbuda"],["Argentina","argentina","ar","Argentina"],["Bahamas","bahamas","bs","Bahamas"],
+      ["Barbados","barbados","bb","Barbados"],["Belize","belize","bz","Belice"],["Bolivia","bolivia","bo","Bolivia"],
+      ["Brazil","brazil","br","Brasil"],["Canada","canada","ca","Canadá"],["Chile","chile","cl","Chile"],
+      ["Colombia","colombia","co","Colombia"],["Costa Rica","costa-rica","cr","Costa Rica"],["Cuba","cuba","cu","Cuba"],
+      ["Dominica","dominica","dm","Dominica"],["Ecuador","ecuador","ec","Ecuador"],["El Salvador","el-salvador","sv","El Salvador"],
+      ["United States","united-states","us","Estados Unidos"],["Grenada","grenada","gd","Granada"],["Guatemala","guatemala","gt","Guatemala"],
+      ["Guyana","guyana","gy","Guyana"],["Haiti","haiti","ht","Haití"],["Honduras","honduras","hn","Honduras"],
+      ["Jamaica","jamaica","jm","Jamaica"],["Mexico","mexico","mx","México"],["Nicaragua","nicaragua","ni","Nicaragua"],
+      ["Panama","panama","pa","Panamá"],["Paraguay","paraguay","py","Paraguay"],["Peru","peru","pe","Perú"],
+      ["Dominican Republic","dominican-republic","do","República Dominicana"],["Saint Kitts and Nevis","saint-kitts-and-nevis","kn","San Cristóbal y Nieves"],
+      ["Saint Vincent and the Grenadines","saint-vincent-and-the-grenadines","vc","San Vicente y las Granadinas"],["Saint Lucia","saint-lucia","lc","Santa Lucía"],
+      ["Suriname","suriname","sr","Surinam"],["Trinidad and Tobago","trinidad-and-tobago","tt","Trinidad y Tobago"],["Uruguay","uruguay","uy","Uruguay"],
+      ["Venezuela","venezuela","ve","Venezuela"]
     ]},
-    oceania: { nombre:"Oceanía", paises:[
-      ["Australia","australia","au"],["Fiyi","fiji","fj"],["Islas Marshall","marshall-islands","mh"],
-      ["Islas Salomón","solomon-islands","sb"],["Kiribati","kiribati","ki"],["Micronesia","micronesia","fm"],
-      ["Nauru","nauru","nr"],["Nueva Zelanda","new-zealand","nz"],["Palaos","palau","pw"],
-      ["Papúa Nueva Guinea","papua-new-guinea","pg"],["Samoa","samoa","ws"],["Tonga","tonga","to"],
-      ["Tuvalu","tuvalu","tv"],["Vanuatu","vanuatu","vu"]
+    oceania: { name:"Oceania", countries:[
+      ["Australia","australia","au","Australia"],["Fiji","fiji","fj","Fiyi"],["Marshall Islands","marshall-islands","mh","Islas Marshall"],
+      ["Solomon Islands","solomon-islands","sb","Islas Salomón"],["Kiribati","kiribati","ki","Kiribati"],["Micronesia","micronesia","fm","Micronesia"],
+      ["Nauru","nauru","nr","Nauru"],["New Zealand","new-zealand","nz","Nueva Zelanda"],["Palau","palau","pw","Palaos"],
+      ["Papua New Guinea","papua-new-guinea","pg","Papúa Nueva Guinea"],["Samoa","samoa","ws","Samoa"],["Tonga","tonga","to","Tonga"],
+      ["Tuvalu","tuvalu","tv","Tuvalu"],["Vanuatu","vanuatu","vu","Vanuatu"]
     ]}
   };
 
-  function slug(nombre){
-    return nombre
+  function slug(name){
+    return name
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
   }
-  function normalizar(str){
+  function normalize(str){
     return str
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
       .trim();
   }
 
-  const FALLBACK_SILUETA = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  const FALLBACK_SILHOUETTE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#8a774a" stroke-width="1.4"><path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="9" r="2.4"/></svg>'
   );
 
   const params = new URLSearchParams(location.search);
-  const zonaKey = params.get("zona");
-  const zona = CONTINENTES[zonaKey];
+  const zoneKey = params.get("zona");
+  const zone = CONTINENTS[zoneKey];
 
   const grid = document.getElementById("grid");
   const empty = document.getElementById("empty");
   const panel = document.getElementById("panel");
-  const contadorEl = document.getElementById("contador");
-  const sinResultados = document.getElementById("sin-resultados");
+  const counterEl = document.getElementById("counter");
+  const noResults = document.getElementById("no-results");
 
-  if(zona){
-    document.getElementById("titulo").textContent = zona.nombre;
-    document.getElementById("subtitulo").textContent = `${zona.paises.length} países — elige uno para explorarlo`;
-    document.title = `Atlas World — ${zona.nombre}`;
+  if(zone){
+    document.getElementById("title").textContent = zone.name;
+    document.getElementById("subtitle").textContent = `${zone.countries.length} countries — choose one to explore`;
+    document.title = `Atlas World — ${zone.name}`;
     panel.style.display = "flex";
-    contadorEl.textContent = zona.paises.length;
+    counterEl.textContent = zone.countries.length;
 
-    const ordenados = [...zona.paises].sort((a,b) => a[0].localeCompare(b[0], "es"));
+    const sorted = [...zone.countries].sort((a,b) => a[0].localeCompare(b[0], "en"));
 
-    ordenados.forEach(([es, en, iso]) => {
+    sorted.forEach(([nameEn, geoSlug, iso, nameEs]) => {
       const a = document.createElement("a");
       a.className = "tile";
-      a.href = `country.html?pais=${slug(es)}`;
-      a.dataset.norm = normalizar(es);
+      a.href = `country.html?pais=${slug(nameEs)}`;
+      a.dataset.norm = normalize(nameEn);
 
-      const bandera = document.createElement("img");
-      bandera.className = "bandera";
-      bandera.loading = "lazy";
-      bandera.alt = "";
-      bandera.src = `https://flagcdn.com/${iso}.svg`;
-      bandera.onerror = () => { bandera.style.display = "none"; };
+      const flag = document.createElement("img");
+      flag.className = "flag";
+      flag.loading = "lazy";
+      flag.alt = "";
+      flag.src = `https://flagcdn.com/${iso}.svg`;
+      flag.onerror = () => { flag.style.display = "none"; };
 
-      const siluetaWrap = document.createElement("div");
-      siluetaWrap.className = "silueta-wrap";
-      const silueta = document.createElement("img");
-      silueta.className = "silueta";
-      silueta.loading = "lazy";
-      silueta.alt = "";
-      silueta.src = `${GEO_PATH}${en}.svg`;
-      silueta.onerror = () => {
-        silueta.onerror = null;
-        silueta.src = FALLBACK_SILUETA;
-        silueta.classList.add("fallback");
+      const silhouetteWrap = document.createElement("div");
+      silhouetteWrap.className = "silhouette-wrap";
+      const silhouette = document.createElement("img");
+      silhouette.className = "silhouette";
+      silhouette.loading = "lazy";
+      silhouette.alt = "";
+      silhouette.src = `${GEO_PATH}${geoSlug}.svg`;
+      silhouette.onerror = () => {
+        silhouette.onerror = null;
+        silhouette.src = FALLBACK_SILHOUETTE;
+        silhouette.classList.add("fallback");
       };
-      siluetaWrap.appendChild(silueta);
+      silhouetteWrap.appendChild(silhouette);
 
-      const nombre = document.createElement("span");
-      nombre.className = "t-name";
-      nombre.textContent = es;
+      const name = document.createElement("span");
+      name.className = "t-name";
+      name.textContent = nameEn;
 
-      a.appendChild(bandera);
-      a.appendChild(siluetaWrap);
-      a.appendChild(nombre);
+      a.appendChild(flag);
+      a.appendChild(silhouetteWrap);
+      a.appendChild(name);
       grid.appendChild(a);
     });
 
-    document.getElementById("buscador").addEventListener("input", e => {
-      const q = normalizar(e.target.value);
-      let visibles = 0;
+    document.getElementById("search").addEventListener("input", e => {
+      const q = normalize(e.target.value);
+      let visible = 0;
       grid.querySelectorAll(".tile").forEach(tile => {
-        const coincide = tile.dataset.norm.includes(q);
-        tile.style.display = coincide ? "" : "none";
-        if(coincide) visibles++;
+        const matches = tile.dataset.norm.includes(q);
+        tile.style.display = matches ? "" : "none";
+        if(matches) visible++;
       });
-      contadorEl.textContent = visibles;
-      sinResultados.style.display = visibles === 0 ? "block" : "none";
+      counterEl.textContent = visible;
+      noResults.style.display = visible === 0 ? "block" : "none";
     });
 
   } else {
-    document.getElementById("titulo").textContent = "Zona no reconocida";
-    document.getElementById("subtitulo").textContent = "";
+    document.getElementById("title").textContent = "Unrecognized region";
+    document.getElementById("subtitle").textContent = "";
     grid.style.display = "none";
     empty.style.display = "block";
-    empty.innerHTML = `No se reconoce esta zona. Vuelve a <a href="seleccionar-modo.html">elegir modo</a>.`;
+    empty.innerHTML = `This region isn't recognized. Go back to <a href="seleccionar-modo.html">choose mode</a>.`;
   }
 </script>
 
