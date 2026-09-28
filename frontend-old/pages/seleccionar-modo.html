@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas World — Choose how to play</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ocean-deep:#0a1a29;
+    --ocean-mid:#132c42;
+    --ocean-glow:#1f4a6e;
+    --parchment:#f4ead2;
+    --parchment-hover:#f0c86b;
+    --ink:#15222d;
+    --ink-soft:#5c5240;
+    --paper:#f6f1e4;
+    --brass:#c9a24b;
+    --brass-bright:#e3c077;
+    --brass-dim:#8a7748;
+    --hairline:rgba(21,34,45,0.14);
+    --grid-line:rgba(246,241,228,0.055);
+    --shadow:rgba(4,10,16,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;min-height:100%;}
+  body{
+    font-family:'Space Mono',monospace;
+    color:var(--paper);
+    background:
+      linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0/36px 36px,
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0/36px 36px,
+      radial-gradient(ellipse 1200px 700px at 22% -8%, var(--ocean-glow) 0%, transparent 60%),
+      radial-gradient(ellipse at 82% 105%, var(--ocean-mid) 0%, var(--ocean-deep) 60%);
+    background-color:var(--ocean-deep);
+    min-height:100vh;
+  }
+  button{font:inherit;}
+  a{color:inherit;}
+  :focus-visible{outline:2px solid var(--brass-bright); outline-offset:3px;}
+
+  header{max-width:1080px;margin:0 auto;padding:40px 40px 0;}
+  .btn-back{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:7px 14px;margin-bottom:34px;
+    border:1px solid var(--brass-dim);
+    background:transparent;color:var(--paper);
+    font-size:12px;letter-spacing:0.03em;text-decoration:none;
+    transition:border-color .2s ease, color .2s ease, transform .2s ease;
+  }
+  .btn-back:hover{border-color:var(--brass-bright);color:var(--brass-bright);transform:translateX(-2px);}
+  .btn-back span{font-size:14px;}
+
+  .title-row{display:flex;align-items:flex-start;gap:18px;}
+  .compass-mark{width:52px;height:52px;flex:none;color:var(--brass);margin-top:4px;}
+  h1{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:clamp(30px,4.2vw,48px);
+    margin:0 0 6px;color:var(--paper);letter-spacing:-0.01em;
+  }
+  .subtitle{margin:0;font-size:13px;color:var(--brass-bright);letter-spacing:0.02em;}
+  .rule{border:none;border-top:1px solid rgba(201,162,75,0.3);margin:24px 0 0;}
+
+  main{max-width:1080px;margin:0 auto;padding:34px 40px 80px;}
+
+  .mode-section{margin-bottom:52px;}
+  .mode-section:last-child{margin-bottom:0;}
+  .section-title{
+    font-family:'Fraunces',serif;font-weight:500;font-size:19px;
+    color:var(--brass-bright);margin:0 0 18px;
+  }
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;}
+  #zonas{grid-template-columns:repeat(3,1fr);}
+
+  .tile{
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;justify-content:space-between;
+    background:var(--parchment);color:var(--ink);
+    padding:22px 20px;min-height:142px;
+    text-decoration:none;cursor:pointer;
+    border:1px solid var(--hairline);
+    box-shadow:0 10px 26px var(--shadow);
+    opacity:0;transform:translateY(14px);
+    animation:rise .5s ease forwards;
+    transition:transform .18s cubic-bezier(.16,.84,.32,1), box-shadow .18s ease, background .18s ease;
+  }
+  .grid .tile:nth-child(1){animation-delay:.05s;}
+  .grid .tile:nth-child(2){animation-delay:.11s;}
+  .grid .tile:nth-child(3){animation-delay:.17s;}
+  .grid .tile:nth-child(4){animation-delay:.23s;}
+  .grid .tile:nth-child(5){animation-delay:.29s;}
+  .grid .tile:nth-child(6){animation-delay:.35s;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+  @media (prefers-reduced-motion:reduce){ .tile{animation:none;opacity:1;transform:none;} }
+
+  .tile:hover, .tile:focus-visible{
+    transform:translateY(-4px);
+    box-shadow:0 18px 40px var(--shadow);
+    background:var(--parchment-hover);
+  }
+  .tile-code{font-size:10.5px;letter-spacing:0.08em;color:var(--brass-dim);}
+  .t-title{font-family:'Fraunces',serif;font-weight:600;font-size:19px;line-height:1.15;margin-top:6px;}
+  .t-desc{font-size:11px;color:var(--ink-soft);margin-top:8px;line-height:1.5;}
+  .t-arrow{align-self:flex-end;font-size:16px;margin-top:14px;color:var(--brass-dim);transition:transform .18s ease;}
+  .tile:hover .t-arrow{transform:translateX(3px);}
+
+  .compass-mini{
+    position:absolute;top:14px;right:14px;width:32px;height:32px;
+    color:var(--brass-dim);opacity:.5;transform:rotate(var(--rot,0deg));
+  }
+
+  .tile.featured{
+    grid-column:1/-1;background:var(--ink);color:var(--paper);
+    min-height:130px;flex-direction:row;align-items:center;justify-content:space-between;
+    padding:28px 32px;
+  }
+  .tile.featured::before{
+    content:"";position:absolute;inset:0;
+    background:
+      linear-gradient(rgba(246,241,228,0.07) 1px,transparent 1px) 0 0/26px 26px,
+      linear-gradient(90deg,rgba(246,241,228,0.07) 1px,transparent 1px) 0 0/26px 26px;
+    -webkit-mask-image:radial-gradient(ellipse at 72% 50%, black 5%, transparent 68%);
+    mask-image:radial-gradient(ellipse at 72% 50%, black 5%, transparent 68%);
+  }
+  .featured-content{position:relative;z-index:1;}
+  .tile.featured .tile-code{color:var(--brass-bright);}
+  .tile.featured .t-title{font-size:25px;margin-top:8px;}
+  .tile.featured .t-desc{color:rgba(246,241,228,0.68);max-width:46ch;}
+  .tile.featured .t-arrow{position:relative;z-index:1;font-size:30px;margin-top:0;color:var(--brass-bright);}
+  .tile.featured:hover{background:var(--ocean-glow);}
+
+  @media (max-width:640px){
+    header,main{padding-left:22px;padding-right:22px;}
+    .tile.featured{flex-direction:column;align-items:flex-start;gap:14px;padding:24px;}
+    .tile.featured .t-arrow{align-self:flex-end;}
+    .compass-mark{width:40px;height:40px;}
+    #zonas{grid-template-columns:repeat(2,1fr);}
+  }
+  @media (max-width:420px){
+    #zonas{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="btn-back" href="../index.html"><span>←</span> Main menu</a>
+  <div class="title-row">
+    <svg class="compass-mark" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <path d="M20 3 L23.5 20 L20 37 L16.5 20 Z" fill="currentColor" opacity="0.9"/>
+      <path d="M3 20 L20 16.5 L37 20 L20 23.5 Z" fill="currentColor" opacity="0.45"/>
+    </svg>
+    <div>
+      <h1>Atlas World</h1>
+      <p class="subtitle">Choose how to start your game</p>
+    </div>
+  </div>
+  <hr class="rule">
+</header>
+
+<main>
+
+  <section class="mode-section" aria-labelledby="mapa-heading">
+    <h2 id="mapa-heading" class="section-title">Play on the map</h2>
+    <div class="grid">
+      <a class="tile featured" href="mapa-mundial.html">
+        <div class="featured-content">
+          <span class="tile-code">MAP</span>
+          <div class="t-title">Interactive map</div>
+          <div class="t-desc">Explore the whole globe, zoom in, and pick a country by tapping directly on the map.</div>
+        </div>
+        <div class="t-arrow">→</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="mode-section" aria-labelledby="zonas-heading">
+    <h2 id="zonas-heading" class="section-title">Play by choosing a region</h2>
+    <div class="grid" id="zonas">
+      <a class="tile" data-zona="mundo" href="paises-del-mundo.html" style="--rot:0deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">WLD</span><div class="t-title">World</div><div class="t-desc">Write all 197 countries in the world from memory.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+      <a class="tile" data-zona="europa" href="paises.html?zona=europa" style="--rot:15deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">EUR</span><div class="t-title">Europe</div><div class="t-desc">Countries of the European continent.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+      <a class="tile" data-zona="asia" href="paises.html?zona=asia" style="--rot:30deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">ASI</span><div class="t-title">Asia</div><div class="t-desc">Countries of the Asian continent.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+      <a class="tile" data-zona="africa" href="paises.html?zona=africa" style="--rot:-15deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">AFR</span><div class="t-title">Africa</div><div class="t-desc">Countries of the African continent.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+      <a class="tile" data-zona="america" href="paises.html?zona=america" style="--rot:45deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">AME</span><div class="t-title">Americas</div><div class="t-desc">North, Central, and South America.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+      <a class="tile" data-zona="oceania" href="paises.html?zona=oceania" style="--rot:-30deg">
+        <svg class="compass-mini" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor"/><path d="M20 5 L23 20 L20 35 L17 20 Z" fill="currentColor"/></svg>
+        <div><span class="tile-code">OCE</span><div class="t-title">Oceania</div><div class="t-desc">Australia and the Pacific islands.</div></div>
+        <div class="t-arrow">→</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+</body>
+</html>

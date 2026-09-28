@@ -1,0 +1,393 @@
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { api } from '../../lib/api';
+import { useAuth } from '../../context/AuthContext';
+import './Menu.css';
+
+// ---------- small presentational pieces ----------
+
+const noop = (e) => e.preventDefault();
+
+function IconFriends({ className = 'icon' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M4 19c0-3 2.2-5 5-5s5 2 5 5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="17" cy="9" r="2.4" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M14.5 19c.3-2.3 1.8-4 3.8-4.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconAccount({ className = 'icon' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="12" cy="8.6" r="3.4" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M5 19.4c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconTrophy({ className = 'icon' }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M7 4h10v3.2c0 3-2.2 5.3-5 5.3s-5-2.3-5-5.3V4z" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M12 12.5V17m-3 3h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function Drawer({ id, label, open, onClose, title, soon, children }) {
+  return (
+    <>
+      <div className={'drawer-overlay' + (open ? ' open' : '')} onClick={onClose} />
+      <aside
+        className={'drawer' + (open ? ' open' : '')}
+        id={id}
+        aria-hidden={!open}
+        aria-label={label}
+      >
+        <div className="drawer-head">
+          <h2>{title}</h2>
+          {soon && <span className="pill soon">Coming soon</span>}
+          <button type="button" className="drawer-close" onClick={onClose} aria-label={`Close ${label.toLowerCase()} panel`}>
+            <CloseIcon />
+          </button>
+        </div>
+        {children}
+      </aside>
+    </>
+  );
+}
+
+function formatTime(totalSeconds) {
+  if (totalSeconds == null) return '—';
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return m > 0 ? `${m}m ${s}s` : `${s}s`;
+}
+
+// Same aggregation the original loadHomeStats() did, as a pure function.
+function computeHomeStats(countries) {
+  const played = countries.filter((c) => c.games_played > 0);
+  if (played.length === 0) return null;
+
+  const favorite = played.reduce((a, b) => (b.games_played > a.games_played ? b : a));
+  const best = played.reduce((a, b) => (b.percentage > a.percentage ? b : a));
+  const mastered = played.filter((c) => c.percentage >= 100);
+  const cleanTimedRuns = played
+    .filter((c) => c.best_score && c.best_score.percentage >= 100 && c.best_score.time_seconds != null)
+    .map((c) => ({ country: c.country_name, time: c.best_score.time_seconds }));
+  const fastest = cleanTimedRuns.length
+    ? cleanTimedRuns.reduce((a, b) => (b.time < a.time ? b : a))
+    : null;
+
+  return {
+    gamesPlayed: played.reduce((sum, c) => sum + c.games_played, 0),
+    countriesPlayed: played.length,
+    favorite: favorite.country_name,
+    best: `${best.percentage}% (${best.country_name})`,
+    masteredCount: mastered.length,
+    masteredPct: Math.round((mastered.length / played.length) * 100),
+    fastest: fastest ? `${formatTime(fastest.time)} (${fastest.country})` : null,
+  };
+}
+
+// ---------- page ----------
+
+export default function MenuPage() {
+  const { loggedIn, user, logout } = useAuth();
+  const [openDrawer, setOpenDrawer] = useState(null); // 'friends' | 'achievements' | 'account' | null
+  const [stats, setStats] = useState(null);
+  const [worldPaths, setWorldPaths] = useState([]);
+
+  // The decorative map is ~1.2 MB of path data: load it in its own chunk.
+  useEffect(() => {
+    let cancelled = false;
+    import('./worldPaths').then((m) => { if (!cancelled) setWorldPaths(m.WORLD_PATHS); });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Esc closes; body doesn't scroll behind an open drawer.
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && setOpenDrawer(null);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = openDrawer ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [openDrawer]);
+
+  useEffect(() => {
+    if (!loggedIn) { setStats(null); return; }
+    let cancelled = false;
+    api.getCountriesProgress()
+      .then((countries) => { if (!cancelled) setStats(computeHomeStats(countries)); })
+      .catch(() => {}); // keep placeholders if loading fails
+    return () => { cancelled = true; };
+  }, [loggedIn]);
+
+  const toggle = (name) => setOpenDrawer((cur) => (cur === name ? null : name));
+  const close = () => setOpenDrawer(null);
+
+  return (
+    <div className="menu-page">
+      <div className="chart-ground" aria-hidden="true" />
+      <div className="page">
+        <div className="topbar">
+          <a className="brand" href="#" onClick={noop}>
+            {/* Put your logo at public/img/logo.png; if missing, the "G" shows. */}
+            <span className="mark">G<img src="/img/logo.png" alt="Geotaria" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></span>
+            <span className="word">Geo<i>taria</i></span>
+          </a>
+          <nav className="mainnav">
+            <a href="#" onClick={noop} className="disabled">Roadmap</a>
+            <a href="#" onClick={noop} className="disabled">Multiplayer</a>
+            <Link to="/mapa-mundial">World map</Link>
+            <Link to="/modo">Countries</Link>
+            <Link to="/perfil">Statistics</Link>
+          </nav>
+          <nav className="social-icons" aria-label="More">
+            <button type="button" className="icon-btn" title="Friends" aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
+              <IconFriends />
+            </button>
+            <a href="#" onClick={noop} className="icon-btn disabled" title="Challenges — coming soon">
+              <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.4" />
+                <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.3" />
+                <circle cx="12" cy="12" r="1" fill="currentColor" />
+              </svg>
+            </a>
+            <button type="button" className="icon-btn" title="Achievements" aria-haspopup="dialog" aria-controls="achievementsDrawer" aria-expanded={openDrawer === 'achievements'} onClick={() => toggle('achievements')}>
+              <IconTrophy />
+            </button>
+            <button type="button" className="icon-btn" title="Account" aria-haspopup="dialog" aria-controls="accountDrawer" aria-expanded={openDrawer === 'account'} onClick={() => toggle('account')}>
+              <IconAccount />
+            </button>
+          </nav>
+        </div>
+
+        {/* Friends */}
+        <Drawer id="friendsDrawer" label="Friends" title="Friends" soon open={openDrawer === 'friends'} onClose={close}>
+          <div className="drawer-search">
+            <input type="text" placeholder="Add a friend by username" disabled />
+            <button type="button" disabled>Add</button>
+          </div>
+          <div className="drawer-empty">
+            <div className="icon-circle big"><IconFriends /></div>
+            <p className="drawer-empty-title">Friends are on the way</p>
+            <p className="drawer-empty-desc">Soon you&apos;ll be able to add friends, see their progress and race them on timed challenges.</p>
+          </div>
+        </Drawer>
+
+        {/* Achievements */}
+        <Drawer id="achievementsDrawer" label="Achievements" title="Achievements" soon open={openDrawer === 'achievements'} onClose={close}>
+          <div className="badge-grid">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div className="badge-slot" key={i}>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="6" y="10.5" width="12" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                </svg>
+              </div>
+            ))}
+          </div>
+          <div className="drawer-empty">
+            <p className="drawer-empty-title">Badges are on the way</p>
+            <p className="drawer-empty-desc">Unlock badges as you master maps, build streaks and beat your best times.</p>
+          </div>
+        </Drawer>
+
+        {/* Account */}
+        <Drawer id="accountDrawer" label="Account" title="Account" open={openDrawer === 'account'} onClose={close}>
+          <div id="authNav">
+            <div className="drawer-empty">
+              <div className="icon-circle big"><IconAccount /></div>
+              {loggedIn ? (
+                <>
+                  <p className="drawer-empty-title">{user ? user.username : '…'}</p>
+                  <p className="drawer-empty-desc">Signed in to Geotaria.</p>
+                  <Link to="/perfil" className="signin">View profile</Link>
+                  <a href="#" className="account-logout" onClick={(e) => { e.preventDefault(); logout(); }}>Log out</a>
+                </>
+              ) : (
+                <>
+                  <p className="drawer-empty-title">You&apos;re not signed in</p>
+                  <p className="drawer-empty-desc">Sign in to save your progress, track your stats and pick up where you left off.</p>
+                  <Link to="/login" className="signin account-cta">Sign in</Link>
+                </>
+              )}
+            </div>
+          </div>
+        </Drawer>
+
+        <main className="layout">
+          {/* 1: roadmap */}
+          <a className="panel roadmap" href="#" onClick={noop}>
+            <div className="roadmap-head">
+              <h2>Roadmap</h2>
+              <span className="pill soon">Coming soon</span>
+            </div>
+            <p className="desc">More ways to play are on the way.</p>
+            <div className="roadmap-list">
+              {['Friends', 'Challenges', 'Achievements'].map((label) => (
+                <div className="roadmap-row" key={label}>
+                  <span className="bullet" /><span className="label">{label}</span><span className="tag">Soon</span>
+                </div>
+              ))}
+            </div>
+          </a>
+
+          {/* 2: multiplayer */}
+          <a className="panel side-card" href="#" onClick={noop}>
+            <div>
+              <div className="head">
+                <div className="icon-circle">
+                  <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M12 13.5V9.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                    <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                  </svg>
+                </div>
+              </div>
+              <div className="body">
+                <div className="widget-title">Multiplayer</div>
+                <p className="widget-desc">Race against other players on timed challenges.</p>
+              </div>
+            </div>
+            <div className="foot"><span className="pill soon">Coming soon</span><span>—</span></div>
+          </a>
+
+          {/* 3: select a country (hero) */}
+          <Link className="hero" to="/mapa-mundial">
+            <span className="tick tick-tl" aria-hidden="true" />
+            <span className="tick tick-tr" aria-hidden="true" />
+            <span className="tick tick-bl" aria-hidden="true" />
+            <span className="tick tick-br" aria-hidden="true" />
+            <div className="hero-head">
+              <h2>Select a country</h2>
+              <svg className="icon compass" width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1" />
+                <path d="M12 3.5v2.3M12 18.2v2.3M3.5 12h2.3M18.2 12h2.3" stroke="currentColor" strokeWidth="1" />
+                <path d="M12 6.5l2.6 5.5-2.6 5.5-2.6-5.5z" fill="currentColor" opacity=".9" />
+              </svg>
+            </div>
+            <p className="hero-sub">Pick a region of the world and start naming its divisions.</p>
+            <div className="map-wrap">
+              <svg className="worldmap" viewBox="0 0 1010 666" aria-hidden="true">
+                {worldPaths.map((d, i) => <path key={i} d={d} />)}
+              </svg>
+              <div className="scale-bar"><div className="bar" /><span>2,000 km</span></div>
+            </div>
+            <div className="hero-foot">
+              <span className="pill live">Available</span>
+              <span className="cta">Open atlas</span>
+            </div>
+          </Link>
+
+          {/* 4: countries list */}
+          <Link className="panel side-card" to="/modo">
+            <div>
+              <div className="head">
+                <div className="icon-circle">
+                  <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M12 21s7-7.7 7-13A7 7 0 1 0 5 8c0 5.3 7 13 7 13z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    <circle cx="12" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+                  </svg>
+                </div>
+              </div>
+              <div className="body">
+                <div className="widget-title">Countries</div>
+                <p className="widget-desc">Browse the full list and jump straight into any country.</p>
+              </div>
+            </div>
+            <div className="foot"><span className="pill live">Available</span><span>→</span></div>
+          </Link>
+
+          {/* 5: statistics */}
+          <div className="panel stats">
+            <div className="head">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 18v-4M12 18V9M18 18v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <span className="widget-title">Statistics</span>
+            </div>
+            <p className="widget-desc">
+              {stats
+                ? `Across ${stats.countriesPlayed} map${stats.countriesPlayed === 1 ? '' : 's'} you've played.`
+                : 'Your accuracy, time and best runs across every map.'}
+            </p>
+
+            <div className="stat-grid">
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 15l3-4 3 2.5L18 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Games played
+                </span>
+                <span className="stat-tile-value">{stats ? stats.gamesPlayed : 0}</span>
+              </div>
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.5" /><path d="M12 4.5c-4 4-4 11 0 15M12 4.5c4 4 4 11 0 15M5 9.5h14M5 14.5h14" stroke="currentColor" strokeWidth="1.2" /></svg>
+                  Countries played
+                </span>
+                <span className={'stat-tile-value' + (stats ? '' : ' dim')}>{stats ? stats.countriesPlayed : '—'}</span>
+              </div>
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4h10v3.2c0 3-2.2 5.3-5 5.3s-5-2.3-5-5.3V4z" stroke="currentColor" strokeWidth="1.4" /><path d="M12 12.5V17m-3 3h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                  Best score
+                </span>
+                <span className={'stat-tile-value' + (stats ? '' : ' dim')}>{stats ? stats.best : '—'}</span>
+              </div>
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="13" r="7.5" stroke="currentColor" strokeWidth="1.4" /><path d="M12 13V9.3M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                  Fastest run
+                </span>
+                <span className={'stat-tile-value' + (stats && stats.fastest ? '' : ' dim')}>{stats && stats.fastest ? stats.fastest : '—'}</span>
+              </div>
+            </div>
+
+            <div className="stat-row">
+              <span className="stat-label">Favorite map</span>
+              <span className={'stat-value' + (stats ? '' : ' dim')}>{stats ? stats.favorite : '—'}</span>
+            </div>
+
+            <div className="mastery">
+              <div className="mastery-head">
+                <span className="stat-label">Maps mastered (100%)</span>
+                <span className={'stat-value' + (stats ? '' : ' dim')}>{stats ? `${stats.masteredCount} / ${stats.countriesPlayed}` : '—'}</span>
+              </div>
+              <div className="stat-bar"><span style={{ width: `${stats ? stats.masteredPct : 0}%` }} /></div>
+            </div>
+
+            <div className="stats-foot">
+              {stats
+                ? <>See the full breakdown on your <Link to="/perfil">profile</Link>.</>
+                : 'Play a round to start building your stats.'}
+            </div>
+          </div>
+        </main>
+
+        <footer>
+          <div className="footer-brand">
+            <strong>Geotaria</strong>
+            <span>Geography training platform</span>
+          </div>
+          <div className="footer-status">geotaria.com</div>
+        </footer>
+      </div>
+    </div>
+  );
+}

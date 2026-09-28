@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Atlas World — Países</title>
+<title>Atlas World — Countries</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
@@ -125,34 +125,33 @@
 <body>
 
 <header>
-  <a class="btn-back" href="seleccionar-modo.html"><span>←</span> Elegir modo</a>
-  <h1 id="title">Países</h1>
-  <p class="subtitle" id="subtitle">Elige un país para explorarlo</p>
+  <a class="btn-back" href="seleccionar-modo.html"><span>←</span> Choose mode</a>
+  <h1 id="title">Countries</h1>
+  <p class="subtitle" id="subtitle">Choose a country to explore</p>
 </header>
 
 <main>
   <div class="panel" id="panel" style="display:none;">
-    <div class="stat"><span class="num" id="counter">0</span><span class="lbl">países</span></div>
+    <div class="stat"><span class="num" id="counter">0</span><span class="lbl">countries</span></div>
     <div class="search-wrap">
-      <label for="search" class="visually-hidden">Buscar país</label>
-      <input type="text" id="search" placeholder="Buscar país…" autocomplete="off">
+      <label for="search" class="visually-hidden">Search country</label>
+      <input type="text" id="search" placeholder="Search country…" autocomplete="off">
     </div>
   </div>
 
   <div class="grid" id="grid"></div>
-  <p class="no-results" id="no-results">Ningún país coincide con tu búsqueda.</p>
+  <p class="no-results" id="no-results">No country matches your search.</p>
   <div class="empty" id="empty" style="display:none;"></div>
 </main>
 
 <script>
-  // Ruta a la silueta SVG de cada país (nombres de archivo en inglés, ej. "albania.svg").
-  // Ajusta este prefijo según dónde esté este archivo respecto a data/geo.
+  // Path to each country's silhouette SVG (English file names, e.g. "albania.svg").
+  // Adjust this prefix depending on where this file sits relative to data/geo.
   const GEO_PATH = "../data/geo/";
 
-  // [nombre en inglés (solo para el nombre del archivo de la silueta), nombre del archivo de la silueta,
-  //  código ISO-2 para la bandera, nombre en español usado para mostrar y para el enlace a country.html]
+  // [English display name, silhouette filename, ISO-2 code for the flag, Spanish name used for the country.html link]
   const CONTINENTS = {
-    europa: { name:"Europa", countries:[
+    europa: { name:"Europe", countries:[
       ["Albania","albania","al","Albania"],["Germany","germany","de","Alemania"],["Andorra","andorra","ad","Andorra"],
       ["Austria","austria","at","Austria"],["Belgium","belgium","be","Bélgica"],["Belarus","belarus","by","Bielorrusia"],
       ["Bosnia and Herzegovina","bosnia-and-herzegovina","ba","Bosnia y Herzegovina"],["Bulgaria","bulgaria","bg","Bulgaria"],
@@ -188,7 +187,7 @@
       ["Tajikistan","tajikistan","tj","Tayikistán"],["Timor-Leste","timor-leste","tl","Timor Oriental"],["Turkmenistan","turkmenistan","tm","Turkmenistán"],
       ["Turkey","turkey","tr","Turquía"],["Uzbekistan","uzbekistan","uz","Uzbekistán"],["Vietnam","vietnam","vn","Vietnam"],["Yemen","yemen","ye","Yemen"]
     ]},
-    africa: { name:"África", countries:[
+    africa: { name:"Africa", countries:[
       ["Angola","angola","ao","Angola"],["Algeria","algeria","dz","Argelia"],["Benin","benin","bj","Benín"],
       ["Botswana","botswana","bw","Botsuana"],["Burkina Faso","burkina-faso","bf","Burkina Faso"],["Burundi","burundi","bi","Burundi"],
       ["Cape Verde","cape-verde","cv","Cabo Verde"],["Cameroon","cameroon","cm","Camerún"],["Chad","chad","td","Chad"],
@@ -208,7 +207,7 @@
       ["Tanzania","tanzania","tz","Tanzania"],["Togo","togo","tg","Togo"],["Tunisia","tunisia","tn","Túnez"],
       ["Uganda","uganda","ug","Uganda"],["Djibouti","djibouti","dj","Yibuti"],["Zambia","zambia","zm","Zambia"],["Zimbabwe","zimbabwe","zw","Zimbabue"]
     ]},
-    america: { name:"América", countries:[
+    america: { name:"Americas", countries:[
       ["Antigua and Barbuda","antigua-and-barbuda","ag","Antigua y Barbuda"],["Argentina","argentina","ar","Argentina"],["Bahamas","bahamas","bs","Bahamas"],
       ["Barbados","barbados","bb","Barbados"],["Belize","belize","bz","Belice"],["Bolivia","bolivia","bo","Bolivia"],
       ["Brazil","brazil","br","Brasil"],["Canada","canada","ca","Canadá"],["Chile","chile","cl","Chile"],
@@ -223,7 +222,7 @@
       ["Suriname","suriname","sr","Surinam"],["Trinidad and Tobago","trinidad-and-tobago","tt","Trinidad y Tobago"],["Uruguay","uruguay","uy","Uruguay"],
       ["Venezuela","venezuela","ve","Venezuela"]
     ]},
-    oceania: { name:"Oceanía", countries:[
+    oceania: { name:"Oceania", countries:[
       ["Australia","australia","au","Australia"],["Fiji","fiji","fj","Fiyi"],["Marshall Islands","marshall-islands","mh","Islas Marshall"],
       ["Solomon Islands","solomon-islands","sb","Islas Salomón"],["Kiribati","kiribati","ki","Kiribati"],["Micronesia","micronesia","fm","Micronesia"],
       ["Nauru","nauru","nr","Nauru"],["New Zealand","new-zealand","nz","Nueva Zelanda"],["Palau","palau","pw","Palaos"],
@@ -263,24 +262,24 @@
   if(zone){
     const total = zone.countries.length;
     document.getElementById("title").textContent = zone.name;
-    document.getElementById("subtitle").textContent = `${total} países — elige uno para explorarlo`;
+    document.getElementById("subtitle").textContent = `${total} countries — choose one to explore`;
     document.title = `Atlas World — ${zone.name}`;
     panel.style.display = "flex";
     counterEl.textContent = `${total} / ${total}`;
 
-    const sorted = [...zone.countries].sort((a,b) => a[3].localeCompare(b[3], "es"));
+    const sorted = [...zone.countries].sort((a,b) => a[0].localeCompare(b[0], "en"));
 
     sorted.forEach(([nameEn, geoSlug, iso, nameEs]) => {
       const a = document.createElement("a");
       a.className = "tile";
       a.href = `country.html?pais=${slug(nameEs)}`;
-      a.dataset.norm = normalize(nameEs);
+      a.dataset.norm = normalize(nameEn);
 
       const flag = document.createElement("img");
       flag.className = "flag";
       flag.loading = "lazy";
-      // alt vacío a propósito: es decorativa, el nombre del país ya la describe
-      // como parte del enlace (evita que el lector de pantalla lo repita dos veces)
+      // intentionally empty alt: decorative, the country name already describes
+      // it as part of the link (avoids the screen reader announcing it twice)
       flag.alt = "";
       flag.src = `https://flagcdn.com/${iso}.svg`;
       flag.onerror = () => { flag.style.display = "none"; };
@@ -301,7 +300,7 @@
 
       const name = document.createElement("span");
       name.className = "t-name";
-      name.textContent = nameEs;
+      name.textContent = nameEn;
 
       a.appendChild(flag);
       a.appendChild(silhouetteWrap);
@@ -322,11 +321,11 @@
     });
 
   } else {
-    document.getElementById("title").textContent = "Región no reconocida";
+    document.getElementById("title").textContent = "Unrecognized region";
     document.getElementById("subtitle").textContent = "";
     grid.style.display = "none";
     empty.style.display = "block";
-    empty.innerHTML = `Esta región no está reconocida. Vuelve a <a href="seleccionar-modo.html">elegir modo</a>.`;
+    empty.innerHTML = `This region isn't recognized. Go back to <a href="seleccionar-modo.html">choose mode</a>.`;
   }
 </script>
 
