@@ -73,7 +73,7 @@ export default function WorldMapPage() {
             <span className="arrow">←</span> Main menu
           </Link>
           <div className="eyebrow-row">
-            <h1>Atlas <em>Woreeeeeld</em></h1>
+            <h1>Atlas <em>World</em></h1>
             <div className="coords">Natural Earth projection<br />select a country</div>
           </div>
         </header>
