@@ -515,28 +515,140 @@
   }
   .left-actions, .right-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  /* ---------- Móvil ---------- */
+  /* ---------- Móvil ----------
+     Objetivo: todo a ancho completo y simétrico (cabecera 3 columnas iguales,
+     progreso y entrada a todo el ancho, botones de igual anchura, recuadros en columnas fijas). */
+  button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .input-wrap input { min-width: 0; }
+  .input-wrap button { flex: none; }
+
   @media (max-width: 720px) {
     .page { gap: 8px; }
+
+    /* Cabecera: [←] título centrado [hueco del mismo ancho]. */
     .game-header {
-      grid-template-columns: 1fr;
-      justify-items: start;
-      row-gap: 8px;
-      padding: 10px 12px 0;
+      grid-template-columns: 44px minmax(0, 1fr) 44px;
+      justify-items: stretch;
+      gap: 8px;
+      padding: 10px 10px 0;
     }
-    .game-header .header-text { grid-column: 1; justify-self: center; width: 100%; }
-    .btn-back { grid-column: 1; }
+    .game-header .header-text { grid-column: 2; justify-self: stretch; width: auto; }
+    .btn-back {
+      grid-column: 1;
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      justify-content: center;
+    }
+    .btn-back .arrow { font-size: 18px; }
+    .btn-back .label {
+      position: absolute;
+      width: 1px; height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+    .kicker { margin-bottom: 2px; font-size: 10px; letter-spacing: .16em; }
+    h1 {
+      font-size: 17px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .subtitle { display: none; }
+
     .game { margin: 0 8px 8px; }
+
+    /* Progreso: «3 / 34» y la barra en una sola línea a todo el ancho; debajo, entrada + botón. */
     .toolbar { padding: 10px 12px; gap: 10px; }
-    .progress { min-width: 96px; }
+    .progress {
+      flex: 1 1 100%;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
     .progress-num { font-size: 19px; }
-    .input-wrap { flex-basis: 100%; }
-    .feedback { padding: 0 12px; }
+    .progress-track { flex: 1; margin-top: 0; }
+    .input-wrap { flex: 1 1 100%; min-width: 0; }
+    .input-wrap button { min-width: 92px; }
+    input, .input-wrap button { min-height: 46px; }
+
+    .feedback {
+      justify-content: center;
+      min-height: 32px;
+      padding: 6px 12px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .map-area { min-height: 200px; }
+    .map-tools { left: 10px; top: 10px; }
+    .map-tools button { width: 40px; height: 40px; }
     .hint { display: none; }
-    .slots { max-height: 22vh; padding: 8px 12px; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); }
-    .bottom { padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom, 0)); }
-    .result-card { padding: 24px 18px 18px; }
+    .toast { max-width: calc(100% - 112px); } /* deja 56px libres a cada lado */
+
+    /* Recuadros: columnas fijas e iguales. */
+    .slots {
+      max-height: 24vh;
+      max-height: 24dvh;
+      padding: 8px 10px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .slot { height: 32px; line-height: 30px; padding: 0 8px; font-size: 12px; }
+    .slot.filled, .slot.missed { line-height: 30px; }
+
+    /* Acciones: una fila, todos los botones con el mismo ancho. */
+    .bottom {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom, 0));
+    }
+    .left-actions, .right-actions { display: contents; }
+    .bottom button { min-height: 44px; padding: 0 10px; font-size: 14px; }
+
+    .overlay { padding: 14px; }
+    .result-card { padding: 22px 16px 16px; }
     .result-card h2 { font-size: 24px; }
     .result-actions { flex-direction: column-reverse; }
+    .result-actions button { min-height: 46px; }
+    .intro-card { max-width: 300px; }
+  }
+
+  @media (max-width: 340px) {
+    .slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .result-stats dd { font-size: 20px; }
+  }
+
+  /* Móvil en horizontal (poca altura): todo en compacto para que el mapa tenga espacio. */
+  @media (max-height: 520px) and (orientation: landscape) {
+    .page { gap: 4px; }
+    .game-header { padding: 6px 12px 0; }
+    .kicker, .subtitle { display: none; }
+    h1 { font-size: 15px; -webkit-line-clamp: 1; }
+    .btn-back { width: 40px; height: 40px; }
+    .toolbar { flex-wrap: nowrap; gap: 12px; padding: 6px 12px; }
+    .progress { flex: 0 0 auto; width: 150px; }
+    .input-wrap { flex: 1 1 auto; }
+    input, .input-wrap button { min-height: 40px; }
+    .feedback { min-height: 26px; padding: 3px 12px; font-size: 12px; }
+    .map-area { min-height: 110px; }
+    .slots { max-height: 58px; padding: 6px 12px; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .bottom { padding: 6px 12px; }
+    .bottom button { min-height: 38px; }
+    .game { margin-bottom: 6px; }
+    .intro-count { font-size: 44px; }
+    .intro-label { margin-bottom: 12px; }
+    .intro-note { display: none; }
+    .btn-lg { padding: 10px 26px; }
+    .result-badge { display: none; }
+    .result-card { padding: 16px 20px 14px; }
+    .result-bar { margin: 12px 0 10px; }
+    .result-actions { flex-direction: row; margin-top: 12px; }
   }
 }

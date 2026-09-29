@@ -5,7 +5,7 @@ import { buildTexts, UI } from '../../lib/countryText';
 import { createGame } from './gameEngine';
 import './Country.css';
 
-// Página del juego de país (/pais?pais=<slug>) — EN ESPAÑOL.
+// Página del juego de país (/pais?pais=<slug>) — EN INGLÉS.
 // 1) Carga data/countries/<slug>.js (script -> window.GEOTARIA_COUNTRY).
 // 2) Cuando hay datos, monta <CountryGame>, que arranca el motor imperativo
 //    (gameEngine.js: D3) dentro de un useEffect.
@@ -95,7 +95,7 @@ function CountryGame({ country, texts, geoUrl }) {
         </div>
       </div>
 
-      {/* Un recuadro por cada nombre que hay que adivinar: vacíos hasta acertarlos (los rellena el motor). */}
+      {/* One box per name to guess: empty until guessed (the engine fills them). */}
       <div className="slots" ref={setEl('slots')} role="list" aria-label={texts.slotsLabel} />
 
       <div className="bottom">
@@ -160,10 +160,10 @@ export default function CountryGamePage() {
     return () => { cancelled = true; };
   }, [pais]);
 
-  // Esta página está en español.
+  // Esta página está en inglés.
   useEffect(() => {
     const prev = document.documentElement.lang;
-    document.documentElement.lang = 'es';
+    document.documentElement.lang = 'en';
     return () => { document.documentElement.lang = prev; };
   }, []);
 
@@ -186,7 +186,8 @@ export default function CountryGamePage() {
       <div className="page">
         <header className="game-header">
           <Link to="/mapa-mundial" className="btn-back">
-            <span className="arrow" aria-hidden="true">←</span> {ready ? stableTexts.backLabel : 'Mapa mundial'}
+            <span className="arrow" aria-hidden="true">←</span>
+            <span className="label">{ready ? stableTexts.backLabel : UI.worldMap}</span>
           </Link>
           <div className="header-text">
             <p className="kicker">{ready ? stableTexts.kicker : 'Geotaria'}</p>
@@ -205,7 +206,7 @@ export default function CountryGamePage() {
         ) : (
           <LoadingShell
             error={failed}
-            message={failed ? `No existe data/countries/${pais}.js` : 'Cargando el mapa…'}
+            message={failed ? UI.notFoundMessage(pais) : UI.loadingMap}
           />
         )}
       </div>

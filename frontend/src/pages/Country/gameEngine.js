@@ -99,7 +99,7 @@ export function createGame({ country, texts, els, geoUrl }) {
   function buildSlots() {
     slotById.clear();
     const sorted = [...regions].sort((a, b) =>
-      (a.display || '').localeCompare(b.display || '', 'es')
+      (a.display || '').localeCompare(b.display || '', 'en')
     );
     slotsEl.replaceChildren(
       ...sorted.map((r) => {
@@ -120,6 +120,16 @@ export function createGame({ country, texts, els, geoUrl }) {
     slot.textContent = state === 'empty' ? '' : region.display || '';
     slot.title = state === 'empty' ? '' : region.display || '';
     slot.setAttribute('aria-label', state === 'empty' ? texts.slotEmpty : region.display || '');
+  }
+
+  // Desplaza SOLO la lista de recuadros hasta el acertado. scrollIntoView movería también
+  // la página (con el teclado abierto en el móvil descolocaba toda la pantalla).
+  function revealSlot(slot) {
+    const s = slot.getBoundingClientRect();
+    const c = slotsEl.getBoundingClientRect();
+    const behavior = prefersReducedMotion ? 'auto' : 'smooth';
+    if (s.top < c.top) slotsEl.scrollBy({ top: s.top - c.top - 8, behavior });
+    else if (s.bottom > c.bottom) slotsEl.scrollBy({ top: s.bottom - c.bottom + 8, behavior });
   }
 
   // Animación breve al acertar (la clase se quita sola al terminar).
@@ -374,8 +384,13 @@ export function createGame({ country, texts, els, geoUrl }) {
   function moveMapTooltip(e) {
     ensureMapTooltip();
     const rect = mapArea.getBoundingClientRect();
-    tooltipEl.style.left = e.clientX - rect.left + 12 + 'px';
-    tooltipEl.style.top = e.clientY - rect.top - 12 + 'px';
+    const w = tooltipEl.offsetWidth || 0;
+    const h = tooltipEl.offsetHeight || 0;
+    // Dentro del mapa en todo momento (en el móvil, junto al borde, se cortaba).
+    const x = Math.max(8, Math.min(e.clientX - rect.left + 12, rect.width - w - 8));
+    const y = Math.max(8, Math.min(e.clientY - rect.top - 12, rect.height - h - 8));
+    tooltipEl.style.left = x + 'px';
+    tooltipEl.style.top = y + 'px';
   }
 
   function showMapTooltip(name, e) {
@@ -522,7 +537,7 @@ export function createGame({ country, texts, els, geoUrl }) {
     const slot = slotById.get(region.id);
     if (slot) {
       flash(slot, 'just');
-      slot.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+      revealSlot(slot);
     }
 
     // Primero el feedback y luego updateCount(): si esta era la última región,

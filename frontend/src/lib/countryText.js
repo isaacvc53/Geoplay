@@ -1,25 +1,20 @@
 // src/lib/countryText.js
 //
-// Textos de la página del juego de país (/pais), EN ESPAÑOL.
+// Textos de la página del juego de país (/pais), EN INGLÉS.
 //
-// Los archivos data/countries/<slug>.js traen sus propios textos (kicker,
-// title, mensajes…) y hoy están en inglés (lang: "en"). Regla:
-//   - Si el archivo declara `lang: "es"`, sus textos MANDAN sobre los de aquí
-//     (así se puede ir traduciendo país a país sin tocar código).
-//   - Si no, se usan los textos en español de este módulo, generados a partir
-//     del nombre del país (en español) y del tipo de región (provincias,
-//     estados…), que se deduce de las etiquetas inglesas del archivo.
-//   - Los datos NO textuales (regions, names, total, quizSeconds, id, slug,
-//     geoFile) siempre vienen del archivo.
+// Todos los textos se generan aquí, en inglés, a partir del nombre inglés del
+// país (data/continents.js) y del tipo de región (provinces, states…), que se
+// deduce de las etiquetas del archivo data/countries/<slug>.js. Los datos NO
+// textuales (regions, names, total, id, slug, geoFile) siempre vienen del archivo.
 
 import { CONTINENTS, slugify } from '../data/continents';
 
-// Nombre en español por slug (inglés, el de data/geo) y por slug del nombre español.
-const ES_NAME_BY_SLUG = new Map();
+// Nombre inglés por slug (el de data/geo) y por slug del nombre español (el de ?pais=).
+const EN_NAME_BY_SLUG = new Map();
 Object.values(CONTINENTS).forEach(({ countries }) => {
-  countries.forEach(([, geoSlug, , nameEs]) => {
-    ES_NAME_BY_SLUG.set(geoSlug, nameEs);
-    ES_NAME_BY_SLUG.set(slugify(nameEs), nameEs);
+  countries.forEach(([nameEn, geoSlug, , nameEs]) => {
+    EN_NAME_BY_SLUG.set(geoSlug, nameEn);
+    EN_NAME_BY_SLUG.set(slugify(nameEs), nameEn);
   });
 });
 
@@ -37,131 +32,104 @@ export function slugCandidates(pais) {
   return list;
 }
 
-// Tipo de región: plural inglés -> { pl, sg, g } (g: género gramatical del sustantivo).
-const REGION_NOUNS = {
-  provinces: { pl: 'provincias', sg: 'provincia', g: 'f' },
-  states: { pl: 'estados', sg: 'estado', g: 'm' },
-  regions: { pl: 'regiones', sg: 'región', g: 'f' },
-  departments: { pl: 'departamentos', sg: 'departamento', g: 'm' },
-  counties: { pl: 'condados', sg: 'condado', g: 'm' },
-  districts: { pl: 'distritos', sg: 'distrito', g: 'm' },
-  prefectures: { pl: 'prefecturas', sg: 'prefectura', g: 'f' },
-  cantons: { pl: 'cantones', sg: 'cantón', g: 'm' },
-  governorates: { pl: 'gobernaciones', sg: 'gobernación', g: 'f' },
-  municipalities: { pl: 'municipios', sg: 'municipio', g: 'm' },
-  islands: { pl: 'islas', sg: 'isla', g: 'f' },
-  parishes: { pl: 'parroquias', sg: 'parroquia', g: 'f' },
-  divisions: { pl: 'divisiones', sg: 'división', g: 'f' },
-  emirates: { pl: 'emiratos', sg: 'emirato', g: 'm' },
-  oblasts: { pl: 'óblasts', sg: 'óblast', g: 'm' },
-  territories: { pl: 'territorios', sg: 'territorio', g: 'm' },
-  communes: { pl: 'comunas', sg: 'comuna', g: 'f' },
-  atolls: { pl: 'atolones', sg: 'atolón', g: 'm' },
-  voivodeships: { pl: 'voivodatos', sg: 'voivodato', g: 'm' },
-};
-const DEFAULT_NOUN = { pl: 'regiones', sg: 'región', g: 'f' };
+// Tipos de región que se reconocen en las etiquetas del archivo (plural inglés).
+const REGION_TYPES = [
+  'provinces', 'states', 'regions', 'departments', 'counties', 'districts', 'prefectures',
+  'cantons', 'governorates', 'municipalities', 'islands', 'parishes', 'divisions', 'emirates',
+  'oblasts', 'territories', 'communes', 'atolls', 'voivodeships',
+];
+const DEFAULT_NOUN = { pl: 'regions', sg: 'region' };
 
-// Deduce el tipo de región de las etiquetas inglesas ("My provinces", "Type a state…").
+const singularOf = (pl) => pl.replace(/ies$/, 'y').replace(/s$/, '');
+
+// Deduce el tipo de región de las etiquetas ("My provinces", "Type a state…").
 function inferNoun(country) {
   const sources = [country.missingLabel, country.guessPlaceholder, country.title, country.subtitle]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  for (const [en, noun] of Object.entries(REGION_NOUNS)) {
-    const singular = en.replace(/ies$/, 'y').replace(/s$/, '');
-    if (new RegExp(`\\b(${en}|${singular})\\b`).test(sources)) return noun;
+  for (const pl of REGION_TYPES) {
+    const sg = singularOf(pl);
+    if (new RegExp(`\\b(${pl}|${sg})\\b`).test(sources)) return { pl, sg };
   }
   return DEFAULT_NOUN;
 }
 
-// Campos de texto que un archivo con lang:"es" puede sobrescribir.
-const TEXT_KEYS = [
-  'kicker', 'title', 'subtitle', 'guessPlaceholder', 'submitLabel',
-  'giveUpLabel', 'resetLabel', 'hintText', 'hintTextRevealed', 'correctPrefix',
-  'notFoundMessage', 'alreadyFoundMessage', 'loadErrorMessage',
-  'backLabel', 'firstCompletionMessage', 'newBestScoreMessage',
-];
+const article = (word) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
+const capitalize = (word) => word.charAt(0).toUpperCase() + word.slice(1);
 
 // Textos fijos de la interfaz (no dependen del archivo del país).
 export const UI = {
-  loadingTitle: 'Cargando…',
-  notFoundTitle: 'País no encontrado',
-  map: 'Mapa',
-  zoomIn: 'Acercar',
-  zoomOut: 'Alejar',
-  resetView: 'Restablecer vista',
-  localModeToast: 'Modo local (sin conexión con el servidor).',
+  loadingTitle: 'Loading…',
+  loadingMap: 'Loading the map…',
+  notFoundTitle: 'Country not found',
+  notFoundMessage: (pais) => `We couldn't find a map for “${pais}”.`,
+  worldMap: 'World map',
+  map: 'Map',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
+  resetView: 'Reset view',
+  localModeToast: 'Local mode (no connection to the server).',
 };
 
 // country: window.GEOTARIA_COUNTRY; slug: el slug con el que se cargó el archivo.
 export function buildTexts(country, slug) {
-  const nameEs = ES_NAME_BY_SLUG.get(country.slug) || ES_NAME_BY_SLUG.get(slug) || null;
   const noun = inferNoun(country);
-  const f = noun.g === 'f';
-  const un = f ? 'una' : 'un';
-  const las = f ? 'Las' : 'Los';
-  const marcadas = f ? 'marcadas' : 'marcados';
+  const a = article(noun.sg);
   const total = Number.isFinite(Number(country.total)) ? Number(country.total) : (country.regions || []).length;
 
-  // Nombre del país para mostrar: español si lo conocemos; si no, el nombre que trae el
-  // kicker del archivo ("GeoPlay · Afghanistan") y, en último caso, el slug.
+  // Nombre del país: inglés de la tabla; si no está, el del kicker del archivo ("GeoPlay · Afghanistan").
   const kickerName = (country.kicker || '').split(' · ')[1];
-  const place = nameEs || kickerName || country.slug || slug;
-  const brand = 'Geotaria';
+  const place = EN_NAME_BY_SLUG.get(country.slug) || EN_NAME_BY_SLUG.get(slug) || kickerName || country.slug || slug;
 
-  const generated = {
-    kicker: `${brand} · ${place}`,
-    title: `¿Cuántas ${noun.pl} de ${place} puedes nombrar?`,
-    subtitle: `Escribe ${un} ${noun.sg} de ${place} y el mapa se irá rellenando.`,
-    guessPlaceholder: `Escribe ${un} ${noun.sg}…`,
-    submitLabel: 'Comprobar',
-    giveUpLabel: 'Rendirse',
-    resetLabel: 'Reiniciar',
-    hintText: 'Arrastra el mapa · usa la rueda para hacer zoom',
-    hintTextRevealed: `Pasa el ratón por cada ${noun.sg} para ver su nombre`,
-    correctPrefix: '¡Correcto! ',
-    notFoundMessage: 'No encontrado o nombre ambiguo.',
-    alreadyFoundMessage: 'Ese ya lo tenías.',
-    loadErrorMessage: `No se pudo cargar el mapa de ${place}. Comprueba tu conexión.`,
-    backLabel: 'Mapa mundial',
-    firstCompletionMessage: 'Primera partida registrada en este país',
-    newBestScoreMessage: 'Nuevo récord personal: +{gain} puntos',
+  const texts = {
+    kicker: `Geotaria · ${place}`,
+    title: `How many ${noun.pl} of ${place} can you name?`,
+    subtitle: `Type ${a} ${noun.sg} of ${place} and the map will fill in.`,
+    guessPlaceholder: `Type ${a} ${noun.sg}…`,
+    submitLabel: 'Check',
+    giveUpLabel: 'Give up',
+    resetLabel: 'Reset',
+    hintText: 'Drag the map · pinch or scroll to zoom',
+    hintTextRevealed: `Hover over or tap ${a} ${noun.sg} to see its name`,
+    correctPrefix: 'Correct! ',
+    notFoundMessage: 'Not found or ambiguous name.',
+    alreadyFoundMessage: 'You already got that one.',
+    loadErrorMessage: `Couldn't load the map of ${place}. Check your connection.`,
+    backLabel: UI.worldMap,
+    firstCompletionMessage: 'First game recorded for this country',
+    newBestScoreMessage: 'New personal best: +{gain} points',
 
-    // Pantalla de inicio.
-    startLabel: 'Empezar',
-    introCountLabel: `${noun.pl} por descubrir`,
-    introNote: 'Pulsa Empezar cuando estés listo.',
+    // Start screen.
+    startLabel: 'Start',
+    introCountLabel: `${noun.pl} to find`,
+    introNote: 'Press Start when you’re ready.',
 
-    // Pantalla de resultado (rendirse o completar).
-    resultEyebrowComplete: 'Enhorabuena',
-    resultEyebrowEnded: 'Partida terminada',
-    resultHitsLabel: 'Aciertos',
-    resultMissingLabel: 'Faltan',
-    resultPercentLabel: 'Completado',
-    playAgainLabel: 'Jugar de nuevo',
-    viewMapLabel: 'Ver el mapa',
-    viewResultLabel: 'Ver resultado',
+    // Result screen (give up or complete).
+    resultEyebrowComplete: 'Congratulations',
+    resultEyebrowEnded: 'Game over',
+    resultHitsLabel: 'Correct',
+    resultMissingLabel: 'Missed',
+    resultPercentLabel: 'Complete',
+    playAgainLabel: 'Play again',
+    viewMapLabel: 'View the map',
+    viewResultLabel: 'View result',
   };
-
-  const texts = { ...generated };
-  if (country.lang === 'es') {
-    TEXT_KEYS.forEach((k) => { if (country[k]) texts[k] = country[k]; });
-  }
 
   // Mensajes con datos dinámicos.
   texts.resultTitle = (pct, complete) => {
-    if (complete) return '¡Mapa completado!';
-    if (pct >= 75) return 'Casi lo tienes';
-    if (pct >= 40) return 'Buen intento';
-    return 'Sigue practicando';
+    if (complete) return 'Map complete!';
+    if (pct >= 75) return 'So close!';
+    if (pct >= 40) return 'Good try';
+    return 'Keep practising';
   };
   texts.resultMessage = (count, complete) => (complete
-    ? `Has nombrado ${f ? 'las' : 'los'} ${total} ${noun.pl} de ${place}. No se te ha escapado ${f ? 'ninguna' : 'ninguno'}.`
-    : `Has acertado ${count} de ${total} ${noun.pl} de ${place}. ${las} que faltan han quedado ${marcadas} en el mapa: pasa el ratón por encima para ver su nombre.`);
-  texts.endedFeedback = (count) => `Partida terminada · ${count}/${total}`;
-  texts.loadingMap = `Cargando el mapa de ${place}…`;
-  texts.slotsLabel = `${noun.pl.charAt(0).toUpperCase()}${noun.pl.slice(1)} por adivinar`;
-  texts.slotEmpty = 'Por adivinar';
+    ? `You named all ${total} ${noun.pl} of ${place}. Not a single one slipped by.`
+    : `You got ${count} of ${total} ${noun.pl} of ${place}. The ones you missed are highlighted on the map — hover over or tap them to see their names.`);
+  texts.endedFeedback = (count) => `Game over · ${count}/${total}`;
+  texts.loadingMap = `Loading the map of ${place}…`;
+  texts.slotsLabel = `${capitalize(noun.pl)} to guess`;
+  texts.slotEmpty = 'To guess';
   texts.total = total;
   texts.place = place;
   texts.localModeToast = UI.localModeToast;
