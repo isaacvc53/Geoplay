@@ -26,6 +26,7 @@ class FriendOut(BaseModel):
     countries_played: int
     accuracy: float | None = None  # % de acierto global (None si aún no ha jugado)
     last_played_at: UtcDatetime | None = None
+    avatar_updated_at: UtcDatetime | None = None  # None = sin foto
 
 
 class FriendRequestOut(BaseModel):

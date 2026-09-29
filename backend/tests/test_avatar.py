@@ -83,3 +83,48 @@ def test_cada_usuario_tiene_su_foto(client):
 def test_requiere_sesion(client):
     assert client.get("/auth/me/avatar").status_code == 401
     assert client.put("/auth/me/avatar", files={"archivo": ("a.png", tiny_png())}).status_code == 401
+
+
+def befriend(client, a, b, b_name):
+    fid = client.post("/friends/requests", json={"username": b_name}, headers=a).json()["friendship_id"]
+    assert client.post(f"/friends/requests/{fid}/accept", json={}, headers=b).status_code == 200
+
+
+def user_id(client, headers):
+    return client.get("/auth/me", headers=headers).json()["id"]
+
+
+def test_amigo_ve_la_foto_y_un_extrano_no(client):
+    ana = register(client, "ana")
+    beto = register(client, "beto")
+    carla = register(client, "carla")
+    png = tiny_png()
+    put(client, ana, png)
+    ana_id = user_id(client, ana)
+    befriend(client, ana, beto, "beto")
+
+    visto = client.get(f"/friends/avatar/{ana_id}", headers=beto)
+    assert visto.status_code == 200 and visto.content == png
+    assert client.get(f"/friends/avatar/{ana_id}", headers=ana).status_code == 200  # la propia
+    assert client.get(f"/friends/avatar/{ana_id}", headers=carla).status_code == 404  # sin amistad
+
+
+def test_solicitud_pendiente_no_da_acceso(client):
+    ana = register(client, "ana")
+    beto = register(client, "beto")
+    put(client, ana, tiny_png())
+    client.post("/friends/requests", json={"username": "beto"}, headers=ana)
+    assert client.get(f"/friends/avatar/{user_id(client, ana)}", headers=beto).status_code == 404
+
+
+def test_lista_de_amigos_y_comparar_indican_si_hay_foto(client):
+    ana = register(client, "ana")
+    beto = register(client, "beto")
+    befriend(client, ana, beto, "beto")
+    assert client.get("/friends", headers=beto).json()["friends"][0]["avatar_updated_at"] is None
+
+    put(client, ana, tiny_png())
+    assert client.get("/friends", headers=beto).json()["friends"][0]["avatar_updated_at"] is not None
+    comp = client.get("/compare?with=ana&tz_offset=0", headers=beto).json()
+    assert comp["friend"]["avatar_updated_at"] is not None
+    assert comp["me"]["avatar_updated_at"] is None

@@ -2,11 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import case, func, or_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from models.friendship_db import STATUS_ACCEPTED, STATUS_PENDING, Friendship
 from models.progress_db import GameSession, GameSessionAnswer
-from models.user_db import User
+from models.user_db import User, UserAvatar
 from models.utc import now_utc_naive
 from services import auth_service
 
@@ -169,6 +169,17 @@ def get_friend_user(db: Session, me: User, username: str) -> User:
     return other
 
 
+def get_visible_avatar(db: Session, me: User, user_id: int) -> UserAvatar | None:
+    """Foto de `user_id` si es la tuya o la de un amigo (relación aceptada).
+    Para cualquier otro caso devuelve None: el llamador responde 404, igual que
+    si no existiera, así no se revela qué usuarios tienen foto."""
+    if user_id != me.id:
+        f = _find_between(db, me.id, user_id)
+        if f is None or f.status != STATUS_ACCEPTED:
+            return None
+    return db.get(UserAvatar, user_id)
+
+
 def get_overview(db: Session, me: User) -> dict:
     """Amigos, solicitudes recibidas y solicitudes enviadas, con las consultas
     justas (relaciones + usuarios + estadísticas), sin importar cuántos amigos haya."""
@@ -183,7 +194,9 @@ def get_overview(db: Session, me: User) -> dict:
     otros_ids = {_other_id(f, me.id) for f in relaciones}
     usuarios = {
         u.id: u
-        for u in db.query(User).filter(User.id.in_(list(otros_ids)), User.is_active.is_(True))
+        for u in db.query(User)
+        .options(selectinload(User.avatar))  # una consulta para todas las fotos (sin los bytes)
+        .filter(User.id.in_(list(otros_ids)), User.is_active.is_(True))
     }
 
     amigos_ids = [
@@ -244,6 +257,7 @@ def get_overview(db: Session, me: User) -> dict:
                     "countries_played": paises,
                     "accuracy": accuracy.get(uid),
                     "last_played_at": ultima,
+                    "avatar_updated_at": u.avatar_updated_at,
                 }
             )
         else:

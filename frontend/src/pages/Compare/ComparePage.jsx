@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { resolveDisplayName, resolveSlug } from '../../lib/countryInfo';
 import { useFriends } from '../Menu/useFriends';
+import UserAvatar from '../../components/UserAvatar';
 import { computeRank, formatRelative } from '../Profile/profileLogic';
 import {
   COUNTRY_FILTERS, METRICS, barWidths, compareContinents, computeScore, countryWinner,
@@ -22,11 +23,14 @@ const compareLink = (username) => `/comparar?con=${encodeURIComponent(username)}
 
 // ---------- small pieces ----------
 
-function Avatar({ name, size }) {
+function Avatar({ user, size }) {
   return (
-    <span className={'cmp-avatar' + (size === 'sm' ? ' sm' : '')} aria-hidden="true">
-      {name.charAt(0).toUpperCase()}
-    </span>
+    <UserAvatar
+      className={'cmp-avatar' + (size === 'sm' ? ' sm' : '')}
+      userId={user.user_id}
+      name={user.username}
+      version={user.avatar_updated_at}
+    />
   );
 }
 
@@ -34,7 +38,7 @@ function Contender({ user, isMe }) {
   const rank = computeRank(user.countries_played);
   return (
     <div className="cmp-contender">
-      <Avatar name={user.username} />
+      <Avatar user={user} />
       <h2 className="cmp-name-main">{isMe ? 'You' : user.username}</h2>
       <span className="cmp-rank">{rank}</span>
       <span className="cmp-last">
@@ -356,7 +360,7 @@ function FriendPicker({ friends }) {
       <div className="cmp-pick-list">
         {data.friends.map((f) => (
           <Link className="cmp-pick" key={f.friendship_id} to={compareLink(f.username)}>
-            <Avatar name={f.username} size="sm" />
+            <Avatar user={f} size="sm" />
             <span className="cmp-pick-who">
               <span className="cmp-pick-name">{f.username}</span>
               <span className="cmp-pick-meta">

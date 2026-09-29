@@ -197,6 +197,19 @@ export const api = {
     return res.blob();
   },
 
+  // A friend's photo (or your own). null = no photo / not visible to you.
+  async getUserAvatarBlob(userId) {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}/friends/avatar/${encodeURIComponent(userId)}`, {
+      headers: { ...this._authHeaders() },
+    });
+    if (res.status === 401 && this._getToken()) {
+      this._handleUnauthorized();
+    }
+    if (res.status === 404) return null;
+    if (!res.ok) throw await this._makeError(res);
+    return res.blob();
+  },
+
   // --- Progress / statistics ---
 
   getCountriesProgress() {

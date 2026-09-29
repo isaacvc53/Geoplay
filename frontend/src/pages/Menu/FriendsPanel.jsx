@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
+import UserAvatar from '../../components/UserAvatar';
 import { formatRelative } from '../Profile/profileLogic';
 import './Friends.css';
 
@@ -220,7 +221,7 @@ export default function FriendsPanel({ loggedIn, friends }) {
           <ul>
             {friendList.map((f) => (
               <li className="friend-row has-footer" key={f.friendship_id}>
-                <Avatar name={f.username} />
+                <UserAvatar className="friend-avatar" userId={f.user_id} name={f.username} version={f.avatar_updated_at} />
                 <span className="friend-who">
                   <span className="friend-name">{f.username}</span>
                   <span className="friend-meta">

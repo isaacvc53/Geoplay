@@ -16,6 +16,7 @@ class CompareUserOut(BaseModel):
     streak: int  # días seguidos jugando (en la zona horaria de quien consulta)
     fastest_perfect_seconds: int | None  # mejor tiempo en una partida al 100 %
     last_played_at: UtcDatetime | None
+    avatar_updated_at: UtcDatetime | None = None  # None = sin foto
 
 
 class CompareSideOut(BaseModel):

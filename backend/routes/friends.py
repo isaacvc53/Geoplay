@@ -33,6 +33,26 @@ def listar_amigos(
     return friends_service.get_overview(db, usuario_actual)
 
 
+@friends_router.get("/avatar/{user_id}")
+def foto_de_amigo(
+    user_id: int,
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Foto de perfil de un amigo (o la propia). Solo los amigos aceptados la ven."""
+    avatar = friends_service.get_visible_avatar(db, usuario_actual, user_id)
+    if avatar is None:
+        raise HTTPException(status_code=404, detail="Sin foto de perfil")
+    return Response(
+        content=avatar.data,
+        media_type=avatar.content_type,
+        headers={
+            "Cache-Control": "private, no-cache",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
+
+
 @friends_router.post(
     "/requests", response_model=RequestResult, status_code=status.HTTP_201_CREATED
 )

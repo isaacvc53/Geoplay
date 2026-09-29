@@ -61,9 +61,10 @@
 .menu-page .friend-avatar{
   width:30px; height:30px; flex:none; border-radius:50%;
   border:1px solid var(--brass-dim);
-  display:grid; place-items:center;
+  display:grid; place-items:center; overflow:hidden;
   font-family:'Fraunces',Georgia,serif; font-size:13px; color:var(--brass);
 }
+.menu-page .friend-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
 .menu-page .friend-who{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .menu-page .friend-name{
   font-size:13px; color:var(--parchment);

@@ -120,6 +120,7 @@ def get_comparison(db: Session, me: User, friend: User, tz_offset: int = 0) -> C
             streak=_streak([s.played_at for s in todas], tz_offset),
             fastest_perfect_seconds=min(perfectas) if perfectas else None,
             last_played_at=max((s.played_at for s in todas), default=None),
+            avatar_updated_at=user.avatar_updated_at,
         )
 
     country_ids = set(por_usuario[me.id]) | set(por_usuario[friend.id])
