@@ -74,15 +74,12 @@ function inferNoun(country) {
   return DEFAULT_NOUN;
 }
 
-const FLAG_EMOJI = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
-
 // Campos de texto que un archivo con lang:"es" puede sobrescribir.
 const TEXT_KEYS = [
-  'kicker', 'title', 'subtitle', 'guessPlaceholder', 'submitLabel', 'pauseLabel', 'resumeLabel',
+  'kicker', 'title', 'subtitle', 'guessPlaceholder', 'submitLabel',
   'missingLabel', 'giveUpLabel', 'resetLabel', 'hintText', 'hintTextRevealed', 'correctPrefix',
-  'notFoundMessage', 'alreadyFoundMessage', 'noneFoundMessage', 'pausedMessage', 'completeMessage',
-  'timeUpMessage', 'giveUpMessage', 'readyMessage', 'readyLocalMessage', 'loadErrorMessage',
-  'backLabel', 'firstCompletionMessage', 'newBestScoreMessage', 'newBestTimeMessage',
+  'notFoundMessage', 'alreadyFoundMessage', 'noneFoundMessage', 'loadErrorMessage',
+  'backLabel', 'firstCompletionMessage', 'newBestScoreMessage',
 ];
 
 // Textos fijos de la interfaz (no dependen del archivo del país).
@@ -104,8 +101,7 @@ export function buildTexts(country, slug) {
   const f = noun.g === 'f';
   const un = f ? 'una' : 'un';
   const las = f ? 'Las' : 'Los';
-  const resaltadas = f ? 'resaltadas' : 'resaltados';
-  const cargadas = f ? 'cargadas' : 'cargados';
+  const marcadas = f ? 'marcadas' : 'marcados';
   const total = Number.isFinite(Number(country.total)) ? Number(country.total) : (country.regions || []).length;
 
   // Nombre del país para mostrar: español si lo conocemos; si no, el nombre que trae el
@@ -113,7 +109,6 @@ export function buildTexts(country, slug) {
   const kickerName = (country.kicker || '').split(' · ')[1];
   const place = nameEs || kickerName || country.slug || slug;
   const brand = 'Geotaria';
-  const flag = ((country.completeMessage || '').match(FLAG_EMOJI) || [''])[0];
 
   const generated = {
     kicker: `${brand} · ${place}`,
@@ -121,8 +116,6 @@ export function buildTexts(country, slug) {
     subtitle: `Escribe ${un} ${noun.sg} de ${place} y el mapa se irá rellenando.`,
     guessPlaceholder: `Escribe ${un} ${noun.sg}…`,
     submitLabel: 'Comprobar',
-    pauseLabel: 'Pausa',
-    resumeLabel: 'Reanudar',
     missingLabel: `Mis ${noun.pl}`,
     giveUpLabel: 'Rendirse',
     resetLabel: 'Reiniciar',
@@ -132,17 +125,25 @@ export function buildTexts(country, slug) {
     notFoundMessage: 'No encontrado o nombre ambiguo.',
     alreadyFoundMessage: 'Ese ya lo tenías.',
     noneFoundMessage: 'Todavía no has acertado nada.',
-    pausedMessage: 'El juego está en pausa.',
-    completeMessage: `¡Has completado ${f ? 'las' : 'los'} ${total} ${noun.pl} de ${place}!${flag ? ' ' + flag : ''}`,
-    timeUpMessage: 'Se acabó el tiempo.',
-    giveUpMessage: `Juego terminado: {count}/{total}. ${las} que faltan están ${resaltadas}; pasa el ratón por encima para ver su nombre.`,
-    readyMessage: '¡Mapa listo, empieza a escribir!',
-    readyLocalMessage: 'Mapa listo en modo local.',
     loadErrorMessage: `No se pudo cargar el mapa de ${place}. Comprueba tu conexión.`,
     backLabel: 'Mapa mundial',
-    firstCompletionMessage: '¡Primera expedición registrada para este país!',
-    newBestScoreMessage: '¡Nueva mejor puntuación! +{gain} pts',
-    newBestTimeMessage: '¡Nuevo mejor tiempo! -{saved} s',
+    firstCompletionMessage: 'Primera partida registrada en este país',
+    newBestScoreMessage: 'Nuevo récord personal: +{gain} puntos',
+
+    // Pantalla de inicio.
+    startLabel: 'Empezar',
+    introCountLabel: `${noun.pl} por descubrir`,
+    introNote: 'Pulsa Empezar cuando estés listo.',
+
+    // Pantalla de resultado (rendirse o completar).
+    resultEyebrowComplete: 'Enhorabuena',
+    resultEyebrowEnded: 'Partida terminada',
+    resultHitsLabel: 'Aciertos',
+    resultMissingLabel: 'Faltan',
+    resultPercentLabel: 'Completado',
+    playAgainLabel: 'Jugar de nuevo',
+    viewMapLabel: 'Ver el mapa',
+    viewResultLabel: 'Ver resultado',
   };
 
   const texts = { ...generated };
@@ -151,7 +152,16 @@ export function buildTexts(country, slug) {
   }
 
   // Mensajes con datos dinámicos.
-  texts.connected = (n) => `Conectado: ${n} ${n === 1 ? noun.sg : noun.pl} ${n === 1 ? cargadas.replace(/s$/, '') : cargadas} desde la base de datos`;
+  texts.resultTitle = (pct, complete) => {
+    if (complete) return '¡Mapa completado!';
+    if (pct >= 75) return 'Casi lo tienes';
+    if (pct >= 40) return 'Buen intento';
+    return 'Sigue practicando';
+  };
+  texts.resultMessage = (count, complete) => (complete
+    ? `Has nombrado ${f ? 'las' : 'los'} ${total} ${noun.pl} de ${place}. No se te ha escapado ${f ? 'ninguna' : 'ninguno'}.`
+    : `Has acertado ${count} de ${total} ${noun.pl} de ${place}. ${las} que faltan han quedado ${marcadas} en el mapa: pasa el ratón por encima para ver su nombre.`);
+  texts.endedFeedback = (count) => `Partida terminada · ${count}/${total}`;
   texts.loadingMap = `Cargando el mapa de ${place}…`;
   texts.slotsLabel = `${noun.pl.charAt(0).toUpperCase()}${noun.pl.slice(1)} por adivinar`;
   texts.slotEmpty = 'Por adivinar';

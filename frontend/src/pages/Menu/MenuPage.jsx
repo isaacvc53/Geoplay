@@ -71,13 +71,6 @@ function Drawer({ id, label, open, onClose, title, soon, children }) {
   );
 }
 
-function formatTime(totalSeconds) {
-  if (totalSeconds == null) return '—';
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
-}
-
 // Same aggregation the original loadHomeStats() did, as a pure function.
 function computeHomeStats(countries) {
   const played = countries.filter((c) => c.games_played > 0);
@@ -86,12 +79,6 @@ function computeHomeStats(countries) {
   const favorite = played.reduce((a, b) => (b.games_played > a.games_played ? b : a));
   const best = played.reduce((a, b) => (b.percentage > a.percentage ? b : a));
   const mastered = played.filter((c) => c.percentage >= 100);
-  const cleanTimedRuns = played
-    .filter((c) => c.best_score && c.best_score.percentage >= 100 && c.best_score.time_seconds != null)
-    .map((c) => ({ country: c.country_name, time: c.best_score.time_seconds }));
-  const fastest = cleanTimedRuns.length
-    ? cleanTimedRuns.reduce((a, b) => (b.time < a.time ? b : a))
-    : null;
 
   return {
     gamesPlayed: played.reduce((sum, c) => sum + c.games_played, 0),
@@ -100,7 +87,6 @@ function computeHomeStats(countries) {
     best: `${best.percentage}% (${best.country_name})`,
     masteredCount: mastered.length,
     masteredPct: Math.round((mastered.length / played.length) * 100),
-    fastest: fastest ? `${formatTime(fastest.time)} (${fastest.country})` : null,
   };
 }
 
@@ -213,7 +199,7 @@ export default function MenuPage() {
           </div>
           <div className="drawer-empty">
             <p className="drawer-empty-title">Badges are on the way</p>
-            <p className="drawer-empty-desc">Unlock badges as you master maps, build streaks and beat your best times.</p>
+            <p className="drawer-empty-desc">Unlock badges as you master maps, build streaks and improve your scores.</p>
           </div>
         </Drawer>
 
@@ -275,7 +261,7 @@ export default function MenuPage() {
               </div>
               <div className="body">
                 <div className="widget-title">Multiplayer</div>
-                <p className="widget-desc">Race against other players on timed challenges.</p>
+                <p className="widget-desc">Compete against other players.</p>
               </div>
             </div>
             <div className="foot"><span className="pill soon">Coming soon</span><span>—</span></div>
@@ -338,7 +324,7 @@ export default function MenuPage() {
             <p className="widget-desc">
               {stats
                 ? `Across ${stats.countriesPlayed} map${stats.countriesPlayed === 1 ? '' : 's'} you've played.`
-                : 'Your accuracy, time and best runs across every map.'}
+                : 'Your accuracy and best runs across every map.'}
             </p>
 
             <div className="stat-grid">
@@ -362,13 +348,6 @@ export default function MenuPage() {
                   Best score
                 </span>
                 <span className={'stat-tile-value' + (stats ? '' : ' dim')}>{stats ? stats.best : '—'}</span>
-              </div>
-              <div className="stat-tile">
-                <span className="stat-tile-label">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="13" r="7.5" stroke="currentColor" strokeWidth="1.4" /><path d="M12 13V9.3M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
-                  Fastest run
-                </span>
-                <span className={'stat-tile-value' + (stats && stats.fastest ? '' : ' dim')}>{stats && stats.fastest ? stats.fastest : '—'}</span>
               </div>
             </div>
 

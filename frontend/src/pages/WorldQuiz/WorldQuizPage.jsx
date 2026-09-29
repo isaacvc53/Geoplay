@@ -26,28 +26,13 @@ const CONTINENTES_ORDENADOS = Object.entries(CONTINENTES).map(([key, c]) => ({
   paises: [...c.paises].sort((a, b) => a.localeCompare(b, 'es')).map((n) => ({ nombre: n, norm: normalizar(n) })),
 }));
 
-function formatTiempo(segundos) {
-  const m = String(Math.floor(segundos / 60)).padStart(2, '0');
-  const s = String(segundos % 60).padStart(2, '0');
-  return `${m}:${s}`;
-}
-
 export default function WorldQuizPage() {
   const [encontrados, setEncontrados] = useState(() => new Set()); // set de norm
-  const [empezado, setEmpezado] = useState(false);
-  const [segundos, setSegundos] = useState(0);
   const [entrada, setEntrada] = useState('');
   const [feedback, setFeedback] = useState({ msg: '', tipo: '' });
   const inputRef = useRef(null);
 
   const completo = encontrados.size === TOTAL;
-
-  // Cronómetro: arranca con el primer envío, se detiene al completar.
-  useEffect(() => {
-    if (!empezado || completo) return undefined;
-    const id = setInterval(() => setSegundos((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [empezado, completo]);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
@@ -64,8 +49,6 @@ export default function WorldQuizPage() {
     const valor = entrada;
     setEntrada('');
     if (!valor.trim()) return;
-
-    if (!empezado) setEmpezado(true);
 
     let candidato = normalizar(valor);
     if (ALIAS[candidato]) candidato = ALIAS[candidato];
@@ -85,8 +68,6 @@ export default function WorldQuizPage() {
 
   function jugarDeNuevo() {
     setEncontrados(new Set());
-    setEmpezado(false);
-    setSegundos(0);
     setEntrada('');
     setFeedback({ msg: '', tipo: '' });
     inputRef.current?.focus();
@@ -104,7 +85,6 @@ export default function WorldQuizPage() {
       <main>
         <div className="panel">
           <div className="stat"><span className="num">{encontrados.size} / {TOTAL}</span><span className="lbl">encontrados</span></div>
-          <div className="stat"><span className="num">{formatTiempo(segundos)}</span><span className="lbl">tiempo</span></div>
           <div className="bar-track"><div className="bar-fill" style={{ width: `${(encontrados.size / TOTAL) * 100}%` }} /></div>
         </div>
 
@@ -157,7 +137,7 @@ export default function WorldQuizPage() {
 
         <div className={'win' + (completo ? ' show' : '')}>
           <h2>Los 197, completos</h2>
-          <p>Lo has conseguido en {formatTiempo(segundos)}.</p>
+          <p>Has nombrado todos los países del mundo.</p>
           <button className="btn-again" type="button" onClick={jugarDeNuevo}>Jugar de nuevo</button>
         </div>
       </main>

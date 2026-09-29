@@ -1,9 +1,12 @@
 // src/pages/Country/gameEngine.js
 //
 // Motor genérico del juego "adivina la región" (port de js/game.js).
-// Es imperativo a propósito (temporizador, D3, DOM del SVG): CountryGamePage lo
-// monta UNA vez dentro de un useEffect, le pasa los elementos por refs y llama a
-// destroy() al desmontar (limpia intervalos, timeouts y listeners).
+// Es imperativo a propósito (D3, DOM del SVG): CountryGamePage lo monta UNA vez
+// dentro de un useEffect, le pasa los elementos por refs y llama a destroy() al
+// desmontar (limpia timeouts y listeners).
+//
+// Fases de la partida: 'idle' (pantalla de inicio, esperando al botón Empezar) →
+// 'playing' → 'ended' (pantalla de resultado). No hay cronómetro por ahora.
 //
 // Todo lo específico del país viene de `country` (window.GEOTARIA_COUNTRY) y los
 // textos ya traducidos de `texts` (ver lib/countryText.js). La geometría se
@@ -20,16 +23,20 @@ export function createGame({ country, texts, els, geoUrl }) {
   const svgEl = els.svg;
   const svg = d3.select(svgEl);
   const {
-    guess: guessEl, count: countEl, total: totalEl, timer: timerEl, feedback: feedbackEl,
-    pause: pauseBtn, toast: toastEl, loadingOverlay, loadingText, submit: submitBtn,
+    guess: guessEl, count: countEl, total: totalEl, progressBar, feedback: feedbackEl,
+    toast: toastEl, loadingOverlay, loadingText, submit: submitBtn,
     foundDrawer: foundListWrap, foundList, foundScrim, foundDrawerClose,
     zoomIn: zoomInBtn, zoomOut: zoomOutBtn, resetView: resetViewBtn,
     missing: missingBtn, giveUp: giveUpBtn, reset: resetBtn, mapArea, hint: hintEl,
     slots: slotsEl,
+    intro: introEl, start: startBtn,
+    result: resultEl, resultEyebrow, resultTitle, resultMessage, resultHits, resultMissing,
+    resultPercent, resultBar, resultRecord, playAgain: playAgainBtn, viewMap: viewMapBtn,
+    viewResult: viewResultBtn,
   } = els;
 
-  const QUIZ_SECONDS = country.quizSeconds || 8 * 60;
-  const LOW_TIME_THRESHOLD = 30; // segundos restantes para el aviso "se acaba el tiempo"
+  // Total que se muestra (el del archivo del país; si no, el nº de regiones).
+  const TOTAL = Number.isFinite(Number(country.total)) ? Number(country.total) : (country.regions || []).length;
 
   const prefersReducedMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -41,25 +48,16 @@ export function createGame({ country, texts, els, geoUrl }) {
   const featureByRegion = new Map();
   const solved = new Set();
   let localMode = false;
-  let secondsLeft = QUIZ_SECONDS;
-  let timerHandle = null;
-  let paused = false;
-  let quizEnded = false;
+  let phase = 'idle'; // 'idle' | 'playing' | 'ended'
   let tooltipEl = null;
   let zoomBehavior = null;
   let previousBest = null;
   let toastTimeoutHandle = null;
+  let resultRaf = null;
   let resizeTimer = null;
   let disposed = false;
   let mapRendered = false;
 
-  // Un color por región (se reparte en orden, así las vecinas casi nunca repiten):
-  // lo usan el mapa y el recuadro de esa región al acertarla.
-  const REGION_COLORS = [
-    '#e2b657', '#e4877a', '#86c5a2', '#6fb4e0', '#c795d6',
-    '#a9cf7c', '#8f9ee3', '#e9a36a', '#d98cab', '#67c6c0',
-  ];
-  const colorById = new Map(regions.map((r, i) => [r.id, REGION_COLORS[i % REGION_COLORS.length]]));
   const slotById = new Map();
 
   const cleanups = [];
@@ -69,14 +67,6 @@ export function createGame({ country, texts, els, geoUrl }) {
   }
 
   const normalizeSafe = normalizeText;
-
-  // ---------------- TIME ----------------
-
-  function fmtTime(sec) {
-    const m = String(Math.floor(sec / 60)).padStart(2, '0');
-    const s = String(sec % 60).padStart(2, '0');
-    return `${m}:${s}`;
-  }
 
   // ---------------- FEEDBACK / TOAST ----------------
 
@@ -92,28 +82,15 @@ export function createGame({ country, texts, els, geoUrl }) {
     toastTimeoutHandle = setTimeout(() => toastEl.classList.remove('show'), 1200);
   }
 
-  // Variante más llamativa y duradera para celebrar un récord personal.
-  function showRecordToast(msg) {
-    toastEl.textContent = '🏆 ' + msg;
-    toastEl.style.borderColor = '#e0bd7d';
-    toastEl.style.boxShadow = '0 0 18px rgba(224,189,125,.55)';
-    toastEl.classList.add('show');
-    if (toastTimeoutHandle) clearTimeout(toastTimeoutHandle);
-    toastTimeoutHandle = setTimeout(() => {
-      toastEl.classList.remove('show');
-      toastEl.style.borderColor = '';
-      toastEl.style.boxShadow = '';
-    }, 2600);
-  }
-
   // ---------------- COUNTER ----------------
 
   function updateCount() {
     countEl.textContent = solved.size;
-    totalEl.textContent = Number.isFinite(Number(country.total)) ? Number(country.total) : regions.length;
+    totalEl.textContent = TOTAL;
+    progressBar.style.width = (TOTAL ? Math.min(100, (solved.size / TOTAL) * 100) : 0) + '%';
 
-    if (solved.size === regions.length && regions.length) {
-      endQuiz(texts.completeMessage, 'ok');
+    if (phase === 'playing' && regions.length && solved.size === regions.length) {
+      endQuiz('complete');
     }
   }
 
@@ -144,8 +121,6 @@ export function createGame({ country, texts, els, geoUrl }) {
     slot.textContent = state === 'empty' ? '' : region.display || '';
     slot.title = state === 'empty' ? '' : region.display || '';
     slot.setAttribute('aria-label', state === 'empty' ? texts.slotEmpty : region.display || '');
-    if (state === 'solved') slot.style.setProperty('--slot-color', colorById.get(region.id));
-    else slot.style.removeProperty('--slot-color');
   }
 
   // Animación breve al acertar (la clase se quita sola al terminar).
@@ -166,40 +141,72 @@ export function createGame({ country, texts, els, geoUrl }) {
     hintEl.textContent = texts.hintTextRevealed;
   }
 
-  // ---------------- TIMER ----------------
+  // ---------------- START ----------------
 
-  function startTimer() {
-    if (timerHandle || quizEnded) return;
+  function showIntro() {
+    introEl.classList.remove('hidden');
+    startBtn.focus({ preventScroll: true });
+  }
 
-    timerHandle = setInterval(() => {
-      if (paused) return;
+  function startGame() {
+    if (phase !== 'idle') return;
+    phase = 'playing';
 
-      secondsLeft--;
-      timerEl.textContent = fmtTime(secondsLeft);
-      timerEl.classList.toggle('low', secondsLeft > 0 && secondsLeft <= LOW_TIME_THRESHOLD);
+    introEl.classList.add('hidden');
+    guessEl.disabled = false;
+    submitBtn.disabled = false;
+    giveUpBtn.disabled = false;
 
-      if (secondsLeft <= 0) {
-        secondsLeft = 0;
-        timerEl.textContent = '00:00';
-        endQuiz(texts.timeUpMessage, 'no');
-      }
-    }, 1000);
+    setFeedback('');
+    guessEl.focus();
+  }
+
+  // ---------------- RESULT SCREEN ----------------
+
+  function openResult(complete, count) {
+    const pct = TOTAL ? Math.round((count / TOTAL) * 100) : 0;
+
+    resultEl.classList.toggle('is-complete', complete);
+    resultEyebrow.textContent = complete ? texts.resultEyebrowComplete : texts.resultEyebrowEnded;
+    resultTitle.textContent = texts.resultTitle(pct, complete);
+    resultMessage.textContent = texts.resultMessage(count, complete);
+    resultHits.textContent = count;
+    resultMissing.textContent = Math.max(0, TOTAL - count);
+    resultPercent.textContent = pct + '%';
+
+    resultBar.style.width = '0%';
+    resultEl.classList.remove('hidden');
+    viewResultBtn.classList.add('hidden');
+
+    // La barra se rellena al abrirse (un frame después, para que se anime).
+    cancelAnimationFrame(resultRaf);
+    resultRaf = requestAnimationFrame(() => { resultBar.style.width = pct + '%'; });
+
+    playAgainBtn.focus({ preventScroll: true });
+  }
+
+  function closeResult() {
+    resultEl.classList.add('hidden');
+    if (phase === 'ended') viewResultBtn.classList.remove('hidden');
   }
 
   // ---------------- END OF QUIZ ----------------
 
-  function endQuiz(message, type) {
-    quizEnded = true;
-
-    if (timerHandle) clearInterval(timerHandle);
-    timerHandle = null;
+  function endQuiz(kind) {
+    if (phase !== 'playing') return;
+    phase = 'ended';
+    const complete = kind === 'complete';
 
     guessEl.disabled = true;
     submitBtn.disabled = true;
+    giveUpBtn.disabled = true;
 
-    setFeedback(message, type);
     revealMissingOnMap();
-    maybeCelebrateRecord();
+    setFeedback(texts.endedFeedback(solved.size));
+    closeFoundDrawer();
+
+    openResult(complete, solved.size);
+    showRecord(getRecordMessage());
     saveGameSession();
   }
 
@@ -219,39 +226,28 @@ export function createGame({ country, texts, els, geoUrl }) {
   }
 
   // Solo si hay sesión y la partida cuenta para el backend (mismas condiciones que saveGameSession).
-  function maybeCelebrateRecord() {
-    if (!api.isLoggedIn() || !country.id || localMode || !regions.length || !solved.size) return;
+  function getRecordMessage() {
+    if (!api.isLoggedIn() || !country.id || localMode || !regions.length || !solved.size) return null;
 
-    const total = regions.length;
-    const pctNow = Math.round((solved.size / total) * 1000) / 10;
-    const elapsedNow = QUIZ_SECONDS - secondsLeft;
+    if (!previousBest) return texts.firstCompletionMessage;
 
-    if (!previousBest) {
-      showRecordToast(texts.firstCompletionMessage);
-      return;
+    const pctNow = Math.round((solved.size / regions.length) * 1000) / 10;
+    if (pctNow > previousBest.percentage) {
+      const gain = Math.round((pctNow - previousBest.percentage) * 10) / 10;
+      return texts.newBestScoreMessage.replace('{gain}', gain);
     }
+    return null;
+  }
 
-    const prevPct = previousBest.percentage;
-    const prevTime = previousBest.time_seconds;
-
-    if (pctNow > prevPct) {
-      const gain = Math.round((pctNow - prevPct) * 10) / 10;
-      showRecordToast(texts.newBestScoreMessage.replace('{gain}', gain));
-      return;
-    }
-
-    if (pctNow === prevPct && prevTime != null && elapsedNow < prevTime) {
-      const saved = prevTime - elapsedNow;
-      showRecordToast(texts.newBestTimeMessage.replace('{saved}', saved));
-    }
+  function showRecord(message) {
+    resultRecord.textContent = message || '';
+    resultRecord.classList.toggle('hidden', !message);
   }
 
   // ---------------- SAVE SESSION ----------------
 
   function saveGameSession() {
     if (!api.isLoggedIn() || !country.id || localMode || !regions.length) return;
-
-    const elapsed = QUIZ_SECONDS - secondsLeft;
 
     // Solo las regiones con region_id real del backend (loadRegions() lo asigna);
     // las que no casaron no tienen id válido y romperían el guardado.
@@ -264,37 +260,32 @@ export function createGame({ country, texts, els, geoUrl }) {
       return;
     }
 
-    api.saveGameSession(country.id, elapsed, answers).catch((err) => {
+    // Sin cronómetro por ahora: el backend acepta time_seconds = null.
+    api.saveGameSession(country.id, null, answers).catch((err) => {
       console.error('Could not save the game session progress', err);
     });
   }
 
   // ---------------- RESET ----------------
+  // Deja el juego como al cargar: mapa limpio y pantalla de inicio.
 
   function resetQuiz() {
     solved.clear();
+    phase = 'idle';
 
-    secondsLeft = QUIZ_SECONDS;
-    paused = false;
-    quizEnded = false;
-
-    timerEl.textContent = fmtTime(QUIZ_SECONDS);
-    timerEl.classList.remove('paused', 'low');
-    pauseBtn.textContent = texts.pauseLabel;
-
-    if (timerHandle) clearInterval(timerHandle);
-    timerHandle = null;
-
-    guessEl.disabled = false;
-    submitBtn.disabled = false;
+    guessEl.disabled = true;
+    submitBtn.disabled = true;
+    giveUpBtn.disabled = true;
 
     closeFoundDrawer();
     setFeedback('');
+    showRecord(null);
+    resultEl.classList.add('hidden');
+    viewResultBtn.classList.add('hidden');
 
     svg.selectAll('.country')
       .classed('found', false)
-      .classed('revealed-missing', false)
-      .style('--region-fill', null);
+      .classed('revealed-missing', false);
     regions.forEach((r) => paintSlot(r, 'empty'));
     slotsEl.scrollTop = 0;
     hintEl.textContent = texts.hintText;
@@ -304,9 +295,8 @@ export function createGame({ country, texts, els, geoUrl }) {
     updateCount();
 
     guessEl.value = '';
-    guessEl.focus();
-
     resetMapView();
+    showIntro();
   }
 
   // ---------------- MATCHING REGIONS TO THE SVG ----------------
@@ -508,13 +498,13 @@ export function createGame({ country, texts, els, geoUrl }) {
       .on('mouseenter', function (e) {
         const id = this.getAttribute('data-region-id');
         if (!id) return;
-        if (!quizEnded && !solved.has(id)) return;
+        if (phase !== 'ended' && !solved.has(id)) return;
         const r = regions.find((x) => x.id === id);
         if (r) showMapTooltip(r.display, e);
       })
       .on('mousemove', function (e) {
         const id = this.getAttribute('data-region-id');
-        if (quizEnded || (id && solved.has(id))) moveMapTooltip(e);
+        if (phase === 'ended' || (id && solved.has(id))) moveMapTooltip(e);
       })
       .on('mouseleave', hideMapTooltip);
   }
@@ -529,7 +519,6 @@ export function createGame({ country, texts, els, geoUrl }) {
     const el = featureByRegion.get(region.id);
     if (el) {
       el.classed('found', true).classed('revealed-missing', false);
-      el.node().style.setProperty('--region-fill', colorById.get(region.id));
       flash(el.node(), 'just-found');
     }
 
@@ -560,20 +549,15 @@ export function createGame({ country, texts, els, geoUrl }) {
       const data = await api.getRegionsNames(country.slug);
       if (disposed) return;
 
-      let matchedCount = 0;
       data.forEach((backendRegion) => {
         const backendKeys = (backendRegion.names || []).map(normalizeSafe);
         const local = regions.find((r) =>
           (r.names || []).some((n) => backendKeys.includes(normalizeSafe(n)))
         );
-        if (local) {
-          local.region_id = backendRegion.region_id;
-          matchedCount++;
-        }
+        if (local) local.region_id = backendRegion.region_id;
       });
 
       localMode = false;
-      setFeedback(texts.connected(matchedCount));
     } catch (err) {
       if (disposed) return;
       console.warn('Backend unavailable or country not seeded, using local mode', err);
@@ -584,12 +568,10 @@ export function createGame({ country, texts, els, geoUrl }) {
   // ---------------- CHECK A GUESS ----------------
 
   async function submitGuess() {
-    if (quizEnded || paused) return;
+    if (phase !== 'playing') return;
 
     const raw = guessEl.value.trim();
     if (!raw) return;
-
-    startTimer();
 
     // Siempre primero en local (instantáneo, sin red): los nombres válidos ya
     // están en `regions`. Al backend solo se pregunta si lo local no encuentra nada.
@@ -661,32 +643,24 @@ export function createGame({ country, texts, els, geoUrl }) {
 
   // ---------------- CONTROLS ----------------
 
-  on(pauseBtn, 'click', () => {
-    if (quizEnded) return;
-
-    paused = !paused;
-    timerEl.classList.toggle('paused', paused);
-    pauseBtn.textContent = paused ? texts.resumeLabel : texts.pauseLabel;
-    setFeedback(paused ? texts.pausedMessage : '');
-
-    if (paused) guessEl.blur();
-    else guessEl.focus();
-  });
-
+  on(startBtn, 'click', startGame);
   on(submitBtn, 'click', submitGuess);
   on(missingBtn, 'click', toggleFoundList);
   on(foundDrawerClose, 'click', closeFoundDrawer);
   on(foundScrim, 'click', closeFoundDrawer);
 
-  on(giveUpBtn, 'click', () => {
-    if (quizEnded) return;
-    endQuiz(
-      texts.giveUpMessage.replace('{count}', solved.size).replace('{total}', regions.length),
-      'no'
-    );
-  });
+  on(giveUpBtn, 'click', () => endQuiz('giveup'));
 
   on(resetBtn, 'click', resetQuiz);
+  on(playAgainBtn, 'click', resetQuiz);
+  on(viewMapBtn, 'click', closeResult);
+  on(viewResultBtn, 'click', () => openResult(solved.size === regions.length, solved.size));
+
+  on(document, 'keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!resultEl.classList.contains('hidden')) closeResult();
+    else closeFoundDrawer();
+  });
 
   // Zoom: los manejadores leen `zoomBehavior` en el momento del clic, así siguen
   // valiendo cuando el redimensionado recrea el comportamiento de zoom.
@@ -708,16 +682,13 @@ export function createGame({ country, texts, els, geoUrl }) {
   // Comprobación instantánea al escribir: solo con el nombre COMPLETO exacto
   // (findLocalGuess aceptaría prefijos de 3+ letras y marcaría "Kabul" al teclear "kab").
   on(guessEl, 'input', () => {
-    if (quizEnded || paused) return;
+    if (phase !== 'playing') return;
 
     const raw = guessEl.value.trim();
     if (!raw) return;
 
     const region = findExactLocalMatch(regions, raw);
-    if (region && !solved.has(region.id)) {
-      startTimer();
-      addSolved(region);
-    }
+    if (region && !solved.has(region.id)) addSolved(region);
   });
 
   // ---------------- LOAD GEOMETRY ----------------
@@ -764,12 +735,15 @@ export function createGame({ country, texts, els, geoUrl }) {
     // Recuadros vacíos ya desde el principio (así el mapa se calcula con su tamaño final).
     buildSlots();
 
-    // Textos iniciales de los elementos que el motor controla.
-    totalEl.textContent = Number.isFinite(Number(country.total)) ? Number(country.total) : regions.length;
-    pauseBtn.textContent = texts.pauseLabel;
+    // Estado inicial: nada empieza hasta pulsar «Empezar».
+    phase = 'idle';
+    guessEl.disabled = true;
+    submitBtn.disabled = true;
+    giveUpBtn.disabled = true;
+    resultEl.classList.add('hidden');
+    viewResultBtn.classList.add('hidden');
     hintEl.textContent = texts.hintText;
     loadingText.textContent = texts.loadingMap;
-    timerEl.textContent = fmtTime(QUIZ_SECONDS);
 
     try {
       // Solo se espera a la geometría SVG (lo único que renderMap necesita).
@@ -781,15 +755,9 @@ export function createGame({ country, texts, els, geoUrl }) {
       renderMap();
       mapRendered = true;
       updateCount();
-      startTimer();
 
-      timerEl.textContent = fmtTime(QUIZ_SECONDS);
-      guessEl.disabled = false;
-      submitBtn.disabled = false;
       loadingOverlay.classList.add('hidden');
-
-      setFeedback(texts.readyMessage);
-      guessEl.focus();
+      showIntro();
 
       Promise.all([loadRegions(), loadPreviousBest()]).then(() => {
         if (!disposed && localMode) showToast(texts.localModeToast);
@@ -808,8 +776,7 @@ export function createGame({ country, texts, els, geoUrl }) {
   return {
     destroy() {
       disposed = true;
-      if (timerHandle) clearInterval(timerHandle);
-      timerHandle = null;
+      cancelAnimationFrame(resultRaf);
       clearTimeout(toastTimeoutHandle);
       clearTimeout(resizeTimer);
       cleanups.forEach((fn) => fn());

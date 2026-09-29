@@ -8,7 +8,7 @@ import UserAvatar from '../../components/UserAvatar';
 import { computeRank, formatRelative } from '../Profile/profileLogic';
 import {
   COUNTRY_FILTERS, METRICS, barWidths, compareContinents, computeScore, countryWinner,
-  decide, filterCountries, formatTime, hasAnyGames, plural, sortCountries, sortRegions,
+  decide, filterCountries, hasAnyGames, plural, sortCountries, sortRegions,
   summarizeRegions,
 } from './compareLogic';
 import './Compare.css';
@@ -153,7 +153,7 @@ function SideChip({ who, side }) {
     <div className="cmp-chip-side">
       <strong>{who}</strong>
       {side
-        ? <span>{side.best_percentage}% best · {formatTime(side.best_time_seconds)} · {plural(side.games_played, 'game', 'games')}</span>
+        ? <span>{side.best_percentage}% best · {plural(side.games_played, 'game', 'games')}</span>
         : <span className="dim">Hasn&apos;t played this one</span>}
     </div>
   );

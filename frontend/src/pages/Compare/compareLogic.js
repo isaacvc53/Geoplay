@@ -8,13 +8,6 @@ const CONTINENT_ORDER = ['Europe', 'Americas', 'Asia', 'Africa', 'Oceania'];
 
 export const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-export function formatTime(totalSeconds) {
-  if (totalSeconds == null) return '—';
-  const m = Math.floor(totalSeconds / 60);
-  const s = totalSeconds % 60;
-  return m > 0 ? `${m}m ${s}s` : `${s}s`;
-}
-
 // ---------- scoreboard ----------
 
 // `better` says which direction wins. `max` fixes the bar scale (percentages).
@@ -24,7 +17,6 @@ export const METRICS = [
   { key: 'accuracy', label: 'Guess accuracy', better: 'high', max: 100, format: (v) => `${v}%` },
   { key: 'mastered_count', label: 'Territories mastered', better: 'high', format: (v) => String(v) },
   { key: 'streak', label: 'Current streak', better: 'high', format: (v) => plural(v, 'day', 'days') },
-  { key: 'fastest_perfect_seconds', label: 'Fastest perfect run', better: 'low', format: formatTime },
 ];
 
 const has = (v) => v !== null && v !== undefined;
@@ -91,17 +83,13 @@ export function compareContinents(countries) {
 
 const pctOf = (side) => (side ? side.best_percentage : null);
 
-// Same rule as a "best score": higher % wins, and on a tie the faster time.
+// Same rule as a "best score": higher % wins.
 export function countryWinner(c) {
   if (c.me && !c.friend) return 'me';
   if (!c.me && c.friend) return 'friend';
   if (!c.me && !c.friend) return null;
   const byPct = decide('high', c.me.best_percentage, c.friend.best_percentage);
-  if (byPct !== 'tie') return byPct;
-  if (has(c.me.best_time_seconds) && has(c.friend.best_time_seconds)) {
-    return decide('low', c.me.best_time_seconds, c.friend.best_time_seconds);
-  }
-  return 'tie';
+  return byPct;
 }
 
 export function countryGap(c) {
