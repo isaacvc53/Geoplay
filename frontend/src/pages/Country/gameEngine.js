@@ -25,9 +25,8 @@ export function createGame({ country, texts, els, geoUrl }) {
   const {
     guess: guessEl, count: countEl, total: totalEl, progressBar, feedback: feedbackEl,
     toast: toastEl, loadingOverlay, loadingText, submit: submitBtn,
-    foundDrawer: foundListWrap, foundList, foundScrim, foundDrawerClose,
     zoomIn: zoomInBtn, zoomOut: zoomOutBtn, resetView: resetViewBtn,
-    missing: missingBtn, giveUp: giveUpBtn, reset: resetBtn, mapArea, hint: hintEl,
+    giveUp: giveUpBtn, reset: resetBtn, mapArea, hint: hintEl,
     slots: slotsEl,
     intro: introEl, start: startBtn,
     result: resultEl, resultEyebrow, resultTitle, resultMessage, resultHits, resultMissing,
@@ -203,7 +202,6 @@ export function createGame({ country, texts, els, geoUrl }) {
 
     revealMissingOnMap();
     setFeedback(texts.endedFeedback(solved.size));
-    closeFoundDrawer();
 
     openResult(complete, solved.size);
     showRecord(getRecordMessage());
@@ -277,7 +275,6 @@ export function createGame({ country, texts, els, geoUrl }) {
     submitBtn.disabled = true;
     giveUpBtn.disabled = true;
 
-    closeFoundDrawer();
     setFeedback('');
     showRecord(null);
     resultEl.classList.add('hidden');
@@ -291,7 +288,6 @@ export function createGame({ country, texts, els, geoUrl }) {
     hintEl.textContent = texts.hintText;
 
     hideMapTooltip();
-    updateFoundList();
     updateCount();
 
     guessEl.value = '';
@@ -529,8 +525,6 @@ export function createGame({ country, texts, els, geoUrl }) {
       slot.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion ? 'auto' : 'smooth' });
     }
 
-    updateFoundList();
-
     // Primero el feedback y luego updateCount(): si esta era la última región,
     // updateCount() termina la partida y su mensaje de "completado" no debe
     // quedar pisado por el "¡Correcto!" (en game.js original sí se pisaba).
@@ -604,50 +598,10 @@ export function createGame({ country, texts, els, geoUrl }) {
     addSolved(region);
   }
 
-  // ---------------- FOUND-REGIONS DRAWER ----------------
-
-  function updateFoundList() {
-    const found = regions
-      .filter((r) => solved.has(r.id))
-      .sort((a, b) => a.display.localeCompare(b.display, country.lang || 'es'));
-
-    foundList.replaceChildren(
-      ...found.map((r) => {
-        const chip = document.createElement('span');
-        chip.className = 'chip';
-        chip.textContent = r.display;
-        return chip;
-      })
-    );
-  }
-
-  function openFoundDrawer() {
-    foundListWrap.classList.add('open');
-    foundScrim.classList.add('open');
-  }
-
-  function closeFoundDrawer() {
-    foundListWrap.classList.remove('open');
-    foundScrim.classList.remove('open');
-  }
-
-  function toggleFoundList() {
-    if (!solved.size) {
-      setFeedback(texts.noneFoundMessage);
-      return;
-    }
-    updateFoundList();
-    if (foundListWrap.classList.contains('open')) closeFoundDrawer();
-    else openFoundDrawer();
-  }
-
   // ---------------- CONTROLS ----------------
 
   on(startBtn, 'click', startGame);
   on(submitBtn, 'click', submitGuess);
-  on(missingBtn, 'click', toggleFoundList);
-  on(foundDrawerClose, 'click', closeFoundDrawer);
-  on(foundScrim, 'click', closeFoundDrawer);
 
   on(giveUpBtn, 'click', () => endQuiz('giveup'));
 
@@ -657,9 +611,7 @@ export function createGame({ country, texts, els, geoUrl }) {
   on(viewResultBtn, 'click', () => openResult(solved.size === regions.length, solved.size));
 
   on(document, 'keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (!resultEl.classList.contains('hidden')) closeResult();
-    else closeFoundDrawer();
+    if (e.key === 'Escape' && !resultEl.classList.contains('hidden')) closeResult();
   });
 
   // Zoom: los manejadores leen `zoomBehavior` en el momento del clic, así siguen

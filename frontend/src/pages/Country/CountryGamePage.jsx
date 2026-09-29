@@ -33,7 +33,7 @@ function CountryGame({ country, texts, geoUrl }) {
   }, [country, texts, geoUrl]);
 
   // Los elementos cuyo texto/clases controla el motor (contadores, feedback, pista, toast,
-  // lista, pantalla de inicio y de resultado) se renderizan SIN hijos dinámicos:
+  // pantalla de inicio y de resultado) se renderizan SIN hijos dinámicos:
   // React no los vuelve a tocar.
   return (
     <section className="game">
@@ -100,22 +100,12 @@ function CountryGame({ country, texts, geoUrl }) {
 
       <div className="bottom">
         <div className="left-actions">
-          <button ref={setEl('missing')} className="secondary regions-btn" type="button">{texts.missingLabel}</button>
           <button ref={setEl('giveUp')} className="secondary" type="button" disabled>{texts.giveUpLabel}</button>
           <button ref={setEl('viewResult')} className="secondary hidden" type="button">{texts.viewResultLabel}</button>
         </div>
         <div className="right-actions">
           <button ref={setEl('reset')} className="secondary" type="button">{texts.resetLabel}</button>
         </div>
-      </div>
-
-      <div className="found-scrim" ref={setEl('foundScrim')} />
-      <div className="found-drawer" ref={setEl('foundDrawer')}>
-        <div className="found-drawer-handle">
-          <span>{texts.missingLabel}</span>
-          <button type="button" className="icon-btn" ref={setEl('foundDrawerClose')} aria-label={UI.close}>✕</button>
-        </div>
-        <div className="found-list" ref={setEl('foundList')} />
       </div>
 
       {/* Pantalla de resultado (al rendirse o al completar el mapa). */}
@@ -195,9 +185,8 @@ export default function CountryGamePage() {
     <div className="country-page">
       <div className="page">
         <header className="game-header">
-          <Link to="/mapa-mundial" className="back-btn">
-            <span className="arrow" aria-hidden="true">←</span>
-            <span>{ready ? stableTexts.backLabel : 'Mapa mundial'}</span>
+          <Link to="/mapa-mundial" className="btn-back">
+            <span className="arrow" aria-hidden="true">←</span> {ready ? stableTexts.backLabel : 'Mapa mundial'}
           </Link>
           <div className="header-text">
             <p className="kicker">{ready ? stableTexts.kicker : 'Geotaria'}</p>

@@ -77,8 +77,8 @@ function inferNoun(country) {
 // Campos de texto que un archivo con lang:"es" puede sobrescribir.
 const TEXT_KEYS = [
   'kicker', 'title', 'subtitle', 'guessPlaceholder', 'submitLabel',
-  'missingLabel', 'giveUpLabel', 'resetLabel', 'hintText', 'hintTextRevealed', 'correctPrefix',
-  'notFoundMessage', 'alreadyFoundMessage', 'noneFoundMessage', 'loadErrorMessage',
+  'giveUpLabel', 'resetLabel', 'hintText', 'hintTextRevealed', 'correctPrefix',
+  'notFoundMessage', 'alreadyFoundMessage', 'loadErrorMessage',
   'backLabel', 'firstCompletionMessage', 'newBestScoreMessage',
 ];
 
@@ -90,7 +90,6 @@ export const UI = {
   zoomIn: 'Acercar',
   zoomOut: 'Alejar',
   resetView: 'Restablecer vista',
-  close: 'Cerrar',
   localModeToast: 'Modo local (sin conexión con el servidor).',
 };
 
@@ -116,7 +115,6 @@ export function buildTexts(country, slug) {
     subtitle: `Escribe ${un} ${noun.sg} de ${place} y el mapa se irá rellenando.`,
     guessPlaceholder: `Escribe ${un} ${noun.sg}…`,
     submitLabel: 'Comprobar',
-    missingLabel: `Mis ${noun.pl}`,
     giveUpLabel: 'Rendirse',
     resetLabel: 'Reiniciar',
     hintText: 'Arrastra el mapa · usa la rueda para hacer zoom',
@@ -124,7 +122,6 @@ export function buildTexts(country, slug) {
     correctPrefix: '¡Correcto! ',
     notFoundMessage: 'No encontrado o nombre ambiguo.',
     alreadyFoundMessage: 'Ese ya lo tenías.',
-    noneFoundMessage: 'Todavía no has acertado nada.',
     loadErrorMessage: `No se pudo cargar el mapa de ${place}. Comprueba tu conexión.`,
     backLabel: 'Mapa mundial',
     firstCompletionMessage: 'Primera partida registrada en este país',
