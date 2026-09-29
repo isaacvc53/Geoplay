@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import FriendsPanel from './FriendsPanel';
+import { useFriends } from './useFriends';
 import './Menu.css';
 
 // ---------- small presentational pieces ----------
@@ -108,6 +110,8 @@ export default function MenuPage() {
   const [openDrawer, setOpenDrawer] = useState(null); // 'friends' | 'achievements' | 'account' | null
   const [stats, setStats] = useState(null);
   const [worldPaths, setWorldPaths] = useState([]);
+  const friends = useFriends(loggedIn);
+  const pendingRequests = friends.data ? friends.data.incoming.length : 0;
 
   // The decorative map is ~1.2 MB of path data: load it in its own chunk.
   useEffect(() => {
@@ -137,6 +141,12 @@ export default function MenuPage() {
     return () => { cancelled = true; };
   }, [loggedIn]);
 
+  // Refresh friends and requests every time the drawer is opened.
+  const reloadFriends = friends.reload;
+  useEffect(() => {
+    if (openDrawer === 'friends' && loggedIn) reloadFriends();
+  }, [openDrawer, loggedIn, reloadFriends]);
+
   const toggle = (name) => setOpenDrawer((cur) => (cur === name ? null : name));
   const close = () => setOpenDrawer(null);
 
@@ -158,8 +168,9 @@ export default function MenuPage() {
             <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
-            <button type="button" className="icon-btn" title="Friends" aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
+            <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
               <IconFriends />
+              {pendingRequests > 0 && <span className="icon-badge" aria-hidden="true">{pendingRequests}</span>}
             </button>
             <a href="#" onClick={noop} className="icon-btn disabled" title="Challenges — coming soon">
               <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -178,16 +189,8 @@ export default function MenuPage() {
         </div>
 
         {/* Friends */}
-        <Drawer id="friendsDrawer" label="Friends" title="Friends" soon open={openDrawer === 'friends'} onClose={close}>
-          <div className="drawer-search">
-            <input type="text" placeholder="Add a friend by username" disabled />
-            <button type="button" disabled>Add</button>
-          </div>
-          <div className="drawer-empty">
-            <div className="icon-circle big"><IconFriends /></div>
-            <p className="drawer-empty-title">Friends are on the way</p>
-            <p className="drawer-empty-desc">Soon you&apos;ll be able to add friends, see their progress and race them on timed challenges.</p>
-          </div>
+        <Drawer id="friendsDrawer" label="Friends" title="Friends" open={openDrawer === 'friends'} onClose={close}>
+          <FriendsPanel loggedIn={loggedIn} friends={friends} />
         </Drawer>
 
         {/* Achievements */}
@@ -240,7 +243,7 @@ export default function MenuPage() {
             </div>
             <p className="desc">More ways to play are on the way.</p>
             <div className="roadmap-list">
-              {['Friends', 'Challenges', 'Achievements'].map((label) => (
+              {['Challenges', 'Achievements'].map((label) => (
                 <div className="roadmap-row" key={label}>
                   <span className="bullet" /><span className="label">{label}</span><span className="tag">Soon</span>
                 </div>

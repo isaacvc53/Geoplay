@@ -46,11 +46,7 @@ export const api = {
     if (res.status === 401 && this._getToken()) {
       this._handleUnauthorized();
     }
-    if (!res.ok) {
-      const err = new Error(`HTTP ${res.status}`);
-      err.status = res.status;
-      throw err;
-    }
+    if (!res.ok) throw await this._makeError(res);
     return res.json();
   },
 
@@ -66,12 +62,38 @@ export const api = {
     if (res.status === 401 && this._getToken()) {
       this._handleUnauthorized();
     }
-    if (!res.ok) {
-      const err = new Error(`HTTP ${res.status}`);
-      err.status = res.status;
-      throw err;
-    }
+    if (!res.ok) throw await this._makeError(res);
     return res.json();
+  },
+
+  // Builds the Error thrown for a failed response. Besides `status`, it
+  // carries `code` when the backend sent {"detail": {"code": "..."}}
+  // (used by the friends endpoints so the UI can show its own message).
+  async _makeError(res) {
+    const err = new Error(`HTTP ${res.status}`);
+    err.status = res.status;
+    try {
+      const body = await res.json();
+      const detail = body && body.detail;
+      if (detail && typeof detail === 'object' && !Array.isArray(detail)) {
+        err.code = detail.code;
+      }
+    } catch {
+      // response without a JSON body
+    }
+    return err;
+  },
+
+  async _delete(path) {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}${path}`, {
+      method: 'DELETE',
+      headers: { ...this._authHeaders() },
+    });
+    if (res.status === 401 && this._getToken()) {
+      this._handleUnauthorized();
+    }
+    if (!res.ok) throw await this._makeError(res);
+    return null; // DELETE endpoints answer 204 No Content
   },
 
   // --- Geography ---
@@ -154,5 +176,30 @@ export const api = {
 
   getRecentSessions(limit = 20) {
     return this._get(`/progress/sessions/recent?limit=${limit}`);
+  },
+
+  // --- Friends ---
+
+  // -> { friends: [...], incoming: [...], outgoing: [...] }
+  getFriends() {
+    return this._get(`/friends`);
+  },
+
+  // -> { status: 'pending' | 'accepted', friendship_id, username }
+  sendFriendRequest(username) {
+    return this._post(`/friends/requests`, { username });
+  },
+
+  acceptFriendRequest(friendshipId) {
+    return this._post(`/friends/requests/${friendshipId}/accept`, {});
+  },
+
+  // Declines a received request or cancels a sent one.
+  removeFriendRequest(friendshipId) {
+    return this._delete(`/friends/requests/${friendshipId}`);
+  },
+
+  removeFriend(friendshipId) {
+    return this._delete(`/friends/${friendshipId}`);
   },
 };
