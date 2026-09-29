@@ -1,24 +1,24 @@
 window.GEOTARIA_COUNTRY = {
-  slug: "poland",
+  slug: "portugal",
   lang: "en",
   kicker: "GeoPlay · Country",
-  title: "How many voivodeships of Poland can you name?",
-  subtitle: "Type a Polish voivodeship and the map will fill in.",
-  total: 16,
+  title: "How many districts and autonomous regions of Portugal can you name?",
+  subtitle: "Type a Portuguese district or autonomous region and the map will fill in.",
+  total: 20,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/poland.svg",
+  geoFile: "../data/geo/portugal.svg",
 
-  guessPlaceholder: "Type a voivodeship…",
+  guessPlaceholder: "Type a district or autonomous region…",
   submitLabel: "Check",
   pauseLabel: "Pause",
   resumeLabel: "Resume",
-  missingLabel: "My voivodeships",
+  missingLabel: "My districts and autonomous regions",
   giveUpLabel: "Give up",
   resetLabel: "Reset",
 
   hintText: "Drag the map · scroll to zoom",
-  hintTextRevealed: "Hover over a voivodeship to see its name",
+  hintTextRevealed: "Hover over a district or autonomous region to see its name",
 
   correctPrefix: "Correct! ",
   notFoundMessage: "Not found or ambiguous name.",
@@ -27,172 +27,194 @@ window.GEOTARIA_COUNTRY = {
   pausedMessage: "The quiz is paused.",
 
   completeMessage:
-    "You've completed all 16 voivodeships of Poland! 🇵🇱",
+    "You've completed all 20 districts and autonomous regions of Portugal! 🇵🇹",
 
   timeUpMessage: "Time's up.",
 
   giveUpMessage:
-    "Quiz finished: {count}/{total}. The missing voivodeships are highlighted; hover over them to see their names.",
+    "Quiz finished: {count}/{total}. The missing districts and autonomous regions are highlighted; hover over them to see their names.",
 
   readyMessage: "Map ready — start typing!",
   readyLocalMessage: "Map ready in local mode.",
 
   loadErrorMessage:
-    "Could not load the map of Poland. Check your connection.",
+    "Could not load the map of Portugal. Check your connection.",
 
   regions: [
     {
-      id: "PL02",
-      name: "Lower Silesian",
+      id: "PT01",
+      name: "Aveiro",
       names: [
-        "Lower Silesian",
-        "Lower Silesian Voivodeship",
-        "Lower Silesia",
-        "Dolnośląskie"
+        "Aveiro",
+        "Aveiro District"
       ]
     },
     {
-      id: "PL04",
-      name: "Kuyavian-Pomeranian",
+      id: "PT02",
+      name: "Beja",
       names: [
-        "Kuyavian-Pomeranian",
-        "Kuyavian-Pomeranian Voivodeship",
-        "Kuyavian Pomeranian",
-        "Kujawsko-Pomorskie"
+        "Beja",
+        "Beja District"
       ]
     },
     {
-      id: "PL06",
-      name: "Lublin",
+      id: "PT03",
+      name: "Braga",
       names: [
-        "Lublin",
-        "Lublin Voivodeship",
-        "Lubelskie"
+        "Braga",
+        "Braga District"
       ]
     },
     {
-      id: "PL08",
-      name: "Lubusz",
+      id: "PT04",
+      name: "Bragança",
       names: [
-        "Lubusz",
-        "Lubusz Voivodeship",
-        "Lubuskie"
+        "Bragança",
+        "Braganca",
+        "Bragança District",
+        "Braganca District"
       ]
     },
     {
-      id: "PL10",
-      name: "Łódź",
+      id: "PT05",
+      name: "Castelo Branco",
       names: [
-        "Łódź",
-        "Lodz",
-        "Łódź Voivodeship",
-        "Lodz Voivodeship",
-        "Łódzkie"
+        "Castelo Branco",
+        "Castelo Branco District"
       ]
     },
     {
-      id: "PL12",
-      name: "Lesser Poland",
+      id: "PT06",
+      name: "Coimbra",
       names: [
-        "Lesser Poland",
-        "Lesser Poland Voivodeship",
-        "Małopolskie",
-        "Malopolskie"
+        "Coimbra",
+        "Coimbra District"
       ]
     },
     {
-      id: "PL14",
-      name: "Masovian",
+      id: "PT07",
+      name: "Évora",
       names: [
-        "Masovian",
-        "Masovian Voivodeship",
-        "Mazowieckie"
+        "Évora",
+        "Evora",
+        "Évora District",
+        "Evora District"
       ]
     },
     {
-      id: "PL16",
-      name: "Opole",
+      id: "PT08",
+      name: "Faro",
       names: [
-        "Opole",
-        "Opole Voivodeship",
-        "Opolskie"
+        "Faro",
+        "Faro District",
+        "Algarve"
       ]
     },
     {
-      id: "PL18",
-      name: "Subcarpathian",
+      id: "PT09",
+      name: "Guarda",
       names: [
-        "Subcarpathian",
-        "Subcarpathian Voivodeship",
-        "Podkarpackie"
+        "Guarda",
+        "Guarda District"
       ]
     },
     {
-      id: "PL20",
-      name: "Podlachian",
+      id: "PT10",
+      name: "Leiria",
       names: [
-        "Podlachian",
-        "Podlachian Voivodeship",
-        "Podlaskie"
+        "Leiria",
+        "Leiria District"
       ]
     },
     {
-      id: "PL22",
-      name: "Pomeranian",
+      id: "PT11",
+      name: "Lisboa",
       names: [
-        "Pomeranian",
-        "Pomeranian Voivodeship",
-        "Pomorskie"
+        "Lisboa",
+        "Lisbon",
+        "Lisboa District",
+        "Lisbon District"
       ]
     },
     {
-      id: "PL24",
-      name: "Silesian",
+      id: "PT12",
+      name: "Portalegre",
       names: [
-        "Silesian",
-        "Silesian Voivodeship",
-        "Śląskie",
-        "Slaskie"
+        "Portalegre",
+        "Portalegre District"
       ]
     },
     {
-      id: "PL26",
-      name: "Świętokrzyskie",
+      id: "PT13",
+      name: "Porto",
       names: [
-        "Świętokrzyskie",
-        "Swietokrzyskie",
-        "Świętokrzyskie Voivodeship",
-        "Swietokrzyskie Voivodeship"
+        "Porto",
+        "Porto District"
       ]
     },
     {
-      id: "PL28",
-      name: "Warmian-Masurian",
+      id: "PT14",
+      name: "Santarém",
       names: [
-        "Warmian-Masurian",
-        "Warmian-Masurian Voivodeship",
-        "Warmian Masurian",
-        "Warmińsko-Mazurskie",
-        "Warminsko-Mazurskie"
+        "Santarém",
+        "Santarem",
+        "Santarém District",
+        "Santarem District"
       ]
     },
     {
-      id: "PL30",
-      name: "Greater Poland",
+      id: "PT15",
+      name: "Setúbal",
       names: [
-        "Greater Poland",
-        "Greater Poland Voivodeship",
-        "Wielkopolskie"
+        "Setúbal",
+        "Setubal",
+        "Setúbal District",
+        "Setubal District"
       ]
     },
     {
-      id: "PL32",
-      name: "West Pomeranian",
+      id: "PT16",
+      name: "Viana do Castelo",
       names: [
-        "West Pomeranian",
-        "West Pomeranian Voivodeship",
-        "West Pomerania",
-        "Zachodniopomorskie"
+        "Viana do Castelo",
+        "Viana do Castelo District"
+      ]
+    },
+    {
+      id: "PT17",
+      name: "Vila Real",
+      names: [
+        "Vila Real",
+        "Vila Real District"
+      ]
+    },
+    {
+      id: "PT18",
+      name: "Viseu",
+      names: [
+        "Viseu",
+        "Viseu District"
+      ]
+    },
+    {
+      id: "PT20",
+      name: "Azores",
+      names: [
+        "Azores",
+        "Azores Autonomous Region",
+        "Autonomous Region of the Azores",
+        "Açores",
+        "Região Autónoma dos Açores"
+      ]
+    },
+    {
+      id: "PT30",
+      name: "Madeira",
+      names: [
+        "Madeira",
+        "Madeira Autonomous Region",
+        "Autonomous Region of Madeira",
+        "Região Autónoma da Madeira"
       ]
     }
   ]
