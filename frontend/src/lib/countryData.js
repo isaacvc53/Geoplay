@@ -22,8 +22,9 @@ export async function loadCountryData(pais) {
   for (const slug of slugCandidates(pais)) {
     delete window.GEOTARIA_COUNTRY;
     try {
-      // ?v=... evita que el navegador/CDN sirva una copia antigua en caché.
-      await injectScript(`/data/countries/${encodeURIComponent(slug)}.js?v=${Date.now()}`);
+      // Sin ?v=Date.now(): nginx sirve /data/ con revalidación (ETag), así que el
+      // navegador solo vuelve a descargar el archivo si ha cambiado de verdad.
+      await injectScript(`/data/countries/${encodeURIComponent(slug)}.js`);
     } catch {
       continue;
     }

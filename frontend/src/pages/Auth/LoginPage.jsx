@@ -22,7 +22,9 @@ export default function LoginPage() {
       await login(email.trim(), password);
       navigate('/');
     } catch (err) {
-      setError(err.status === 401 ? 'Incorrect email or password.' : 'Something went wrong. Please try again.');
+      if (err.status === 401) setError('Incorrect email or password.');
+      else if (err.status === 429) setError('Too many attempts. Please wait a minute and try again.');
+      else setError('Something went wrong. Please try again.');
       setBusy(false);
     }
   }

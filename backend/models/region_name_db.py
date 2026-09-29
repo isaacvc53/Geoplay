@@ -1,4 +1,4 @@
-from sqlalchemy import String, ForeignKey
+from sqlalchemy import String, ForeignKey, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
@@ -18,3 +18,8 @@ class RegionName(Base):
     name: Mapped[str] = mapped_column(String(100))
 
     region: Mapped["Region"] = relationship()
+
+    # Lo usan selectinload(Region.names) y /regions/check en cada consulta.
+    __table_args__ = (
+        Index("ix_region_names_region_id", "region_id"),
+    )

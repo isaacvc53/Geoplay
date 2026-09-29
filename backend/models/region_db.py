@@ -21,4 +21,6 @@ class Region(Base):
 
     country: Mapped["Country"] = relationship()
 
-    names: Mapped[list["RegionName"]] = relationship()
+    names: Mapped[list["RegionName"]] = relationship(
+        cascade="all, delete-orphan", overlaps="region"
+    )

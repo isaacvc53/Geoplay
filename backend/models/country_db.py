@@ -13,4 +13,6 @@ class Country(Base):
     capital: Mapped[str] = mapped_column(String(100))
     continente: Mapped[str] = mapped_column(String(100))
 
-    regiones: Mapped[list["Region"]] = relationship()
+    regiones: Mapped[list["Region"]] = relationship(
+        cascade="all, delete-orphan", overlaps="country"
+    )

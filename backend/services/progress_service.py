@@ -15,26 +15,38 @@ from models.user_db import User
 
 
 def create_session(db: Session, user: User, data: GameSessionCreate) -> GameSession:
-    correct_count = sum(1 for a in data.answers if a.correct)
+    """Guarda una partida validando TODO en el servidor: el cliente solo dice
+    qué regiones acertó; el total de regiones lo decide la base de datos.
+    Lanza ValueError si las respuestas no encajan con el país."""
+    ids_validos = {
+        rid for (rid,) in db.query(Region.id).filter(Region.country_id == data.country_id)
+    }
+    if not ids_validos:
+        raise ValueError("Este país no tiene regiones")
+
+    respuestas: dict[int, bool] = {}
+    for a in data.answers:
+        if a.region_id not in ids_validos:
+            raise ValueError("Alguna región no pertenece a este país")
+        respuestas[a.region_id] = a.correct  # duplicadas: se queda la última
+
+    if not respuestas:
+        raise ValueError("No hay respuestas que guardar")
+
+    correct_count = sum(1 for ok in respuestas.values() if ok)
 
     sesion = GameSession(
         user_id=user.id,
         country_id=data.country_id,
-        total_regions=len(data.answers),
+        total_regions=len(ids_validos),
         correct_regions=correct_count,
         time_seconds=data.time_seconds,
     )
     db.add(sesion)
     db.flush()  # para tener sesion.id antes de crear las respuestas
 
-    for respuesta in data.answers:
-        db.add(
-            GameSessionAnswer(
-                session_id=sesion.id,
-                region_id=respuesta.region_id,
-                correct=respuesta.correct,
-            )
-        )
+    for region_id, correcta in respuestas.items():
+        db.add(GameSessionAnswer(session_id=sesion.id, region_id=region_id, correct=correcta))
 
     db.commit()
     db.refresh(sesion)

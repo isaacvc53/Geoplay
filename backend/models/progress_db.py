@@ -4,6 +4,7 @@ from sqlalchemy import ForeignKey, Boolean, Integer, DateTime, Index
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base import Base
+from models.utc import now_utc_naive
 
 
 class GameSession(Base):
@@ -18,12 +19,12 @@ class GameSession(Base):
     correct_regions: Mapped[int] = mapped_column(Integer)
     time_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    played_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    played_at: Mapped[datetime] = mapped_column(DateTime, default=now_utc_naive, index=True)
 
     answers: Mapped[list["GameSessionAnswer"]] = relationship()
 
-    # Índice compuesto: cubre exactamente "WHERE user_id = ? ORDER BY played_at DESC",
-    # que es el patrón de /progress/sessions/recent (el endpoint que tardaba 1.1s).
+    # Índice compuesto: cubre "WHERE user_id = ? ORDER BY played_at DESC"
+    # (patrón de /progress/sessions/recent).
     __table_args__ = (
         Index("ix_game_sessions_user_played", "user_id", "played_at"),
     )

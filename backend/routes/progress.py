@@ -25,7 +25,10 @@ def guardar_partida(
     if not pais:
         raise HTTPException(status_code=404, detail="País no encontrado")
 
-    return progress_service.create_session(db, usuario_actual, datos)
+    try:
+        return progress_service.create_session(db, usuario_actual, datos)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 # NUEVO: últimas partidas del jugador, más recientes primero. Va ANTES de

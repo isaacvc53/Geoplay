@@ -1,6 +1,6 @@
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic import BaseModel, ConfigDict
+from models.utc import UtcDatetime
 
 
 class AnswerIn(BaseModel):
@@ -10,8 +10,10 @@ class AnswerIn(BaseModel):
 
 class GameSessionCreate(BaseModel):
     country_id: int
-    time_seconds: int | None = None
-    answers: list[AnswerIn]
+    # Máximo 24 h; evita valores absurdos o negativos que rompan los rankings.
+    time_seconds: int | None = Field(default=None, ge=0, le=86400)
+    # Tope de seguridad: ningún país tiene más de unos cientos de regiones.
+    answers: list[AnswerIn] = Field(max_length=1000)
 
 
 class GameSessionOut(BaseModel):
@@ -22,7 +24,7 @@ class GameSessionOut(BaseModel):
     total_regions: int
     correct_regions: int
     time_seconds: int | None
-    played_at: datetime
+    played_at: UtcDatetime
 
 
 class RegionProgressOut(BaseModel):
@@ -43,7 +45,7 @@ class BestScoreOut(BaseModel):
     total_regions: int
     percentage: float
     time_seconds: int | None
-    played_at: datetime
+    played_at: UtcDatetime
 
 
 class CountryProgressOut(BaseModel):
@@ -57,7 +59,7 @@ class CountryProgressOut(BaseModel):
     best_score: BestScoreOut | None
     # NUEVO: cuándo jugaste tu última partida de este país (no tiene por qué
     # coincidir con best_score.played_at, que es tu MEJOR partida, no la última)
-    last_played_at: datetime | None = None
+    last_played_at: UtcDatetime | None = None
     regions: list[RegionProgressOut]
 
 
@@ -77,4 +79,4 @@ class GameSessionSummaryOut(BaseModel):
     correct_regions: int
     percentage: float
     time_seconds: int | None
-    played_at: datetime
+    played_at: UtcDatetime

@@ -22,7 +22,10 @@ export default function RegisterPage() {
       await register(email.trim(), username.trim(), password);
       navigate('/');
     } catch (err) {
-      setError(err.status === 400 ? 'That email or username is already taken.' : 'Something went wrong. Please try again.');
+      if (err.status === 400) setError('That email or username is already taken.');
+      else if (err.status === 422) setError('Check your details: username 3–50 characters, password 8–72 characters.');
+      else if (err.status === 429) setError('Too many attempts. Please wait a minute and try again.');
+      else setError('Something went wrong. Please try again.');
       setBusy(false);
     }
   }
@@ -41,7 +44,7 @@ export default function RegisterPage() {
         <form onSubmit={onSubmit}>
           <div className="field">
             <label htmlFor="username">Username</label>
-            <input type="text" id="username" required minLength={3} autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+            <input type="text" id="username" required minLength={3} maxLength={50} autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
           </div>
           <div className="field">
             <label htmlFor="email">Email</label>
@@ -49,7 +52,7 @@ export default function RegisterPage() {
           </div>
           <div className="field">
             <label htmlFor="password">Password</label>
-            <input type="password" id="password" required minLength={8} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input type="password" id="password" required minLength={8} maxLength={72} autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} />
             <div className="hint">At least 8 characters.</div>
           </div>
           <button type="submit" disabled={busy}>{busy ? 'Creating…' : 'Create account'}</button>

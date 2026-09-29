@@ -1,9 +1,11 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
-from database.connection import SessionLocal
 from core.security import create_access_token, decode_access_token
+from database.connection import get_db
 from models.user import UserCreate, UserOut, Token
 from models.user_db import User
 from services import auth_service
@@ -13,13 +15,11 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 # apunta al endpoint de login para que /docs sepa dónde pedir el token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+# Emails con permisos de administración (crear/editar/borrar países y regiones),
+# separados por comas en la variable de entorno ADMIN_EMAILS.
+ADMIN_EMAILS = {
+    e.strip().lower() for e in os.getenv("ADMIN_EMAILS", "").split(",") if e.strip()
+}
 
 
 def get_current_user(
@@ -36,14 +36,21 @@ def get_current_user(
     if payload is None:
         raise credenciales_invalidas
 
-    email: str | None = payload.get("sub")
-    if email is None:
+    try:
+        user_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
         raise credenciales_invalidas
 
-    usuario = auth_service.get_user_by_email(db, email)
-    if usuario is None:
+    usuario = auth_service.get_user_by_id(db, user_id)
+    if usuario is None or not usuario.is_active:
         raise credenciales_invalidas
 
+    return usuario
+
+
+def require_admin(usuario: User = Depends(get_current_user)) -> User:
+    if usuario.email.lower() not in ADMIN_EMAILS:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado")
     return usuario
 
 
@@ -54,7 +61,10 @@ def registrar_usuario(datos: UserCreate, db: Session = Depends(get_db)):
     if auth_service.get_user_by_username(db, datos.username):
         raise HTTPException(status_code=400, detail="Ese nombre de usuario ya existe")
 
-    return auth_service.create_user(db, datos)
+    try:
+        return auth_service.create_user(db, datos)
+    except auth_service.UsuarioDuplicado:
+        raise HTTPException(status_code=400, detail="Ese email o nombre de usuario ya existe")
 
 
 @auth_router.post("/login", response_model=Token)
@@ -71,7 +81,8 @@ def iniciar_sesion(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": usuario.email})
+    # El "sub" del token es el id del usuario (inmutable), no el email.
+    access_token = create_access_token(data={"sub": str(usuario.id)})
     return Token(access_token=access_token)
 
 

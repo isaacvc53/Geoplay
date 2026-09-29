@@ -9,3 +9,8 @@ def normalizar(texto: str) -> str:
     texto = "".join(c for c in texto if unicodedata.category(c) != "Mn")
     texto = re.sub(r"[-_/.,'’()]+", " ", texto)
     return " ".join(texto.split())
+
+
+def slugify(texto: str) -> str:
+    """'Costa Rica' -> 'costa-rica' (mismo criterio que normalizar, unido con guiones)."""
+    return normalizar(texto).replace(" ", "-")

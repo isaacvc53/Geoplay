@@ -4,6 +4,7 @@ from sqlalchemy import String, Boolean, DateTime
 from sqlalchemy.orm import Mapped, mapped_column
 
 from models.base import Base
+from models.utc import now_utc_naive
 
 
 class User(Base):
@@ -16,7 +17,4 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255))
 
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-
-    # Cuando montemos las estadísticas/progreso, aquí añadiremos:
-    # progress: Mapped[list["UserProgress"]] = relationship()
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=now_utc_naive)
