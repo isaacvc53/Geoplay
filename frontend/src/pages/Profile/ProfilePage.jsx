@@ -296,6 +296,7 @@ function Achievements({ stats }) {
 // Descarga la foto (si hay), permite cambiarla o quitarla. La imagen se recorta
 // en el navegador (avatarImage.js) antes de subirla.
 function useAvatar(user) {
+  const { updateUser } = useAuth(); // so the menu icon gets the new photo too
   const inputRef = useRef(null);
   const urlRef = useRef(null);
   const [url, setUrl] = useState(null);
@@ -330,7 +331,8 @@ function useAvatar(user) {
     setBusy(true);
     try {
       const blob = await squareAvatarBlob(file);
-      await api.uploadAvatar(blob);
+      const updated = await api.uploadAvatar(blob);
+      updateUser(updated);
       show(blob);
     } catch (err) {
       setError(avatarErrorMessage(err));
@@ -344,6 +346,7 @@ function useAvatar(user) {
     setBusy(true);
     try {
       await api.deleteAvatar();
+      updateUser((u) => (u ? { ...u, avatar_updated_at: null } : u));
       show(null);
     } catch (err) {
       setError(avatarErrorMessage(err));

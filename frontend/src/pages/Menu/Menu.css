@@ -121,6 +121,9 @@
   }
   .icon-btn:hover{ border-color:var(--brass-bright); color:var(--brass-bright); }
   .icon-btn.disabled{ opacity:.4; cursor:default; }
+  /* Own profile photo inside the account button / drawer circle. */
+  .btn-photo{ width:100%; height:100%; border-radius:50%; overflow:hidden; display:grid; place-items:center; }
+  .btn-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
   .icon-btn.disabled:hover{ border-color:var(--brass-dim); color:var(--brass); }
 
   

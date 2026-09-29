@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import UserAvatar from '../../components/UserAvatar';
 import FriendsPanel from './FriendsPanel';
 import { useFriends } from './useFriends';
 import './Menu.css';
@@ -186,7 +187,9 @@ export default function MenuPage() {
               <IconTrophy />
             </button>
             <button type="button" className="icon-btn" title="Account" aria-haspopup="dialog" aria-controls="accountDrawer" aria-expanded={openDrawer === 'account'} onClick={() => toggle('account')}>
-              <IconAccount />
+              {loggedIn && user
+                ? <UserAvatar className="btn-photo" userId={user.id} name={user.username} version={user.avatar_updated_at} fallback={<IconAccount />} />
+                : <IconAccount />}
             </button>
           </nav>
         </div>
@@ -218,7 +221,11 @@ export default function MenuPage() {
         <Drawer id="accountDrawer" label="Account" title="Account" open={openDrawer === 'account'} onClose={close}>
           <div id="authNav">
             <div className="drawer-empty">
-              <div className="icon-circle big"><IconAccount /></div>
+              <div className="icon-circle big">
+                {loggedIn && user
+                  ? <UserAvatar className="btn-photo" userId={user.id} name={user.username} version={user.avatar_updated_at} fallback={<IconAccount />} />
+                  : <IconAccount />}
+              </div>
               {loggedIn ? (
                 <>
                   <p className="drawer-empty-title">{user ? user.username : '…'}</p>
