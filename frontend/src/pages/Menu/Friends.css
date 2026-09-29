@@ -3,10 +3,10 @@
 /* Red dot with the number of pending requests on the topbar icon */
 .menu-page .icon-btn{ position:relative; }
 .menu-page .icon-badge{
-  position:absolute; top:-5px; right:-5px;
-  min-width:16px; height:16px; padding:0 4px;
+  position:absolute; top:-6px; right:-6px;
+  min-width:19px; height:19px; padding:0 5px;
   border-radius:999px; background:var(--rust); color:var(--parchment);
-  font-size:9.5px; font-weight:700; line-height:16px; text-align:center;
+  font-size:11px; font-weight:700; line-height:19px; text-align:center;
   box-shadow:0 0 0 2px var(--ocean-deep);
   pointer-events:none;
 }
@@ -28,23 +28,23 @@
 .menu-page .friends-panel .drawer-search button:not(:disabled):hover{ background:var(--land-hover); }
 
 .menu-page .friends-msg-slot{ min-height:20px; margin-bottom:14px; }
-.menu-page .friends-msg{ font-size:11.5px; line-height:1.5; }
+.menu-page .friends-msg{ font-size:14px; line-height:1.5; }
 .menu-page .friends-msg.ok{ color:var(--brass-bright); }
 .menu-page .friends-msg.error{ color:var(--rust); }
 
 .menu-page .friends-note{
   display:flex; flex-direction:column; align-items:flex-start; gap:10px;
-  font-size:11.5px; color:var(--parchment-dim);
+  font-size:14px; color:var(--parchment-dim);
 }
 
 .menu-page .friends-section{ margin-bottom:22px; }
 .menu-page .friends-section h3{
   display:flex; align-items:center; gap:8px; margin-bottom:8px;
-  font-size:9.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+  font-size:11.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
   color:var(--brass-dim);
 }
 .menu-page .friends-count{
-  font-size:9.5px; padding:2px 7px; border-radius:999px;
+  font-size:11.5px; padding:2px 7px; border-radius:999px;
   background:var(--line-soft); color:var(--brass);
 }
 .menu-page .friends-section ul{
@@ -54,23 +54,23 @@
 
 .menu-page .friend-row{
   display:flex; align-items:center; gap:10px;
-  padding:10px 12px;
+  padding:12px 14px;
   border:1px solid var(--line); border-radius:var(--radius);
   background:var(--panel-bg);
 }
 .menu-page .friend-avatar{
-  width:30px; height:30px; flex:none; border-radius:50%;
+  width:38px; height:38px; flex:none; border-radius:50%;
   border:1px solid var(--brass-dim);
   display:grid; place-items:center; overflow:hidden;
-  font-family:'Fraunces',Georgia,serif; font-size:13px; color:var(--brass);
+  font-family:'Fraunces',Georgia,serif; font-size:15.5px; color:var(--brass);
 }
 .menu-page .friend-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
 .menu-page .friend-who{ flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
 .menu-page .friend-name{
-  font-size:13px; color:var(--parchment);
+  font-size:15.5px; color:var(--parchment);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.menu-page .friend-meta{ font-size:10.5px; color:var(--parchment-dim); }
+.menu-page .friend-meta{ font-size:12.5px; color:var(--parchment-dim); }
 .menu-page .friend-actions{ display:flex; gap:6px; flex:none; }
 
 /* Friend rows: name and stats on top, actions on their own line underneath */
@@ -79,7 +79,7 @@
 .menu-page .friend-meta.dim{ color:var(--brass-dim); }
 
 .menu-page .friend-btn{
-  font-family:inherit; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
+  font-family:inherit; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase;
   padding:6px 10px; border-radius:var(--radius);
   border:1px solid var(--line); background:none; color:var(--parchment-dim);
   cursor:pointer;
