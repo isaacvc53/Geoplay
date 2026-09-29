@@ -1,4 +1,10 @@
 @keyframes geotaria-spin { to { transform: rotate(360deg); } }
+@keyframes geotaria-found-flash { from { filter: brightness(1.9); } to { filter: brightness(1); } }
+@keyframes geotaria-slot-pop {
+  0% { transform: scale(.9); }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
 .country-page{
 
 
@@ -7,6 +13,9 @@
   --water:#0e2233; --land:#ece6d7; --land-hover:#d9bd82; --found:#c9a24b;
   --found-stroke:#d4a94c; --accent:#c9a24b; --accent-soft:#3a2e14;
   --danger:#e0895a; --white:#f6f1e4;
+  /* Mapa: tierra azul pizarra sobre el mar, cada región acertada con su color. */
+  --map-land:#2d5877; --map-land-hover:#3f7599; --map-stroke:#0b1a28;
+  --map-missing:#b5563f; --map-missing-hover:#cf6c52;
 }
 
 *{box-sizing:border-box} &{
@@ -243,7 +252,7 @@ button.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
   position: relative;
   flex: 1 1 auto;
   min-height: 140px;
-  background: var(--water, #0a1f30);
+  background: radial-gradient(ellipse at 50% 42%, #17415f 0%, #0d2738 58%, #081a28 100%);
   border-top: 1px solid var(--line, #1c4363);
   overflow: hidden;
 }
@@ -258,15 +267,21 @@ button.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
 #map:active { cursor: grabbing; }
 
 .country {
-  fill: var(--land, #274a63);
-  stroke: #000;
-  stroke-width: .8;
+  fill: var(--map-land);
+  stroke: var(--map-stroke);
+  stroke-width: 1;
+  stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  transition: fill .15s ease, stroke .15s ease;
+  transition: fill .25s ease, stroke .25s ease;
 }
-.country:hover { fill: var(--land-hover, #33607f); stroke: #000; }
-.country.found { fill: var(--found, #2e7d5b); stroke: #000; }
-.country.revealed-missing { fill: var(--land-hover, #33607f); stroke: var(--accent-2, var(--accent, #7dd3fc)); }
+.country:hover { fill: var(--map-land-hover); }
+/* --region-fill lo pone el motor: un color distinto por región acertada. */
+.country.found { fill: var(--region-fill, var(--found)); stroke: var(--map-stroke); }
+.country.found:hover { filter: brightness(1.1); }
+.country.just-found { animation: geotaria-found-flash .7s ease-out; }
+/* Al terminar: las que faltaban, en rojo teja. */
+.country.revealed-missing { fill: var(--map-missing); stroke: rgba(255, 236, 226, .7); }
+.country.revealed-missing:hover { fill: var(--map-missing-hover); }
 
 .map-tools {
   position: absolute;
@@ -358,6 +373,59 @@ button.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
 .toast.show { opacity: 1; }
 
 
+
+/* Recuadros con todos los nombres a adivinar: vacíos hasta acertarlos. */
+.slots {
+  flex: 0 0 auto;
+  max-height: min(32vh, 260px);
+  overflow-y: auto;
+  padding: 10px 14px;
+  border-top: 1px solid var(--line, #1c4363);
+  background: rgba(8, 22, 34, .55);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line, #1c4363) transparent;
+}
+.slot {
+  display: block;
+  height: 30px;
+  padding: 0 10px;
+  line-height: 28px;
+  border: 1px dashed rgba(201, 162, 75, .3);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, .035);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink, #f6f1e4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background var(--game-transition), border-color var(--game-transition);
+}
+.slot.filled {
+  border: 1px solid rgba(201, 162, 75, .5);
+  border-left: 3px solid var(--slot-color, var(--found));
+  background: rgba(201, 162, 75, .16);
+  line-height: 26px;
+  padding-left: 8px;
+}
+@supports (background: color-mix(in srgb, red 10%, transparent)) {
+  .slot.filled {
+    border-color: color-mix(in srgb, var(--slot-color) 55%, transparent);
+    border-left-color: var(--slot-color);
+    background: color-mix(in srgb, var(--slot-color) 17%, transparent);
+  }
+}
+.slot.missed {
+  border: 1px solid rgba(224, 137, 90, .5);
+  background: rgba(224, 137, 90, .1);
+  color: var(--danger, #e0895a);
+  font-weight: 500;
+  line-height: 28px;
+}
+.slot.just { animation: geotaria-slot-pop .45s ease-out; }
 
 .feedback {
   flex: 0 0 auto;
@@ -478,6 +546,8 @@ button.regions-btn:hover { border-color: var(--found-stroke, #d4a94c); }
   .progress { min-width: unset; font-size: 16px; }
   .input-wrap { min-width: 100%; }
   .hint { display: none; }
+  .slots { max-height: 24vh; padding: 8px 10px; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+  .slot { font-size: 12px; }
   .bottom { padding: 8px 10px; padding-bottom: max(8px, env(safe-area-inset-bottom, 0)); }
   .found-drawer { max-height: 68%; }
 }

@@ -63,6 +63,9 @@ function CountryGame({ country, texts, geoUrl }) {
         <div className="toast" ref={setEl('toast')} />
       </div>
 
+      {/* Un recuadro por cada nombre que hay que adivinar: vacíos hasta acertarlos (los rellena el motor). */}
+      <div className="slots" ref={setEl('slots')} role="list" aria-label={texts.slotsLabel} />
+
       <div className="feedback" ref={setEl('feedback')} />
 
       <div className="bottom">

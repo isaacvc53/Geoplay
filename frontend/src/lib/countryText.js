@@ -108,9 +108,11 @@ export function buildTexts(country, slug) {
   const cargadas = f ? 'cargadas' : 'cargados';
   const total = Number.isFinite(Number(country.total)) ? Number(country.total) : (country.regions || []).length;
 
-  // Nombre del país para mostrar: español si lo conocemos; si no, el que ya venga en el archivo.
-  const place = nameEs || country.title || country.slug || slug;
-  const brand = (country.kicker || 'Geotaria').split(' · ')[0];
+  // Nombre del país para mostrar: español si lo conocemos; si no, el nombre que trae el
+  // kicker del archivo ("GeoPlay · Afghanistan") y, en último caso, el slug.
+  const kickerName = (country.kicker || '').split(' · ')[1];
+  const place = nameEs || kickerName || country.slug || slug;
+  const brand = 'Geotaria';
   const flag = ((country.completeMessage || '').match(FLAG_EMOJI) || [''])[0];
 
   const generated = {
@@ -151,6 +153,8 @@ export function buildTexts(country, slug) {
   // Mensajes con datos dinámicos.
   texts.connected = (n) => `Conectado: ${n} ${n === 1 ? noun.sg : noun.pl} ${n === 1 ? cargadas.replace(/s$/, '') : cargadas} desde la base de datos`;
   texts.loadingMap = `Cargando el mapa de ${place}…`;
+  texts.slotsLabel = `${noun.pl.charAt(0).toUpperCase()}${noun.pl.slice(1)} por adivinar`;
+  texts.slotEmpty = 'Por adivinar';
   texts.total = total;
   texts.place = place;
   texts.localModeToast = UI.localModeToast;

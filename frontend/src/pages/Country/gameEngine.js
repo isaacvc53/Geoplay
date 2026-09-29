@@ -25,6 +25,7 @@ export function createGame({ country, texts, els, geoUrl }) {
     foundDrawer: foundListWrap, foundList, foundScrim, foundDrawerClose,
     zoomIn: zoomInBtn, zoomOut: zoomOutBtn, resetView: resetViewBtn,
     missing: missingBtn, giveUp: giveUpBtn, reset: resetBtn, mapArea, hint: hintEl,
+    slots: slotsEl,
   } = els;
 
   const QUIZ_SECONDS = country.quizSeconds || 8 * 60;
@@ -51,6 +52,15 @@ export function createGame({ country, texts, els, geoUrl }) {
   let resizeTimer = null;
   let disposed = false;
   let mapRendered = false;
+
+  // Un color por región (se reparte en orden, así las vecinas casi nunca repiten):
+  // lo usan el mapa y el recuadro de esa región al acertarla.
+  const REGION_COLORS = [
+    '#e2b657', '#e4877a', '#86c5a2', '#6fb4e0', '#c795d6',
+    '#a9cf7c', '#8f9ee3', '#e9a36a', '#d98cab', '#67c6c0',
+  ];
+  const colorById = new Map(regions.map((r, i) => [r.id, REGION_COLORS[i % REGION_COLORS.length]]));
+  const slotById = new Map();
 
   const cleanups = [];
   function on(target, type, handler) {
@@ -107,12 +117,51 @@ export function createGame({ country, texts, els, geoUrl }) {
     }
   }
 
+  // ---------------- SLOTS (recuadros de nombres) ----------------
+
+  // Ordenados alfabéticamente y SIN texto: no se ve ningún nombre hasta acertarlo.
+  function buildSlots() {
+    slotById.clear();
+    const sorted = [...regions].sort((a, b) =>
+      (a.display || '').localeCompare(b.display || '', 'es')
+    );
+    slotsEl.replaceChildren(
+      ...sorted.map((r) => {
+        const slot = document.createElement('span');
+        slot.setAttribute('role', 'listitem');
+        slotById.set(r.id, slot);
+        paintSlot(r, 'empty');
+        return slot;
+      })
+    );
+  }
+
+  // state: 'empty' | 'solved' | 'missed' (los que faltaban al terminar)
+  function paintSlot(region, state) {
+    const slot = slotById.get(region.id);
+    if (!slot) return;
+    slot.className = 'slot' + (state === 'solved' ? ' filled' : state === 'missed' ? ' missed' : '');
+    slot.textContent = state === 'empty' ? '' : region.display || '';
+    slot.title = state === 'empty' ? '' : region.display || '';
+    slot.setAttribute('aria-label', state === 'empty' ? texts.slotEmpty : region.display || '');
+    if (state === 'solved') slot.style.setProperty('--slot-color', colorById.get(region.id));
+    else slot.style.removeProperty('--slot-color');
+  }
+
+  // Animación breve al acertar (la clase se quita sola al terminar).
+  function flash(node, cls) {
+    if (!node || prefersReducedMotion) return;
+    node.classList.add(cls);
+    node.addEventListener('animationend', () => node.classList.remove(cls), { once: true });
+  }
+
   // ---------------- REVEAL MISSING ----------------
 
   function revealMissingOnMap() {
     regions.forEach((r) => {
       const el = featureByRegion.get(r.id);
       if (el) el.classed('revealed-missing', !solved.has(r.id));
+      if (!solved.has(r.id)) paintSlot(r, 'missed');
     });
     hintEl.textContent = texts.hintTextRevealed;
   }
@@ -242,7 +291,12 @@ export function createGame({ country, texts, els, geoUrl }) {
     closeFoundDrawer();
     setFeedback('');
 
-    svg.selectAll('.country').classed('found', false).classed('revealed-missing', false);
+    svg.selectAll('.country')
+      .classed('found', false)
+      .classed('revealed-missing', false)
+      .style('--region-fill', null);
+    regions.forEach((r) => paintSlot(r, 'empty'));
+    slotsEl.scrollTop = 0;
     hintEl.textContent = texts.hintText;
 
     hideMapTooltip();
@@ -473,7 +527,18 @@ export function createGame({ country, texts, els, geoUrl }) {
     solved.add(region.id);
 
     const el = featureByRegion.get(region.id);
-    if (el) el.classed('found', true).classed('revealed-missing', false);
+    if (el) {
+      el.classed('found', true).classed('revealed-missing', false);
+      el.node().style.setProperty('--region-fill', colorById.get(region.id));
+      flash(el.node(), 'just-found');
+    }
+
+    paintSlot(region, 'solved');
+    const slot = slotById.get(region.id);
+    if (slot) {
+      flash(slot, 'just');
+      slot.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    }
 
     updateFoundList();
 
@@ -696,6 +761,9 @@ export function createGame({ country, texts, els, geoUrl }) {
   // ---------------- BOOTSTRAP ----------------
 
   async function bootstrap() {
+    // Recuadros vacíos ya desde el principio (así el mapa se calcula con su tamaño final).
+    buildSlots();
+
     // Textos iniciales de los elementos que el motor controla.
     totalEl.textContent = Number.isFinite(Number(country.total)) ? Number(country.total) : regions.length;
     pauseBtn.textContent = texts.pauseLabel;
@@ -749,6 +817,7 @@ export function createGame({ country, texts, els, geoUrl }) {
       svg.selectAll('.country').on('click mouseenter mousemove mouseleave', null);
       svg.interrupt();
       if (tooltipEl) { tooltipEl.remove(); tooltipEl = null; }
+      slotsEl.replaceChildren();
       const regionsGroup = svgEl.querySelector('.regions');
       if (regionsGroup) regionsGroup.replaceChildren();
     },
