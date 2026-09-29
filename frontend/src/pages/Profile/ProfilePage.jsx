@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
+import { avatarErrorMessage, squareAvatarBlob } from '../../lib/avatarImage';
 import { resolveDisplayName, resolveSlug, resolveTopoName } from '../../lib/countryInfo';
 import CountryPicker from './CountryPicker';
 import ProgressMap from './ProgressMap';
@@ -290,6 +291,70 @@ function Achievements({ stats }) {
   );
 }
 
+// ---------- foto de perfil ----------
+
+// Descarga la foto (si hay), permite cambiarla o quitarla. La imagen se recorta
+// en el navegador (avatarImage.js) antes de subirla.
+function useAvatar(user) {
+  const inputRef = useRef(null);
+  const urlRef = useRef(null);
+  const [url, setUrl] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const show = useCallback((blob) => {
+    if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    urlRef.current = blob ? URL.createObjectURL(blob) : null;
+    setUrl(urlRef.current);
+  }, []);
+
+  useEffect(() => () => { if (urlRef.current) URL.revokeObjectURL(urlRef.current); }, []);
+
+  const hasServerPhoto = Boolean(user.avatar_updated_at);
+  useEffect(() => {
+    if (!hasServerPhoto) return undefined;
+    let cancelled = false;
+    api.getAvatarBlob()
+      .then((blob) => { if (!cancelled && blob) show(blob); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [hasServerPhoto, show]);
+
+  const choose = () => inputRef.current?.click();
+
+  const onFile = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // permite volver a elegir el mismo archivo
+    if (!file) return;
+    setError('');
+    setBusy(true);
+    try {
+      const blob = await squareAvatarBlob(file);
+      await api.uploadAvatar(blob);
+      show(blob);
+    } catch (err) {
+      setError(avatarErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      await api.deleteAvatar();
+      show(null);
+    } catch (err) {
+      setError(avatarErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { url, busy, error, inputRef, choose, onFile, remove };
+}
+
 // ---------- vista principal (con datos ya cargados) ----------
 
 function ProfileView({ user, countries, onLogout }) {
@@ -300,6 +365,7 @@ function ProfileView({ user, countries, onLogout }) {
   const [spotMode, setSpotMode] = useState('weak');
   const [worldTopology, setWorldTopology] = useState({ status: 'loading' });
   const [provinceMap, setProvinceMap] = useState({ status: 'idle' });
+  const avatar = useAvatar(user);
 
   const played = useMemo(() => countries.filter((c) => c.games_played > 0), [countries]);
   const totalGames = countries.reduce((sum, c) => sum + c.games_played, 0);
@@ -376,7 +442,20 @@ function ProfileView({ user, countries, onLogout }) {
     <>
       <div className="identity">
         <div className="avatar-wrap">
-          <div className="avatar" aria-hidden="true">{user.username?.charAt(0).toUpperCase() || '?'}</div>
+          <button
+            type="button"
+            className={'avatar avatar-btn' + (avatar.busy ? ' busy' : '')}
+            onClick={avatar.choose}
+            disabled={avatar.busy}
+            aria-label={avatar.url ? 'Change profile photo' : 'Add a profile photo'}
+            title={avatar.url ? 'Change photo' : 'Add a photo'}
+          >
+            {avatar.url
+              ? <img src={avatar.url} alt="" />
+              : <span>{user.username?.charAt(0).toUpperCase() || '?'}</span>}
+            <span className="avatar-edit" aria-hidden="true">{avatar.busy ? '…' : 'Edit'}</span>
+          </button>
+          <input ref={avatar.inputRef} type="file" accept="image/*" hidden onChange={avatar.onFile} />
           <RankSeal />
         </div>
         <div className="identity-main">
@@ -387,6 +466,15 @@ function ProfileView({ user, countries, onLogout }) {
             <div><dt>Member since</dt><dd>{created}</dd></div>
             <div><dt>Email</dt><dd>{user.email}</dd></div>
           </dl>
+          <div className="avatar-actions">
+            <button type="button" className="link-btn" onClick={avatar.choose} disabled={avatar.busy}>
+              {avatar.url ? 'Change photo' : 'Add photo'}
+            </button>
+            {avatar.url && (
+              <button type="button" className="link-btn" onClick={avatar.remove} disabled={avatar.busy}>Remove</button>
+            )}
+            {avatar.error && <span className="avatar-error" role="alert">{avatar.error}</span>}
+          </div>
         </div>
       </div>
 

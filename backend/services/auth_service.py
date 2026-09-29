@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 
 from core.security import hash_password, verify_password
 from models.user import UserCreate
-from models.user_db import User
+from models.user_db import User, UserAvatar
+from models.utc import now_utc_naive
 
 
 class UsuarioDuplicado(Exception):
@@ -50,3 +51,25 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     if not usuario.is_active:
         return None
     return usuario
+
+
+def get_avatar(db: Session, user_id: int) -> UserAvatar | None:
+    return db.get(UserAvatar, user_id)
+
+
+def set_avatar(db: Session, user: User, content_type: str, data: bytes) -> None:
+    avatar = db.get(UserAvatar, user.id)
+    if avatar is None:
+        db.add(UserAvatar(user_id=user.id, content_type=content_type, data=data))
+    else:
+        avatar.content_type = content_type
+        avatar.data = data
+        avatar.updated_at = now_utc_naive()
+    db.commit()
+
+
+def delete_avatar(db: Session, user: User) -> None:
+    avatar = db.get(UserAvatar, user.id)
+    if avatar is not None:
+        db.delete(avatar)
+        db.commit()

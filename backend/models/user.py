@@ -37,6 +37,8 @@ class UserOut(BaseModel):
     email: EmailStr
     username: str
     created_at: UtcDatetime
+    # Fecha de la foto de perfil (None = sin foto).
+    avatar_updated_at: UtcDatetime | None = None
 
 
 class Token(BaseModel):

@@ -84,6 +84,20 @@ export const api = {
     return err;
   },
 
+  async _putForm(path, formData) {
+    // Sin Content-Type: el navegador lo pone con el boundary del multipart.
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}${path}`, {
+      method: 'PUT',
+      headers: { ...this._authHeaders() },
+      body: formData,
+    });
+    if (res.status === 401 && this._getToken()) {
+      this._handleUnauthorized();
+    }
+    if (!res.ok) throw await this._makeError(res);
+    return res.json();
+  },
+
   async _delete(path) {
     const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}${path}`, {
       method: 'DELETE',
@@ -154,6 +168,33 @@ export const api = {
 
   getCurrentUser() {
     return this._get(`/auth/me`);
+  },
+
+  // --- Profile photo ---
+
+  // `blob` is the already-cropped image. Resolves with the updated user.
+  uploadAvatar(blob) {
+    const form = new FormData();
+    form.append('archivo', blob, 'avatar.jpg');
+    return this._putForm(`/auth/me/avatar`, form);
+  },
+
+  deleteAvatar() {
+    return this._delete(`/auth/me/avatar`);
+  },
+
+  // The image needs the token, so an <img src> can't fetch it directly:
+  // we download it as a Blob and the caller makes an object URL. null = no photo.
+  async getAvatarBlob() {
+    const res = await fetch(`${GEOTARIA_CONFIG.API_BASE}/auth/me/avatar`, {
+      headers: { ...this._authHeaders() },
+    });
+    if (res.status === 401 && this._getToken()) {
+      this._handleUnauthorized();
+    }
+    if (res.status === 404) return null;
+    if (!res.ok) throw await this._makeError(res);
+    return res.blob();
   },
 
   // --- Progress / statistics ---

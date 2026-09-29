@@ -1,6 +1,6 @@
 import os
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
@@ -14,6 +14,23 @@ auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 # apunta al endpoint de login para que /docs sepa dónde pedir el token
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+
+# La foto llega ya recortada (256x256) desde el navegador; este tope es solo una
+# red de seguridad. nginx limita el cuerpo a 1 MB.
+MAX_AVATAR_BYTES = 512 * 1024
+
+
+def _detect_image_type(data: bytes) -> str | None:
+    """Tipo real según los primeros bytes (no nos fiamos del nombre ni del
+    Content-Type del cliente). Solo formatos raster: nada de SVG (puede llevar JS)."""
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    return None
+
 
 # Emails con permisos de administración (crear/editar/borrar países y regiones),
 # separados por comas en la variable de entorno ADMIN_EMAILS.
@@ -89,3 +106,53 @@ def iniciar_sesion(
 @auth_router.get("/me", response_model=UserOut)
 def perfil_actual(usuario_actual: User = Depends(get_current_user)):
     return usuario_actual
+
+
+@auth_router.put("/me/avatar", response_model=UserOut)
+def subir_foto(
+    archivo: UploadFile = File(...),
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    data = archivo.file.read(MAX_AVATAR_BYTES + 1)
+    if len(data) > MAX_AVATAR_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={"code": "avatar_too_large", "message": "La imagen es demasiado grande"},
+        )
+    tipo = _detect_image_type(data)
+    if tipo is None:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail={"code": "avatar_bad_type", "message": "Solo se admiten JPG, PNG o WebP"},
+        )
+    auth_service.set_avatar(db, usuario_actual, tipo, data)
+    db.refresh(usuario_actual)
+    return usuario_actual
+
+
+@auth_router.get("/me/avatar")
+def ver_foto(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    avatar = auth_service.get_avatar(db, usuario_actual.id)
+    if avatar is None:
+        raise HTTPException(status_code=404, detail="Sin foto de perfil")
+    return Response(
+        content=avatar.data,
+        media_type=avatar.content_type,
+        headers={
+            "Cache-Control": "private, no-cache",
+            "Content-Security-Policy": "default-src 'none'",
+        },
+    )
+
+
+@auth_router.delete("/me/avatar", status_code=status.HTTP_204_NO_CONTENT)
+def borrar_foto(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    auth_service.delete_avatar(db, usuario_actual)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
