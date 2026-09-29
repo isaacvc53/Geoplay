@@ -107,7 +107,10 @@ function computeHomeStats(countries) {
 
 export default function MenuPage() {
   const { loggedIn, user, logout } = useAuth();
-  const [openDrawer, setOpenDrawer] = useState(null); // 'friends' | 'achievements' | 'account' | null
+  // "/?panel=friends" opens the friends drawer straight away (used by the compare page).
+  const [openDrawer, setOpenDrawer] = useState(() => (
+    new URLSearchParams(window.location.search).get('panel') === 'friends' ? 'friends' : null
+  )); // 'friends' | 'achievements' | 'account' | null
   const [stats, setStats] = useState(null);
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
@@ -377,7 +380,7 @@ export default function MenuPage() {
 
             <div className="stats-foot">
               {stats
-                ? <>See the full breakdown on your <Link to="/perfil">profile</Link>.</>
+                ? <>See the full breakdown on your <Link to="/perfil">profile</Link>, or <Link to="/comparar">compare with a friend</Link>.</>
                 : 'Play a round to start building your stats.'}
             </div>
           </div>

@@ -202,4 +202,19 @@ export const api = {
   removeFriend(friendshipId) {
     return this._delete(`/friends/${friendshipId}`);
   },
+
+  // --- Compare with a friend ---
+
+  // Global stats of both players + a per-country summary. Only works with
+  // accepted friends (404 { code: 'friend_not_found' } otherwise). The browser's
+  // UTC offset lets the server compute streaks in the viewer's own timezone.
+  getComparison(username) {
+    const tz = new Date().getTimezoneOffset();
+    return this._get(`/compare?with=${encodeURIComponent(username)}&tz_offset=${tz}`);
+  },
+
+  // Region-by-region accuracy of both players in one country.
+  getCountryComparison(countryId, username) {
+    return this._get(`/compare/countries/${countryId}?with=${encodeURIComponent(username)}`);
+  },
 };

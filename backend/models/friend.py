@@ -24,6 +24,8 @@ class FriendOut(BaseModel):
     since: UtcDatetime  # desde cuándo son amigos
     games_played: int
     countries_played: int
+    accuracy: float | None = None  # % de acierto global (None si aún no ha jugado)
+    last_played_at: UtcDatetime | None = None
 
 
 class FriendRequestOut(BaseModel):

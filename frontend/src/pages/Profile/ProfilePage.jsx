@@ -488,6 +488,7 @@ function ProfileView({ user, countries, onLogout }) {
         </>
       )}
 
+      <Link className="btn" to="/comparar">Compare with a friend</Link>
       <button id="logoutBtn" type="button" onClick={onLogout}>Log out</button>
     </>
   );

@@ -1,9 +1,11 @@
-from sqlalchemy import func, or_
+from datetime import datetime
+
+from sqlalchemy import case, func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from models.friendship_db import STATUS_ACCEPTED, STATUS_PENDING, Friendship
-from models.progress_db import GameSession
+from models.progress_db import GameSession, GameSessionAnswer
 from models.user_db import User
 from models.utc import now_utc_naive
 from services import auth_service
@@ -154,6 +156,19 @@ def remove_friend(db: Session, me: User, friendship_id: int) -> None:
     db.commit()
 
 
+def get_friend_user(db: Session, me: User, username: str) -> User:
+    """Devuelve al usuario `username` SOLO si es amigo tuyo (solicitud aceptada).
+    Para cualquier otro caso (no existe, eres tú, solo hay solicitud pendiente,
+    cuenta desactivada) responde igual, así no se filtra qué nombres existen."""
+    other = auth_service.get_user_by_username(db, username)
+    if other is None or not other.is_active or other.id == me.id:
+        raise FriendsError("friend_not_found", "Amigo no encontrado", 404)
+    f = _find_between(db, me.id, other.id)
+    if f is None or f.status != STATUS_ACCEPTED:
+        raise FriendsError("friend_not_found", "Amigo no encontrado", 404)
+    return other
+
+
 def get_overview(db: Session, me: User) -> dict:
     """Amigos, solicitudes recibidas y solicitudes enviadas, con las consultas
     justas (relaciones + usuarios + estadísticas), sin importar cuántos amigos haya."""
@@ -176,19 +191,40 @@ def get_overview(db: Session, me: User) -> dict:
         for f in relaciones
         if f.status == STATUS_ACCEPTED and _other_id(f, me.id) in usuarios
     ]
-    stats: dict[int, tuple[int, int]] = {}
+    # partidas, países distintos y última partida (una consulta) ...
+    stats: dict[int, tuple[int, int, datetime | None]] = {}
+    # ... y % de acierto global por amigo (otra consulta)
+    accuracy: dict[int, float] = {}
     if amigos_ids:
         filas = (
             db.query(
                 GameSession.user_id,
                 func.count(GameSession.id),
                 func.count(func.distinct(GameSession.country_id)),
+                func.max(GameSession.played_at),
             )
             .filter(GameSession.user_id.in_(amigos_ids))
             .group_by(GameSession.user_id)
             .all()
         )
-        stats = {uid: (partidas, paises) for uid, partidas, paises in filas}
+        stats = {uid: (partidas, paises, ultima) for uid, partidas, paises, ultima in filas}
+
+        filas_acierto = (
+            db.query(
+                GameSession.user_id,
+                func.count(GameSessionAnswer.id),
+                func.sum(case((GameSessionAnswer.correct.is_(True), 1), else_=0)),
+            )
+            .join(GameSessionAnswer, GameSessionAnswer.session_id == GameSession.id)
+            .filter(GameSession.user_id.in_(amigos_ids))
+            .group_by(GameSession.user_id)
+            .all()
+        )
+        accuracy = {
+            uid: round((aciertos or 0) / intentos * 100, 1)
+            for uid, intentos, aciertos in filas_acierto
+            if intentos
+        }
 
     friends, incoming, outgoing = [], [], []
     for f in relaciones:
@@ -197,7 +233,7 @@ def get_overview(db: Session, me: User) -> dict:
         if u is None:
             continue  # cuenta desactivada: se oculta
         if f.status == STATUS_ACCEPTED:
-            partidas, paises = stats.get(uid, (0, 0))
+            partidas, paises, ultima = stats.get(uid, (0, 0, None))
             friends.append(
                 {
                     "friendship_id": f.id,
@@ -206,6 +242,8 @@ def get_overview(db: Session, me: User) -> dict:
                     "since": f.accepted_at or f.created_at,
                     "games_played": partidas,
                     "countries_played": paises,
+                    "accuracy": accuracy.get(uid),
+                    "last_played_at": ultima,
                 }
             )
         else:

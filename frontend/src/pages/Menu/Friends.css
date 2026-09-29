@@ -72,6 +72,11 @@
 .menu-page .friend-meta{ font-size:10.5px; color:var(--parchment-dim); }
 .menu-page .friend-actions{ display:flex; gap:6px; flex:none; }
 
+/* Friend rows: name and stats on top, actions on their own line underneath */
+.menu-page .friend-row.has-footer{ flex-wrap:wrap; row-gap:10px; }
+.menu-page .friend-actions.spread{ width:100%; justify-content:space-between; align-items:center; }
+.menu-page .friend-meta.dim{ color:var(--brass-dim); }
+
 .menu-page .friend-btn{
   font-family:inherit; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase;
   padding:6px 10px; border-radius:var(--radius);
@@ -79,6 +84,8 @@
   cursor:pointer;
   transition:border-color var(--ease), color var(--ease), background var(--ease);
 }
+/* The Compare action is a router <Link> (an <a>), not a <button> */
+.menu-page a.friend-btn{ display:inline-block; text-decoration:none; }
 .menu-page .friend-btn:hover:not(:disabled){ border-color:var(--brass-bright); color:var(--brass-bright); }
 .menu-page .friend-btn:disabled{ opacity:.5; cursor:not-allowed; }
 .menu-page .friend-btn.primary{

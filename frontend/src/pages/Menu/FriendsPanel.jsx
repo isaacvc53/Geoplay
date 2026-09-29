@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
+import { formatRelative } from '../Profile/profileLogic';
 import './Friends.css';
 
 // The backend answers with a stable `code`; the texts live here.
@@ -26,6 +27,15 @@ function errorText(err) {
 
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
+// "78% accuracy · last played 2d ago" (or a hint when they haven't played yet).
+function activityText(f) {
+  if (!f.last_played_at) return "Hasn't played yet";
+  const parts = [];
+  if (f.accuracy != null) parts.push(`${f.accuracy}% accuracy`);
+  parts.push(`last played ${formatRelative(f.last_played_at).toLowerCase()}`);
+  return parts.join(' · ');
+}
+
 function Avatar({ name }) {
   return <span className="friend-avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>;
 }
@@ -36,6 +46,13 @@ export default function FriendsPanel({ loggedIn, friends }) {
   const [busy, setBusy] = useState(null); // key of the action in flight, or null
   const [message, setMessage] = useState(null); // { kind: 'ok' | 'error', text }
   const [confirmId, setConfirmId] = useState(null); // friendship waiting for "Confirm"
+
+  // Feedback messages fade after a few seconds so they don't linger forever.
+  useEffect(() => {
+    if (!message) return undefined;
+    const timer = setTimeout(() => setMessage(null), 6000);
+    return () => clearTimeout(timer);
+  }, [message]);
 
   if (!loggedIn) {
     return (
@@ -202,17 +219,24 @@ export default function FriendsPanel({ loggedIn, friends }) {
           <h3>Friends <span className="friends-count">{friendList.length}</span></h3>
           <ul>
             {friendList.map((f) => (
-              <li className="friend-row" key={f.friendship_id}>
+              <li className="friend-row has-footer" key={f.friendship_id}>
                 <Avatar name={f.username} />
                 <span className="friend-who">
                   <span className="friend-name">{f.username}</span>
                   <span className="friend-meta">
                     {plural(f.games_played, 'game', 'games')} · {plural(f.countries_played, 'country', 'countries')}
                   </span>
+                  <span className="friend-meta dim">{activityText(f)}</span>
                 </span>
-                <span className="friend-actions">
+                <span className="friend-actions spread">
+                  <Link
+                    className="friend-btn primary"
+                    to={`/comparar?con=${encodeURIComponent(f.username)}`}
+                  >
+                    Compare
+                  </Link>
                   {confirmId === f.friendship_id ? (
-                    <>
+                    <span className="friend-actions">
                       <button
                         type="button"
                         className="friend-btn danger"
@@ -228,7 +252,7 @@ export default function FriendsPanel({ loggedIn, friends }) {
                       <button type="button" className="friend-btn" onClick={() => setConfirmId(null)}>
                         Keep
                       </button>
-                    </>
+                    </span>
                   ) : (
                     <button
                       type="button"

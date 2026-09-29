@@ -12,7 +12,7 @@ friends_router = APIRouter(prefix="/friends", tags=["friends"])
 
 
 @contextmanager
-def _errores_de_amigos():
+def errores_de_amigos():
     """Convierte los errores de negocio en respuestas HTTP con un código estable
     ({"detail": {"code": ..., "message": ...}}) para que el frontend los traduzca."""
     try:
@@ -41,7 +41,7 @@ def enviar_solicitud(
     usuario_actual: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    with _errores_de_amigos():
+    with errores_de_amigos():
         f, destino, aceptada = friends_service.send_request(db, usuario_actual, datos.username)
     return RequestResult(
         status="accepted" if aceptada else "pending",
@@ -56,7 +56,7 @@ def aceptar_solicitud(
     usuario_actual: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    with _errores_de_amigos():
+    with errores_de_amigos():
         f, otro = friends_service.accept_request(db, usuario_actual, friendship_id)
     return RequestResult(status="accepted", friendship_id=f.id, username=otro.username)
 
@@ -68,7 +68,7 @@ def rechazar_o_cancelar_solicitud(
     db: Session = Depends(get_db),
 ):
     """Rechaza una solicitud recibida o cancela una enviada."""
-    with _errores_de_amigos():
+    with errores_de_amigos():
         friends_service.remove_request(db, usuario_actual, friendship_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
@@ -79,6 +79,6 @@ def eliminar_amigo(
     usuario_actual: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    with _errores_de_amigos():
+    with errores_de_amigos():
         friends_service.remove_friend(db, usuario_actual, friendship_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -37,5 +37,16 @@ export function useFriends(loggedIn) {
     }
   }, [loggedIn, reload]);
 
+  // Requests can arrive while the tab is in the background: refresh when the
+  // user comes back, so the badge and the lists don't go stale.
+  useEffect(() => {
+    if (!loggedIn) return undefined;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') reload();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loggedIn, reload]);
+
   return { data, error, loading, reload };
 }

@@ -9,6 +9,7 @@ import RegionCountriesPage from './pages/Regions/RegionCountriesPage';
 import WorldMapPage from './pages/WorldMap/WorldMapPage';
 import CountryGamePage from './pages/Country/CountryGamePage';
 import ProfilePage from './pages/Profile/ProfilePage';
+import ComparePage from './pages/Compare/ComparePage';
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/mapa-mundial" element={<WorldMapPage />} />
           <Route path="/pais" element={<CountryGamePage />} />
           <Route path="/perfil" element={<ProfilePage />} />
+          <Route path="/comparar" element={<ComparePage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

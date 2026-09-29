@@ -19,6 +19,7 @@ from routes.regiones import region_router
 from routes.auth import auth_router
 from routes.progress import progress_router
 from routes.friends import friends_router
+from routes.compare import compare_router
 
 
 @asynccontextmanager
@@ -73,3 +74,4 @@ app.include_router(region_router)
 app.include_router(auth_router)
 app.include_router(progress_router)
 app.include_router(friends_router)
+app.include_router(compare_router)
