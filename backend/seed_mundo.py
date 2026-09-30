@@ -11,6 +11,15 @@ que van en la misma carpeta que este script (backend/):
 Mismo patrón que seed_sudamerica.py: cada país es un `Country`, cada división
 una `Region`, y cada nombre válido un `RegionName`.
 
+FORMATO de nombres_es.json (solo hace falta escribir lo que cambia):
+    {"germany": {"_revisado": true, "regiones": {
+        "DEBY": {"es": "Baviera", "en": "Bavaria", "alias": ["Baviera libre"], "excluir": ["Bayern State"]}
+    }}}
+    - es / en: si se omiten, se usa el nombre del fichero .js (display).
+    - alias:   nombres extra aceptados como respuesta.
+    - excluir: nombres que vienen del .js pero NO deben ir a esta región
+               (p. ej. "Zagreb" cuando lo comparten un condado y su ciudad).
+
 IDEMPOTENTE Y NO DESTRUCTIVO:
 - Si el país ya existe (se busca por slug y luego por nombre) no se duplica.
 - Si una región ya existe (algún nombre suyo coincide, sin tildes/mayúsculas)
@@ -68,6 +77,7 @@ def construir_nombres(region_base, override):
     es = override.get("es") or display
     en = override.get("en") or display
 
+    excluidos = {normalizar(x) for x in override.get("excluir", [])}
     vistos = {normalizar(es), normalizar(en)}
     alias = []
     candidatos = list(override.get("alias", [])) + list(region_base.get("names", []))
@@ -75,7 +85,7 @@ def construir_nombres(region_base, override):
         candidatos.append(display)
     for c in candidatos:
         clave = normalizar(c)
-        if clave and clave not in vistos:
+        if clave and clave not in vistos and clave not in excluidos:
             vistos.add(clave)
             alias.append(c)
     return es, en, alias
@@ -129,10 +139,18 @@ def seed_pais(db, nombre_es, meta, base, extra, dry_run, verbose, informe):
             db.commit()
         return
 
-    por_region, por_nombre = ({}, {}) if (creado or pais is None) else nombres_por_region(db, pais.id)
+    # Lo que YA había en la BD antes de este pase. Solo contra esto se decide si
+    # una región "ya existe": así dos regiones distintas del mapa que comparten
+    # un nombre (Zagreb condado / Zagreb ciudad) no se funden en una.
+    if pais is not None and not creado:
+        por_region, previo = nombres_por_region(db, pais.id)
+    else:
+        por_region, previo = {}, {}
+    propietario = dict(previo)   # nombre normalizado -> región dueña (para detectar conflictos)
+    reclamadas = set()           # regiones ya asignadas a un elemento del mapa en este pase
+
     overrides = extra.get("regiones", {}) if extra else {}
-    revisado = bool(extra and extra.get("_revisado"))
-    if not revisado:
+    if not (extra and extra.get("_revisado")):
         informe["sin_revisar"].append(nombre_es)
 
     nuevas = enriquecidas = 0
@@ -141,47 +159,55 @@ def seed_pais(db, nombre_es, meta, base, extra, dry_run, verbose, informe):
         todos = [(es, "es"), (en, "en")] + [(a, "es") for a in alias]
         todos = [(n, l) for n, l in todos if n and len(n) <= MAX_LEN]
 
-        # ¿Ya existe esta región? (algún nombre coincide con uno guardado)
-        region_id = next((por_nombre[normalizar(n)] for n, _ in todos if normalizar(n) in por_nombre), None)
+        # ¿Existía ya en la BD? Se prueba por orden: es, en, alias.
+        region_id = None
+        for n, _ in todos:
+            rid = previo.get(normalizar(n))
+            if rid is not None and rid not in reclamadas:
+                region_id = rid
+                break
+        existia = region_id is not None
 
-        if region_id is None:
+        if not existia:
             nuevas += 1
             if dry_run:
-                if verbose:
-                    print(f"  + {es} / {en}" + (f"  (alias: {', '.join(alias)})" if alias else "") + "  -> se crearía")
-                continue
-            region = Region(country_id=pais.id)
-            db.add(region)
-            db.flush()
-            region_id = region.id
+                region_id = f"nueva-{nuevas}"   # marcador: no se escribe nada
+            else:
+                region = Region(country_id=pais.id)
+                db.add(region)
+                db.flush()
+                region_id = region.id
             por_region[region_id] = set()
+        reclamadas.add(region_id)
 
-        existentes = por_region.setdefault(region_id, set())
-        añadidos = []
+        conocidos = por_region.setdefault(region_id, set())
+        añadidos = 0
         for nombre, idioma in todos:
             clave = normalizar(nombre)
-            if clave in existentes:
+            if clave in conocidos:
                 continue
-            dueño = por_nombre.get(clave)
+            dueño = propietario.get(clave)
             if dueño is not None and dueño != region_id:
                 informe["alias_en_conflicto"].append((nombre_es, nombre, es))
                 continue
-            añadidos.append(nombre)
             if not dry_run:
                 db.add(RegionName(region_id=region_id, language=idioma, name=nombre))
-            existentes.add(clave)
-            por_nombre[clave] = region_id
+            conocidos.add(clave)
+            propietario[clave] = region_id
+            añadidos += 1
 
-        if añadidos and region_id and not (dry_run and region_id is None):
-            if nuevas == 0 or region_id not in (None,):
-                pass
-        if añadidos:
-            enriquecidas += 1 if region_id is not None and not (dry_run and False) else 0
+        if verbose and dry_run and not existia:
+            print(f"  + {es} / {en}" + (f"  (alias: {', '.join(alias)})" if alias else "") + "  -> se crearía")
+        if existia and añadidos:
+            enriquecidas += 1
 
     if not dry_run:
         db.commit()
+        en_bd = db.query(Region).filter(Region.country_id == pais.id).count()
+        if en_bd != len(regiones):
+            informe["recuento_distinto"].append((nombre_es, len(regiones), en_bd))
     if verbose:
-        print(f"  {len(regiones)} regiones: {nuevas} nuevas, {enriquecidas} con nombres añadidos")
+        print(f"  {len(regiones)} regiones: {nuevas} nuevas, {enriquecidas} ya existentes con nombres añadidos")
 
 
 def main():
@@ -198,7 +224,7 @@ def main():
     extras = cargar("nombres_es.json")
 
     objetivos = args.paises or list(metas.keys())
-    informe = {"slugs_corregidos": [], "sin_regiones": [], "sin_revisar": [], "alias_en_conflicto": []}
+    informe = {"slugs_corregidos": [], "sin_regiones": [], "sin_revisar": [], "alias_en_conflicto": [], "recuento_distinto": []}
 
     db = SessionLocal()
     try:
@@ -229,6 +255,10 @@ def main():
             print("\nNombres descartados por estar ya en otra región del mismo país (revísalos):")
             for p, n, r in informe["alias_en_conflicto"]:
                 print(f"  {p}: '{n}' (de {r})")
+        if informe["recuento_distinto"]:
+            print("\nRecuento distinto al esperado (país: regiones en el mapa / regiones en la BD):")
+            for p, esperado, real in informe["recuento_distinto"]:
+                print(f"  {p}: {esperado} / {real}")
         if informe["sin_regiones"]:
             print(f"\nPaíses sin regiones en regiones_base.json ({len(informe['sin_regiones'])}): {', '.join(informe['sin_regiones'])}")
         if informe["sin_revisar"]:
