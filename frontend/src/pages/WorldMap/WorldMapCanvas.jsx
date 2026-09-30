@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import { findAvailableCountries } from '../../lib/availability';
 
-// Mapa mundial a partir de world.svg (paths ya proyectados, sin d3.geo) con D3
+// Mapa mundial a partir de worldUltra.svg (paths ya proyectados, sin d3.geo) con D3
 // para zoom/paneo (imperativo, NO en JSX): se monta UNA vez dentro de un
 // useEffect y se limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
 // Conserva las optimizaciones del original: capa GPU (will-change), throttling
@@ -15,6 +15,10 @@ import { findAvailableCountries } from '../../lib/availability';
 //   selected        país actualmente abierto en el panel (para pintarlo "active")
 //   onSelect(f)     se llama al hacer clic en un país disponible; f = { id, properties:{name,slug}, d, main? }
 //   ref             { zoomIn(), zoomOut(), reset() }
+// Ancho del mapa para el que se diseñó el rayado de 6 px (world.svg antiguo).
+// Con worldUltra.svg (~5000 de ancho) el rayado se multiplica por mapW / 1010.
+const HATCH_REF_WIDTH = 1010;
+
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -71,9 +75,16 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       .attr('width', 6).attr('height', 6)
       .attr('patternUnits', 'userSpaceOnUse')
       .attr('patternTransform', 'rotate(45)');
-    hatch.append('rect').attr('width', 6).attr('height', 6).attr('fill', disabledFill);
-    hatch.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6)
+    const hatchRect = hatch.append('rect').attr('width', 6).attr('height', 6).attr('fill', disabledFill);
+    const hatchLine = hatch.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6)
       .attr('stroke', disabledLine).attr('stroke-width', 2);
+    // El rayado se mide en unidades del SVG; como el mapa tiene otro tamaño,
+    // se reescala al cargar los datos (ver HATCH_REF_WIDTH).
+    function setHatchScale(k) {
+      hatch.attr('width', 6 * k).attr('height', 6 * k);
+      hatchRect.attr('width', 6 * k).attr('height', 6 * k);
+      hatchLine.attr('y2', 6 * k).attr('stroke-width', 2 * k);
+    }
 
     // Panel de océano (degradado + cuadrícula) dentro de `g`: hace zoom y
     // paneo junto con los países, como antes la esfera.
@@ -142,6 +153,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         if (cancelled) return;
         mapW = worldData.width;
         mapH = worldData.height;
+        setHatchScale(mapW / HATCH_REF_WIDTH);
         const radius = Math.round(mapH * 0.035);
         for (const r of [clipRect, ocean]) {
           r.attr('x', 0).attr('y', 0).attr('width', mapW).attr('height', mapH)

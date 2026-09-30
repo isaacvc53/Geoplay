@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 """
-Genera public/data/world-map.json a partir de scripts/world.svg (MapSVG).
+Genera public/data/world-map.json a partir de scripts/worldUltra.svg
+(SVG Map Generator de amCharts: paths M/L/Z ya proyectados).
 
 Uso (desde frontend/):
-    pip install svgpathtools
-    python3 scripts/build-world-map.py
+    python3 scripts/build-world-map.py        # no necesita dependencias
 
 Salida: { width, height, graticule, countries: [{ id, name, slug, d, main? }] }
-  - graticule: path con meridianos/paralelos cada 10° (el SVG es Web Mercator;
-    se calcula a partir de mapsvg:geoViewBox)
+  - width/height: caja REAL de los países. El viewBox que declara worldUltra.svg
+    (1655x851) está mal y recorta el mapa, así que aquí se ignora: se calcula el
+    bbox de todos los paths y se desplaza todo al origen (con un pequeño margen).
+  - graticule: vacío (este SVG no es Mercator ni trae geoViewBox, así que no hay
+    forma exacta de calcular la cuadrícula; el canvas lo admite vacío).
   - id:   código ISO 3166-1 alfa-2 del SVG (o UM-xx para islas menores de EE. UU.)
   - slug: nombre de archivo en public/data/countries/<slug>.js (ver SLUG_OVERRIDES)
-  - d:    path completo del país
-  - main: solo si el país tiene varios polígonos; path (absoluto) del polígono
-          más grande, para la silueta del panel.
+  - d:    path completo del país (coordenadas desplazadas, 2 decimales)
+  - main: solo si el país tiene varios polígonos; path del polígono más grande,
+          para la silueta del panel.
 """
-import json, math, os, re, unicodedata, sys
-from svgpathtools import parse_path
+import json, os, re, sys, unicodedata
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, 'world.svg')
+SRC = os.path.join(HERE, 'worldUltra.svg')
 OUT = os.path.join(HERE, '..', 'public', 'data', 'world-map.json')
+MARGIN = 10  # unidades de SVG alrededor de la caja de los países
 
 # Casos en los que el nombre del SVG no da el slug real de los archivos de datos.
 SLUG_OVERRIDES = {
@@ -28,63 +31,94 @@ SLUG_OVERRIDES = {
     'CD': 'democratic-republic-of-the-congo', 'CG': 'republic-of-the-congo',
     'LA': 'laos', 'PS': 'palestine', 'CZ': 'czechia', 'SZ': 'eswatini',
     'TL': 'east-timor', 'US': 'usa',
+    # worldUltra.svg usa nombres modernos; se conserva el slug del mapa anterior
+    # para no romper los archivos de datos ya existentes.
+    'TR': 'turkey', 'MK': 'macedonia', 'BN': 'brunei-darussalam',
+    'BQ': 'bonaire-saint-eustachius-and-saba',
 }
+
+# Erratas del SVG en el nombre que se muestra.
+NAME_OVERRIDES = {'BQ': 'Bonaire, Saint Eustachius and Saba'}
+
 
 def slugify(name):
     n = unicodedata.normalize('NFD', name)
     n = ''.join(c for c in n if unicodedata.category(c) != 'Mn')
     return re.sub(r'^-+|-+$', '', re.sub(r'[^a-z0-9]+', '-', n.lower()))
 
-def round_d(d, nd=2):
-    return re.sub(r'-?\d+\.\d+(?:e-?\d+)?', lambda m: ('%.*f' % (nd, float(m.group())))
-                  .rstrip('0').rstrip('.') or '0', d)
 
-def main_subpath(d):
-    subs = parse_path(d).continuous_subpaths()
-    if len(subs) < 2:
-        return None
-    def area(p):
-        x0, x1, y0, y1 = p.bbox()
-        return (x1 - x0) * (y1 - y0)
-    return round_d(max(subs, key=area).d())
+NUM = r'-?\d+(?:\.\d+)?'
+
+
+def polygons(d):
+    """Lista de polígonos [(x, y), ...] de un path de solo M/L/Z absolutos."""
+    polys = []
+    for sub in re.split(r'(?=M)', d):
+        pts = [(float(a), float(b)) for a, b in re.findall(rf'({NUM}),({NUM})', sub)]
+        if pts:
+            polys.append(pts)
+    return polys
+
+
+def to_d(polys, dx, dy):
+    parts = []
+    for pts in polys:
+        seg = ['M%s,%s' % (fmt(pts[0][0] + dx), fmt(pts[0][1] + dy))]
+        seg += ['L%s,%s' % (fmt(x + dx), fmt(y + dy)) for x, y in pts[1:]]
+        parts.append(''.join(seg) + 'Z')
+    return ''.join(parts)
+
+
+def fmt(v):
+    return ('%.2f' % v).rstrip('0').rstrip('.') or '0'
+
+
+def bbox_area(pts):
+    xs = [p[0] for p in pts]
+    ys = [p[1] for p in pts]
+    return (max(xs) - min(xs)) * (max(ys) - min(ys))
+
 
 svg = open(SRC, encoding='utf8').read()
-w = float(re.search(r'\bwidth="([\d.]+)"', svg).group(1))
-h = float(re.search(r'\bheight="([\d.]+)"', svg).group(1))
-items = re.findall(r'<path\s+d="([^"]+)"\s+title="([^"]*)"\s+id="([^"]*)"', svg)
+items = re.findall(
+    r'<path\s+d="([^"]+)"\s+class="[^"]*"\s+id="([^"]*)"\s+title="([^"]*)"', svg)
+if not items:
+    sys.exit('No se encontraron paths en worldUltra.svg')
 
-# --- Cuadrícula (Mercator) -------------------------------------------------
-lon0, lat_top, lon1, lat_bot = map(float, re.search(
-    r'mapsvg:geoViewBox="([^"]+)"', svg).group(1).split())
-K = w / (lon1 - lon0)                      # px por grado de longitud
+parsed = [(cid, re.sub(r'\s+', ' ', title).strip(), polygons(d)) for d, cid, title in items]
 
-def merc(lat):
-    return math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
-
-def gx(lon): return (lon - lon0) * K
-def gy(lat): return (merc(lat_top) - merc(lat)) * K * 180 / math.pi
-
-segs = []
-for lon in range(-170, 191, 10):
-    if lon0 < lon < lon1:
-        segs.append(f'M{gx(lon):.1f},0V{h:.1f}')
-for lat in range(-50, 81, 10):
-    segs.append(f'M0,{gy(lat):.1f}H{w:.1f}')
-graticule = ''.join(segs)
+allpts = [p for _, _, polys in parsed for poly in polys for p in poly]
+min_x = min(p[0] for p in allpts)
+max_x = max(p[0] for p in allpts)
+min_y = min(p[1] for p in allpts)
+max_y = max(p[1] for p in allpts)
+dx = MARGIN - min_x
+dy = MARGIN - min_y
+width = round(max_x - min_x + 2 * MARGIN, 2)
+height = round(max_y - min_y + 2 * MARGIN, 2)
 
 countries = []
-for d, title, cid in items:
-    name = re.sub(r'\s+', ' ', title).strip()
+for cid, name, polys in parsed:
+    name = NAME_OVERRIDES.get(cid, name)
     entry = {'id': cid, 'name': name,
-             'slug': SLUG_OVERRIDES.get(cid, slugify(name)), 'd': d}
-    m = main_subpath(d)
-    if m:
-        entry['main'] = m
+             'slug': SLUG_OVERRIDES.get(cid, slugify(name)),
+             'd': to_d(polys, dx, dy)}
+    if len(polys) > 1:
+        entry['main'] = to_d([max(polys, key=bbox_area)], dx, dy)
     countries.append(entry)
+
+countries.sort(key=lambda c: c['id'])
+
+seen = {}
+for c in countries:
+    seen.setdefault(c['slug'], []).append(c['id'])
+dups = {s: ids for s, ids in seen.items() if len(ids) > 1}
+if dups:
+    print('AVISO: slugs repetidos:', dups, file=sys.stderr)
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, 'w', encoding='utf8') as f:
-    json.dump({'width': w, 'height': h, 'graticule': graticule, 'countries': countries}, f,
+    json.dump({'width': width, 'height': height, 'graticule': '', 'countries': countries}, f,
               ensure_ascii=False, separators=(',', ':'))
-print(f'{len(countries)} países -> {os.path.relpath(OUT)} '
+print(f'{len(countries)} países, mapa {width}x{height} -> {os.path.relpath(OUT)} '
       f'({os.path.getsize(OUT)/1024:.0f} KB)', file=sys.stderr)
