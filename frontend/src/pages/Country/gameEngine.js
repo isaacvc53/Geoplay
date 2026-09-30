@@ -680,6 +680,10 @@ export function createGame({ country, texts, els, geoUrl }) {
       .forEach((shape) => {
         if (shape.closest('#points, #label_points')) return;
         const imported = document.importNode(shape, true);
+        // Algunos SVG (p. ej. usa.svg) traen style="fill:#f9f9f9;stroke-width:…" en cada forma.
+        // Un estilo en línea gana a las reglas de .country, así que el mapa salía blanco y
+        // nunca se pintaba de acertado/fallado. El color lo decide siempre el CSS del juego.
+        imported.removeAttribute('style');
         imported.classList.add('country');
         regionsGroup.appendChild(imported);
       });
