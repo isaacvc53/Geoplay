@@ -48,10 +48,6 @@ html, body { background: var(--g-bg); }
 .chart-ground.chart-ground { background: var(--g-backdrop), var(--g-bg); }
 .chart-ground.chart-ground::after { display: none; } /* sin la cuadrícula de carta náutica */
 
-.worldmap-page.worldmap-page .stage {
-  background: radial-gradient(ellipse at 50% 42%, #17415f 0%, #0d2738 58%, #081a28 100%);
-}
-
 /* ---------- Botón «volver»: idéntico en todas las páginas ---------- */
 #root .btn-back {
   border: 1px solid #8a774a;
@@ -185,20 +181,14 @@ html, body { background: var(--g-bg); }
   background: rgba(201, 162, 75, .08);
 }
 
-/* ---------- Mapa mundial: tierra azul, seleccionada en latón, panel oscuro ---------- */
+/* ---------- Mapa mundial: solo el panel/controles; los colores del mapa no se tocan ---------- */
 .worldmap-page.worldmap-page {
-  --land: #2d5877;
-  --land-hover: #3b6d90;
-  --land-active: #c9a24b;
-  --land-disabled: #163247;
-  --land-disabled-line: #0b1a28;
   --panel-bg: #123049;
   --ink: #f6f1e4;
   --paper: #f6f1e4;
   --hairline: #1f4666;
   --shadow: rgba(0, 0, 0, .5);
 }
-.worldmap-page.worldmap-page .country { fill-opacity: 1; stroke: #0b1a28; }
 .worldmap-page.worldmap-page .panel {
   border: 1px solid var(--g-line);
   border-radius: 0;
@@ -228,5 +218,4 @@ html, body { background: var(--g-bg); }
 }
 .worldmap-page.worldmap-page .zoom-controls button:hover { border-color: var(--g-accent); color: var(--g-accent); }
 
-/* ---------- Menú principal: el mapa decorativo usa la misma tierra azul ---------- */
-.menu-page.menu-page { --land: #2d5877; --land-hover: #3b6d90; }
+/* Los mapas (mundial, menú principal y perfil) conservan sus colores originales. */

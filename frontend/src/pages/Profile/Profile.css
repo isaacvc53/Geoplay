@@ -220,19 +220,19 @@
     position:relative;
     border:1px solid var(--line);
     border-radius:var(--radius);
-    background:rgba(0,0,0,0.18);
+    background:#0e181f;
     overflow:hidden;
   }
   .world-map-wrap svg{ display:block; width:100%; height:auto; }
   .world-map-wrap path.country{
-    stroke:var(--ink); stroke-width:.4; fill:var(--map-empty);
+    stroke:#0a1720; stroke-width:.4; fill:var(--map-empty);
     cursor:default;
   }
   .world-map-wrap path.country.played{ cursor:pointer; }
-  .world-map-wrap path.country:hover{ stroke:var(--brass-bright); }
+  .world-map-wrap path.country:hover{ stroke:#e0bd7d; }
 
   .map-legend{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:9.5px; color:var(--parchment-dim); }
-  .map-legend .swatch{ width:80px; height:8px; border-radius:2px; background:linear-gradient(90deg, rgb(70,62,44) 0%, var(--brass-bright) 100%); }
+  .map-legend .swatch{ width:80px; height:8px; border-radius:2px; background:linear-gradient(90deg, rgb(70,62,44) 0%, #e0bd7d 100%); }
 
   .map-tooltip{
     position:absolute; pointer-events:none;
