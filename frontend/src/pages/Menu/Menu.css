@@ -140,13 +140,16 @@
     width:440px; max-width:88vw; height:100vh;
     background:var(--ocean-mid);
     border-left:1px solid var(--brass);
-    box-shadow:-30px 0 60px var(--shadow);
+    /* Sin sombra mientras está cerrado: el cajón queda fuera de pantalla a la derecha y su
+       sombra (proyectada hacia la izquierda) se colaba como una franja negra en el borde,
+       muy visible en el móvil. */
+    box-shadow:none;
     padding:24px 22px;
     display:flex; flex-direction:column;
     transform:translateX(100%);
-    transition:transform var(--ease-slow);
+    transition:transform var(--ease-slow), box-shadow var(--ease-slow);
   }
-  .drawer.open{ transform:translateX(0); }
+  .drawer.open{ transform:translateX(0); box-shadow:-30px 0 60px var(--shadow); }
 
   .drawer-head{ display:flex; align-items:center; gap:10px; margin-bottom:22px; }
   .drawer-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:24px; }
