@@ -61,7 +61,7 @@ export default function WorldMapPage() {
           </Link>
           <div className="eyebrow-row">
             <h1>Atlas <em>World</em></h1>
-            <div className="coords">drag to pan · scroll to zoom<br />select a country</div>
+            <div className="coords">Equal Earth projection<br />drag to pan · scroll to zoom · select a country</div>
           </div>
         </header>
 

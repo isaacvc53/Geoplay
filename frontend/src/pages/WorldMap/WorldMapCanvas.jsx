@@ -3,9 +3,12 @@ import * as d3 from 'd3';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import { findAvailableCountries } from '../../lib/availability';
 
-// Mapa mundial a partir de worldUltra.svg (paths ya proyectados, sin d3.geo) con D3
-// para zoom/paneo (imperativo, NO en JSX): se monta UNA vez dentro de un
+// Mapa mundial a partir de worldUltra.svg (paths ya proyectados, sin d3.geo por país)
+// con D3 para zoom/paneo (imperativo, NO en JSX): se monta UNA vez dentro de un
 // useEffect y se limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
+// El SVG está en proyección Equal Earth (meridiano central ~12,65°E); su descripción
+// viaja en `projection` dentro de world-map.json, y con ella se dibujan con d3 el
+// contorno de la esfera y la cuadrícula (solo 2 paths) como en el atlas original.
 // Conserva las optimizaciones del original: capa GPU (will-change), throttling
 // del zoom con requestAnimationFrame, path.digits(1), non-scaling-stroke y
 // contain (estos dos últimos, en el CSS). Los datos vienen de
@@ -15,9 +18,13 @@ import { findAvailableCountries } from '../../lib/availability';
 //   selected        país actualmente abierto en el panel (para pintarlo "active")
 //   onSelect(f)     se llama al hacer clic en un país disponible; f = { id, properties:{name,slug}, d, main? }
 //   ref             { zoomIn(), zoomOut(), reset() }
-// Ancho del mapa para el que se diseñó el rayado de 6 px (world.svg antiguo).
-// Con worldUltra.svg (~5000 de ancho) el rayado se multiplica por mapW / 1010.
-const HATCH_REF_WIDTH = 1010;
+
+// Proyecciones que puede declarar world-map.json en `projection.type`.
+const PROJECTIONS = { equalEarth: d3.geoEqualEarth, naturalEarth1: d3.geoNaturalEarth1 };
+
+// El mapa está muy detallado (islas y microestados), así que se permite más zoom que
+// en el mapa antiguo (8x) para poder acertar Malta, Singapur, etc.
+const MAX_ZOOM = 20;
 
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
@@ -78,21 +85,18 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     const hatchRect = hatch.append('rect').attr('width', 6).attr('height', 6).attr('fill', disabledFill);
     const hatchLine = hatch.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6)
       .attr('stroke', disabledLine).attr('stroke-width', 2);
-    // El rayado se mide en unidades del SVG; como el mapa tiene otro tamaño,
-    // se reescala al cargar los datos (ver HATCH_REF_WIDTH).
+    // El rayado se mide en unidades del SVG: en resize() se reescala con la escala
+    // real de pantalla para que sean ~6 px a zoom 1, como en el atlas original.
     function setHatchScale(k) {
       hatch.attr('width', 6 * k).attr('height', 6 * k);
       hatchRect.attr('width', 6 * k).attr('height', 6 * k);
       hatchLine.attr('y2', 6 * k).attr('stroke-width', 2 * k);
     }
 
-    // Panel de océano (degradado + cuadrícula) dentro de `g`: hace zoom y
-    // paneo junto con los países, como antes la esfera.
-    const clip = defs.append('clipPath').attr('id', 'oceanClip');
-    const clipRect = clip.append('rect');
-    const ocean = g.append('rect').attr('class', 'sphere');
-    const graticuleG = g.append('path').attr('class', 'graticule')
-      .attr('clip-path', 'url(#oceanClip)');
+    // Esfera (contorno de la proyección, con el degradado de océano) y cuadrícula,
+    // dentro de `g`: hacen zoom y paneo junto con los países.
+    const ocean = g.append('path').attr('class', 'sphere');
+    const graticuleG = g.append('path').attr('class', 'graticule');
     const countriesG = g.append('g').attr('class', 'countries-group');
 
     // El evento 'zoom' llega más rápido de lo que la pantalla repinta:
@@ -106,7 +110,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     }
 
     const zoom = d3.zoom()
-      .scaleExtent([1, 8])
+      .scaleExtent([1, MAX_ZOOM])
       // Un toque en pantalla táctil nunca es tan quieto como un clic de ratón.
       .clickDistance(12)
       .on('zoom', (event) => {
@@ -133,6 +137,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       const padBottom = 72;
       const padX = Math.min(48, W * 0.03);
       const s = Math.min((W - padX * 2) / mapW, (H - padTop - padBottom) / mapH);
+      setHatchScale(1 / s);
       const vbW = W / s;
       const vbH = H / s;
       const vbX = -(vbW - mapW) / 2;
@@ -153,13 +158,20 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         if (cancelled) return;
         mapW = worldData.width;
         mapH = worldData.height;
-        setHatchScale(mapW / HATCH_REF_WIDTH);
-        const radius = Math.round(mapH * 0.035);
-        for (const r of [clipRect, ocean]) {
-          r.attr('x', 0).attr('y', 0).attr('width', mapW).attr('height', mapH)
-            .attr('rx', radius).attr('ry', radius);
+        // Esfera + cuadrícula a partir de la proyección del SVG (ver build-world-map.py).
+        const proj = worldData.projection;
+        const makeProjection = PROJECTIONS[proj?.type];
+        if (makeProjection) {
+          const projection = makeProjection()
+            .rotate([-proj.rotate, 0])
+            .scale(proj.scale)
+            .translate(proj.translate);
+          const geoPath = d3.geoPath(projection).digits(1);
+          ocean.attr('d', geoPath({ type: 'Sphere' }));
+          graticuleG.attr('d', geoPath(d3.geoGraticule10()));
+        } else {
+          console.warn('world-map.json sin `projection` válida: se dibuja el mapa sin esfera ni cuadrícula.');
         }
-        graticuleG.attr('d', worldData.graticule);
         const features = worldData.countries.map((c) => ({
           id: c.id,
           properties: { name: c.name, slug: c.slug },
