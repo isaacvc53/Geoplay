@@ -4,7 +4,7 @@
   &{
     --ocean-deep:#0e2233;
     --ocean-mid:#123049;
-    --ocean-glow:#16405f;
+    --ocean-glow:#17415f;
     --land:#e7ddc6;
     --land-hover:#f3c667;
     --land-active:#d97b3f;
@@ -13,7 +13,7 @@
     --ink:#0e2233;
     --paper:#f6f1e4;
     --brass:#c9a24b;
-    --brass-dim:#7d6a3c;
+    --brass-dim:#8a774a;
     --panel-bg:#f6f1e4;
     --hairline:rgba(14,34,51,0.14);
     --shadow:rgba(5,14,22,0.5);
@@ -22,7 +22,7 @@
   &{
     margin:0; padding:0; width:100%; height:100%;
     background:var(--ocean-deep);
-    font-family:'Space Mono',monospace;
+    font-family:Inter,system-ui,sans-serif;
     color:var(--paper);
     overflow:hidden;
   }
@@ -68,7 +68,7 @@
     border:1px solid var(--brass-dim);
     background:transparent;
     color:var(--paper);
-    font-family:'Space Mono',monospace;
+    font-family:Inter,system-ui,sans-serif;
     font-size:12px; letter-spacing:0.04em;
     text-decoration:none;
     cursor:pointer;
@@ -119,7 +119,7 @@
     pointer-events:none;
     background:var(--panel-bg);
     color:var(--ink);
-    font-family:'Space Mono',monospace;
+    font-family:Inter,system-ui,sans-serif;
     padding:7px 11px;
     border:1px solid var(--brass);
     opacity:0;

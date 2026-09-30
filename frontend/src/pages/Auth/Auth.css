@@ -1,12 +1,12 @@
 
 .auth-page{
 &{
-  --ocean-deep:#0c1e2f; --ocean-mid:#153350; --ocean-shallow:#1d4364;
-  --parchment:#f3eee0; --parchment-dim:#a89b81;
-  --brass:#c6a05b; --brass-dim:#7d6d48; --brass-bright:#e0bd7d;
+  --ocean-deep:#0e2233; --ocean-mid:#123049; --ocean-shallow:#17415f;
+  --parchment:#f6f1e4; --parchment-dim:#93a4b3;
+  --brass:#c9a24b; --brass-dim:#8a774a; --brass-bright:#d9b661;
   --rust:#c9723f; --rust-bg:rgba(201,114,63,0.16);
-  --line:rgba(198,160,91,0.22); --line-soft:rgba(198,160,91,0.12);
-  --panel-bg:rgba(243,238,224,0.025); --shadow:rgba(3,9,15,0.55);
+  --line:#1f4666; --line-soft:rgba(31,70,102,.55);
+  --panel-bg:#123049; --shadow:rgba(3,9,15,0.55);
   --radius:2px; --ease:.2s ease;
 }
 *{ box-sizing:border-box; }
@@ -15,7 +15,7 @@
 &{
   color:var(--parchment); background:var(--ocean-deep); -webkit-font-smoothing:antialiased;
   min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
-  font-family:'Space Mono','SF Mono',Consolas,monospace;
+  font-family:Inter,system-ui,sans-serif;
 }
 .chart-ground{
   position:fixed; inset:0; z-index:0; pointer-events:none;
@@ -46,7 +46,7 @@ a{ color:var(--brass-bright); }
 .card input{
   width:100%; padding:11px 12px; background:rgba(12,30,47,0.6);
   border:1px solid var(--line); border-radius:var(--radius); color:var(--parchment);
-  font-family:'Space Mono',monospace; font-size:13px; transition:border-color var(--ease);
+  font-family:Inter,system-ui,sans-serif; font-size:13px; transition:border-color var(--ease);
 }
 .card input:focus{ border-color:var(--brass); outline:none; }
 .hint{ font-size:10px; color:var(--parchment-dim); margin-top:5px; }
@@ -54,7 +54,7 @@ a{ color:var(--brass-bright); }
 .error.show{ display:block; }
 .card button{
   width:100%; background:var(--brass); color:var(--ocean-deep); border:none; border-radius:var(--radius);
-  padding:12px; font-family:'Space Mono',monospace; font-size:12px; font-weight:700;
+  padding:12px; font-family:Inter,system-ui,sans-serif; font-size:12px; font-weight:700;
   letter-spacing:.05em; text-transform:uppercase; cursor:pointer; transition:background var(--ease);
 }
 .card button:hover{ background:var(--brass-bright); }

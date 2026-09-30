@@ -2,17 +2,17 @@
    written flat and scoped to .compare-page so it never touches other pages. */
 
 .compare-page{
-  --ink:#0a1720;
-  --ink-panel:#0f2233;
-  --parchment:#f2ecda;
-  --parchment-dim:#a89b81;
-  --brass:#c6a05b;
-  --brass-dim:#7d6d48;
-  --brass-bright:#e0bd7d;
+  --ink:#0e2233;
+  --ink-panel:#123049;
+  --parchment:#f6f1e4;
+  --parchment-dim:#93a4b3;
+  --brass:#c9a24b;
+  --brass-dim:#8a774a;
+  --brass-bright:#d9b661;
   --seal:#b1483a;
   --moss:#5a9a86;
-  --line:rgba(198,160,91,0.22);
-  --line-soft:rgba(198,160,91,0.12);
+  --line:#1f4666;
+  --line-soft:rgba(31,70,102,.55);
   --shadow:rgba(3,9,15,0.6);
   --track:rgba(255,255,255,0.06);
   --radius:2px;
@@ -20,7 +20,7 @@
 
   min-height:100vh;
   background:var(--ink);
-  font-family:'Space Mono','SF Mono',Consolas,monospace;
+  font-family:Inter,system-ui,sans-serif;
   color:var(--parchment);
   -webkit-font-smoothing:antialiased;
   display:flex; align-items:flex-start; justify-content:center;
@@ -47,7 +47,7 @@
   position:relative; z-index:1;
   width:100%; max-width:900px;
   border:1px solid var(--line); border-radius:var(--radius);
-  background:linear-gradient(180deg, rgba(243,238,224,0.03), rgba(243,238,224,0.015));
+  background:linear-gradient(180deg, rgba(246,241,228,0.03), rgba(246,241,228,0.015));
   box-shadow:0 20px 48px var(--shadow);
   padding:34px 32px 30px;
 }
@@ -86,7 +86,7 @@
 .compare-page .cmp-contender{ display:flex; flex-direction:column; align-items:center; text-align:center; gap:3px; min-width:0; }
 .compare-page .cmp-avatar{
   width:60px; height:60px; border-radius:50%; margin-bottom:8px;
-  border:1px solid var(--brass); background:rgba(198,160,91,0.06);
+  border:1px solid var(--brass); background:rgba(201,162,75,0.06);
   display:grid; place-items:center; overflow:hidden;
   font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; color:var(--brass-bright);
 }
@@ -154,7 +154,7 @@
   transition:border-color var(--ease), color var(--ease), background var(--ease);
 }
 .compare-page .cmp-chip:hover{ border-color:var(--brass); color:var(--brass-bright); }
-.compare-page .cmp-chip.active{ background:rgba(198,160,91,0.14); border-color:var(--brass); color:var(--brass-bright); }
+.compare-page .cmp-chip.active{ background:rgba(201,162,75,0.14); border-color:var(--brass); color:var(--brass-bright); }
 .compare-page .cmp-chip-n{ color:var(--brass-dim); margin-left:3px; }
 .compare-page .cmp-chip.active .cmp-chip-n{ color:var(--brass); }
 
@@ -191,7 +191,7 @@
 .compare-page .cmp-detail{
   margin:0 0 6px; padding:14px 16px 16px;
   border:1px solid var(--line); border-left:2px solid var(--brass-dim);
-  background:rgba(198,160,91,0.04);
+  background:rgba(201,162,75,0.04);
 }
 .compare-page .cmp-sides{ display:flex; flex-wrap:wrap; gap:8px 26px; margin-bottom:14px; }
 .compare-page .cmp-chip-side{ display:flex; flex-direction:column; gap:2px; font-size:10.5px; color:var(--parchment-dim); }
@@ -229,7 +229,7 @@
   font-family:inherit; font-size:11px; font-weight:700;
   transition:border-color var(--ease), background var(--ease);
 }
-.compare-page .cmp-btn:hover{ border-color:var(--brass-bright); background:rgba(198,160,91,0.08); }
+.compare-page .cmp-btn:hover{ border-color:var(--brass-bright); background:rgba(201,162,75,0.08); }
 
 .compare-page .cmp-pick-list{ display:flex; flex-direction:column; }
 .compare-page .cmp-pick{

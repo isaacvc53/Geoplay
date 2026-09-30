@@ -6,22 +6,22 @@
 
   
   &{
-    --ocean-deep:#0c1e2f;
-    --ocean-mid:#153350;
-    --ocean-shallow:#1d4364;
-    --parchment:#f3eee0;
-    --parchment-dim:#a89b81;
+    --ocean-deep:#0e2233;
+    --ocean-mid:#123049;
+    --ocean-shallow:#17415f;
+    --parchment:#f6f1e4;
+    --parchment-dim:#93a4b3;
     --land:#e4d8ba;
     --land-hover:#eec877;
-    --brass:#c6a05b;
-    --brass-dim:#7d6d48;
-    --brass-bright:#e0bd7d;
+    --brass:#c9a24b;
+    --brass-dim:#8a774a;
+    --brass-bright:#d9b661;
     --rust:#c9723f;
     --rust-bg:rgba(201,114,63,0.16);
-    --line:rgba(198,160,91,0.22);
-    --line-soft:rgba(198,160,91,0.12);
-    --panel-bg:rgba(243,238,224,0.025);
-    --panel-bg-hover:rgba(198,160,91,0.055);
+    --line:#1f4666;
+    --line-soft:rgba(31,70,102,.55);
+    --panel-bg:#123049;
+    --panel-bg-hover:rgba(201,162,75,0.055);
     --shadow:rgba(3,9,15,0.55);
     --radius:3px;
     --ease:.22s cubic-bezier(.25,.7,.35,1);
@@ -32,7 +32,7 @@
   &{ margin:0; padding:0; max-width:100%; overflow-x:hidden; } &{
     min-height:100vh;
     background:var(--ocean-deep);
-    font-family:'Space Mono', 'SF Mono', Consolas, monospace;
+    font-family:Inter,system-ui,sans-serif;
     color:var(--parchment);
     -webkit-font-smoothing:antialiased;
     text-rendering:optimizeLegibility;
@@ -57,8 +57,8 @@
     content:"";
     position:absolute; inset:0;
     background-image:
-      repeating-linear-gradient(0deg, rgba(198,160,91,0.05) 0 1px, transparent 1px 72px),
-      repeating-linear-gradient(90deg, rgba(198,160,91,0.05) 0 1px, transparent 1px 72px);
+      repeating-linear-gradient(0deg, rgba(201,162,75,0.05) 0 1px, transparent 1px 72px),
+      repeating-linear-gradient(90deg, rgba(201,162,75,0.05) 0 1px, transparent 1px 72px);
     opacity:.55;
   }
 
@@ -85,7 +85,7 @@
     position:absolute; inset:0; width:100%; height:100%;
     object-fit:cover; border-radius:50%;
   }
-  .brand:hover .mark{ border-color:var(--brass-bright); box-shadow:0 0 14px -2px rgba(198,160,91,.55); }
+  .brand:hover .mark{ border-color:var(--brass-bright); box-shadow:0 0 14px -2px rgba(201,162,75,.55); }
   .brand .word{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; }
   .brand .word i{ font-style:italic; color:var(--brass-bright); }
 
@@ -104,7 +104,7 @@
     border-bottom:none; font-weight:700;
     transition:background var(--ease), transform var(--ease), box-shadow var(--ease);
   }
-  a.signin:hover{ background:var(--land-hover); transform:translateY(-1px); box-shadow:0 6px 16px -6px rgba(198,160,91,.55); }
+  a.signin:hover{ background:var(--land-hover); transform:translateY(-1px); box-shadow:0 6px 16px -6px rgba(201,162,75,.55); }
 
   nav.mainnav{ flex:1; justify-content:center; gap:38px; }
   .topbar nav a.disabled{ opacity:.4; cursor:default; }
@@ -333,7 +333,7 @@
     border:1px solid var(--brass);
     border-radius:var(--radius);
     background:radial-gradient(ellipse at 28% 10%, var(--ocean-shallow) 0%, var(--ocean-deep) 72%);
-    box-shadow:0 24px 56px var(--shadow), 0 0 100px -32px rgba(198,160,91,0.5);
+    box-shadow:0 24px 56px var(--shadow), 0 0 100px -32px rgba(201,162,75,0.5);
     overflow:hidden;
     display:flex; flex-direction:column;
     text-decoration:none; color:inherit;
@@ -341,7 +341,7 @@
   }
   .hero:hover, .hero:focus-visible{
     transform:translateY(-3px);
-    box-shadow:0 26px 58px var(--shadow), 0 0 120px -30px rgba(198,160,91,0.62);
+    box-shadow:0 26px 58px var(--shadow), 0 0 120px -30px rgba(201,162,75,0.62);
     border-color:var(--brass-bright);
   }
   .hero:hover .worldmap path{ fill:var(--land-hover); opacity:.92; }
@@ -417,7 +417,7 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .stat-tile-value{ font-family:'Fraunces',Georgia,serif; font-size:20.5px; line-height:1; }
-  .stat-tile-value.dim{ color:var(--parchment-dim); font-size:13px; font-family:'Space Mono',monospace; }
+  .stat-tile-value.dim{ color:var(--parchment-dim); font-size:13px; font-family:Inter,system-ui,sans-serif; }
 
   .stat-row{
     display:flex; justify-content:space-between; align-items:baseline;
@@ -425,7 +425,7 @@
   }
   .stat-label{ font-size:11.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--brass-dim); }
   .stat-value{ font-family:'Fraunces',Georgia,serif; font-size:17px; }
-  .stat-value.dim{ color:var(--brass-dim); font-size:13px; font-family:'Space Mono',monospace; }
+  .stat-value.dim{ color:var(--brass-dim); font-size:13px; font-family:Inter,system-ui,sans-serif; }
 
   .mastery{ padding-top:2px; }
   .mastery-head{

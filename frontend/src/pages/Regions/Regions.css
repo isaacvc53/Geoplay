@@ -2,7 +2,7 @@
 .regions-page{
 
   &{
-    --ocean-deep:#0b1c2c;
+    --ocean-deep:#0e2233;
     --ocean-mid:#123049;
     --paper:#f6f1e4;
     --land-hover:#f3c667;
@@ -11,14 +11,14 @@
     --brass:#c9a24b;
     --brass-bright:#e6c273;
     --brass-dim:#8a774a;
-    --hairline:rgba(201,162,75,0.22);
+    --hairline:#1f4666;
     --shadow:rgba(4,10,16,0.5);
   }
   *{box-sizing:border-box;}
   &{
     margin:0; padding:0; min-height:100%;
     background:radial-gradient(ellipse at 28% 6%, var(--ocean-mid) 0%, var(--ocean-deep) 62%);
-    font-family:'Space Mono',monospace;
+    font-family:Inter,system-ui,sans-serif;
     color:var(--paper);
   }
   a{ color:inherit; }
@@ -51,7 +51,7 @@
   .search-wrap{ flex:1 1 200px; min-width:180px; }
   #search{
     width:100%;
-    font-family:'Space Mono',monospace;
+    font-family:Inter,system-ui,sans-serif;
     font-size:14px;
     padding:11px 14px;
     background:var(--paper);
