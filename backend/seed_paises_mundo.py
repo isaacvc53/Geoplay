@@ -27,6 +27,10 @@ import argparse
 
 from database.connection import SessionLocal
 from models.country_db import Country
+# Region y RegionName no se usan aquí, pero SQLAlchemy necesita todos los modelos
+# importados para configurar las relaciones de Country.
+from models.region_db import Region  # noqa: F401
+from models.region_name_db import RegionName  # noqa: F401
 
 # Pon aquí "América Central" si no quieres un continente "Caribe" aparte.
 CARIBE_COMO = "Caribe"
