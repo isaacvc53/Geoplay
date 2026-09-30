@@ -7,7 +7,7 @@
 // deduce de las etiquetas del archivo data/countries/<slug>.js. Los datos NO
 // textuales (regions, names, total, id, slug, geoFile) siempre vienen del archivo.
 
-import { CONTINENTS, slugify } from '../data/continents';
+import { CONTINENTS, FILE_SLUG_ALIASES, slugify, fileSlug } from '../data/continents';
 
 // Nombre inglés por slug (el de data/geo) y por slug del nombre español (el de ?pais=).
 const EN_NAME_BY_SLUG = new Map();
@@ -18,6 +18,13 @@ Object.values(CONTINENTS).forEach(({ countries }) => {
   });
 });
 
+// Los slugs de archivo con otro nombre (usa, bosnia, czechia…) también conocen su nombre inglés.
+Object.entries(FILE_SLUG_ALIASES).forEach(([variant, file]) => {
+  const name = EN_NAME_BY_SLUG.get(variant);
+  if (name && !EN_NAME_BY_SLUG.has(file)) EN_NAME_BY_SLUG.set(file, name);
+});
+EN_NAME_BY_SLUG.set('usa', 'United States');
+
 // Slug inglés (data/geo) a partir del slug del nombre en español.
 const EN_SLUG_BY_ES_SLUG = new Map();
 Object.values(CONTINENTS).forEach(({ countries }) => {
@@ -25,11 +32,11 @@ Object.values(CONTINENTS).forEach(({ countries }) => {
 });
 
 // Slugs de archivo a probar para un ?pais=... dado (tal cual y equivalente inglés).
+// Orden: el slug tal cual, su alias de archivo, el equivalente inglés y el alias de éste.
 export function slugCandidates(pais) {
-  const list = [pais];
   const en = EN_SLUG_BY_ES_SLUG.get(pais);
-  if (en && en !== pais) list.push(en);
-  return list;
+  const list = [pais, fileSlug(pais), en, en && fileSlug(en)].filter(Boolean);
+  return [...new Set(list)];
 }
 
 // Tipos de región que se reconocen en las etiquetas del archivo (plural inglés).
@@ -54,6 +61,15 @@ function inferNoun(country) {
   }
   return DEFAULT_NOUN;
 }
+
+// Nombres que en inglés llevan "the" (title: "states of the United States").
+const THE_PLACES = new Set([
+  'United States', 'United Kingdom', 'Netherlands', 'Philippines', 'Bahamas', 'Gambia',
+  'Czech Republic', 'Czechia', 'Republic of the Congo', 'Democratic Republic of the Congo',
+  'Central African Republic', 'United Arab Emirates', 'Maldives', 'Seychelles', 'Comoros',
+  'Marshall Islands', 'Solomon Islands',
+]);
+const withThe = (name) => (THE_PLACES.has(name) ? `the ${name}` : name);
 
 const article = (word) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
 const capitalize = (word) => word.charAt(0).toUpperCase() + word.slice(1);
@@ -84,8 +100,8 @@ export function buildTexts(country, slug) {
 
   const texts = {
     kicker: `Geotaria · ${place}`,
-    title: `How many ${noun.pl} of ${place} can you name?`,
-    subtitle: `Type ${a} ${noun.sg} of ${place} and the map will fill in.`,
+    title: `How many ${noun.pl} of ${withThe(place)} can you name?`,
+    subtitle: `Type ${a} ${noun.sg} of ${withThe(place)} and the map will fill in.`,
     guessPlaceholder: `Type ${a} ${noun.sg}…`,
     submitLabel: 'Check',
     giveUpLabel: 'Give up',
@@ -95,7 +111,7 @@ export function buildTexts(country, slug) {
     correctPrefix: 'Correct! ',
     notFoundMessage: 'Not found or ambiguous name.',
     alreadyFoundMessage: 'You already got that one.',
-    loadErrorMessage: `Couldn't load the map of ${place}. Check your connection.`,
+    loadErrorMessage: `Couldn't load the map of ${withThe(place)}. Check your connection.`,
     backLabel: UI.worldMap,
     firstCompletionMessage: 'First game recorded for this country',
     newBestScoreMessage: 'New personal best: +{gain} points',
@@ -124,10 +140,10 @@ export function buildTexts(country, slug) {
     return 'Keep practising';
   };
   texts.resultMessage = (count, complete) => (complete
-    ? `You named all ${total} ${noun.pl} of ${place}. Not a single one slipped by.`
-    : `You got ${count} of ${total} ${noun.pl} of ${place}. The ones you missed are highlighted on the map — hover over or tap them to see their names.`);
+    ? `You named all ${total} ${noun.pl} of ${withThe(place)}. Not a single one slipped by.`
+    : `You got ${count} of ${total} ${noun.pl} of ${withThe(place)}. The ones you missed are highlighted on the map — hover over or tap them to see their names.`);
   texts.endedFeedback = (count) => `Game over · ${count}/${total}`;
-  texts.loadingMap = `Loading the map of ${place}…`;
+  texts.loadingMap = `Loading the map of ${withThe(place)}…`;
   texts.slotsLabel = `${capitalize(noun.pl)} to guess`;
   texts.slotEmpty = 'To guess';
   texts.total = total;

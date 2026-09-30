@@ -246,3 +246,38 @@ export function normalize(str) {
     .replace(/[\u0300-\u036f]/g, '')
     .trim();
 }
+
+// Nombre REAL del archivo (public/data/countries/<slug>.js y public/data/geo/<slug>.svg)
+// cuando no coincide ni con el slug inglés de la lista de arriba ni con el slug del
+// nombre español. Clave: cualquier variante de slug; valor: el slug del archivo.
+// Es la única fuente: la usan la lista de países, el juego y las siluetas.
+export const FILE_SLUG_ALIASES = {
+  'united-states': 'usa',
+  'united-states-of-america': 'usa',
+  'estados-unidos': 'usa',
+  'bosnia-and-herzegovina': 'bosnia',
+  'bosnia-y-herzegovina': 'bosnia',
+  'north-macedonia': 'macedonia',
+  'macedonia-del-norte': 'macedonia',
+  'czech-republic': 'czechia',
+  'republica-checa': 'czechia',
+  'burkina-faso': 'burkina',
+  'ivory-coast': 'cote-d-ivoire',
+  'cote-divoire': 'cote-d-ivoire',
+  'costa-de-marfil': 'cote-d-ivoire',
+  'central-african-republic': 'central-african',
+  'republica-centroafricana': 'central-african',
+  'timor-leste': 'east-timor',
+  'timor-oriental': 'east-timor',
+  'republic-of-congo': 'republic-of-the-congo',
+  'republica-del-congo': 'republic-of-the-congo',
+  'republica-democratica-del-congo': 'democratic-republic-of-the-congo',
+  'cameroon': 'camerun',
+  'palestinian-territories': 'palestine',
+  'palestina': 'palestine',
+};
+
+// Slug del archivo a partir de cualquier variante (si no hay alias, se devuelve tal cual).
+export function fileSlug(slug) {
+  return FILE_SLUG_ALIASES[slug] || slug;
+}

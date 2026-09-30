@@ -10,7 +10,7 @@ window.GEOTARIA_COUNTRY = {
   total: 14,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/czech-republic.svg",
+  geoFile: "../data/geo/czechia.svg",
 
   guessPlaceholder: "Type a region…",
   submitLabel: "Check",

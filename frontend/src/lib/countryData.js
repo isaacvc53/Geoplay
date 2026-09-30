@@ -35,10 +35,11 @@ export async function loadCountryData(pais) {
   throw new Error(`data/countries/${pais}.js does not exist`);
 }
 
-// country.geoFile viene relativo a pages/ ("../data/geo/x.svg"): en la SPA es /data/geo/x.svg.
+// El SVG es /data/geo/<slug>.svg, con el slug del archivo .js que se cargó. Se ignora
+// country.geoFile salvo que sea una URL absoluta: algunos archivos lo tenían con otro
+// nombre (ivory-coast.svg, czech-republic.svg…) que no existe y el mapa no cargaba.
 export function resolveGeoUrl(country, slug) {
   const file = country.geoFile;
-  if (!file) return `/data/geo/${slug}.svg`;
-  if (/^(https?:)?\/\//.test(file) || file.startsWith('/')) return file;
-  return '/' + file.replace(/^(\.\.?\/)+/, '');
+  if (file && /^(https?:)?\/\//.test(file)) return file;
+  return `/data/geo/${encodeURIComponent(slug)}.svg`;
 }

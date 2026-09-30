@@ -26,10 +26,20 @@ const PROJECTIONS = { equalEarth: d3.geoEqualEarth, naturalEarth1: d3.geoNatural
 // en el mapa antiguo (8x) para poder acertar Malta, Singapur, etc.
 const MAX_ZOOM = 20;
 
+// En pantallas altas y estrechas (móvil en vertical) el mapa entero cabe en una franja
+// de ~180 px. La vista inicial hace zoom hasta llenar el alto disponible (centrada en
+// Europa/África) y se puede seguir alejando hasta ver el mundo entero (zoom 1).
+const MAX_HOME_ZOOM = 4;
+// Tiempo tras el último gesto antes de soltar la capa GPU y repintar nítido.
+const GESTURE_IDLE_MS = 140;
+
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
   const tooltipRef = useRef(null);
+  const toastRef = useRef(null);
   const zoomApiRef = useRef(null);
   const countryPathsRef = useRef(null);
   const onSelectRef = useRef(onSelect);
@@ -51,18 +61,31 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
   useEffect(() => {
     const wrap = wrapRef.current;
     const tooltip = tooltipRef.current;
+    const toast = toastRef.current;
+    const stage = wrap.closest('.stage');
+    const headerEl = stage?.querySelector('header');
+    const controlsEl = stage?.querySelector('.zoom-controls');
     const svg = d3.select(svgRef.current);
+    const touchOnly = window.matchMedia('(hover: none)');
     let cancelled = false;
     let rafId = 0;
+    let idleTimer = 0;
+    let toastTimer = 0;
 
     // Tamaño del mapa en coordenadas del SVG; se fija al cargar los datos.
     let mapW = 0;
     let mapH = 0;
+    let viewScale = 1;          // px de pantalla por unidad de SVG a zoom 1
+    let currentK = 1;           // zoom actual
+    let home = d3.zoomIdentity; // vista inicial (la de "reset")
+    let userMoved = false;      // si el usuario ya movió el mapa, un resize no lo recoloca
+    let lastLandscape = null;
 
     const g = svg.append('g');
-    // Capa de composición propia desde el principio (evita repintar en CPU
-    // los ~241 países en cada frame de zoom/paneo).
-    g.style('will-change', 'transform');
+    // OJO: NO se deja `will-change: transform` fijo. Con él el navegador rasteriza el
+    // grupo una vez y al hacer zoom solo escala ese bitmap: el mapa se veía borroso.
+    // Ahora la capa GPU se pide solo mientras dura el gesto (start) y se suelta al
+    // terminar (end), lo que obliga a repintar los vectores nítidos a la escala final.
 
     const defs = svg.append('defs');
 
@@ -113,41 +136,109 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       .scaleExtent([1, MAX_ZOOM])
       // Un toque en pantalla táctil nunca es tan quieto como un clic de ratón.
       .clickDistance(12)
+      .on('start', () => {
+        clearTimeout(idleTimer);
+        g.style('will-change', 'transform');
+      })
       .on('zoom', (event) => {
+        if (event.sourceEvent) userMoved = true; // gesto real (no una llamada del código)
+        currentK = event.transform.k;
         pendingTransform = event.transform;
         if (!rafScheduled) { rafScheduled = true; rafId = requestAnimationFrame(flushTransform); }
+      })
+      .on('end', () => {
+        if (pendingTransform) flushTransform();
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(() => {
+          g.style('will-change', null);
+          // El rayado mide ~6 px en pantalla sea cual sea el zoom.
+          setHatchScale(1 / (viewScale * currentK));
+        }, GESTURE_IDLE_MS);
       });
     svg.call(zoom);
     svg.on('mousedown.cursor', () => svg.classed('grabbing', true));
     svg.on('mouseup.cursor', () => svg.classed('grabbing', false));
 
     zoomApiRef.current = {
-      zoomIn: () => svg.transition().duration(300).call(zoom.scaleBy, 1.5),
-      zoomOut: () => svg.transition().duration(300).call(zoom.scaleBy, 0.67),
-      reset: () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity),
+      zoomIn: () => { userMoved = true; svg.transition().duration(300).call(zoom.scaleBy, 1.5); },
+      zoomOut: () => { userMoved = true; svg.transition().duration(300).call(zoom.scaleBy, 0.67); },
+      reset: () => { userMoved = false; svg.transition().duration(400).call(zoom.transform, home); },
     };
 
+    // Toque en un país no disponible: en pantallas táctiles no hay tooltip, así que
+    // se avisa con un mensaje breve para que no parezca que la app no responde.
+    function showToast(name) {
+      toast.replaceChildren();
+      const nameEl = document.createElement('span');
+      nameEl.className = 'toast-name';
+      nameEl.textContent = name;
+      const noteEl = document.createElement('span');
+      noteEl.className = 'toast-note';
+      noteEl.textContent = 'Not available yet';
+      toast.append(nameEl, noteEl);
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    // Vista inicial: escala respecto al centro del mapa (que es el centro de la zona
+    // libre entre cabecera y controles) y ajustada a los límites de paneo.
+    function computeHome(vbX, vbY, vbW, vbH, availH) {
+      const fit = availH / (mapH * viewScale);
+      const k = fit > 1.15 ? Math.min(MAX_HOME_ZOOM, fit) : 1;
+      if (k === 1) return d3.zoomIdentity;
+      const tx = clamp((1 - k) * (mapW / 2), (vbX + vbW) * (1 - k), vbX * (1 - k));
+      const ty = clamp((1 - k) * (mapH / 2), (vbY + vbH) * (1 - k), vbY * (1 - k));
+      return d3.zoomIdentity.translate(tx, ty).scale(k);
+    }
+
     // Encaja el mapa en el visor (deja hueco arriba para la cabecera y abajo
-    // para los controles) y recalcula los límites de zoom/paneo.
+    // para los controles, medidos de verdad: en móvil la cabecera es más baja y los
+    // botones más grandes) y recalcula los límites de zoom/paneo.
     function resize() {
       if (!mapW) return;
       const W = wrap.clientWidth;
       const H = wrap.clientHeight;
-      const padTop = Math.min(168, H * 0.21);
-      const padBottom = 72;
+      if (!W || !H) return;
+      const wrapRect = wrap.getBoundingClientRect();
+      const padTop = clamp(
+        headerEl ? headerEl.getBoundingClientRect().bottom - wrapRect.top + 10 : Math.min(168, H * 0.21),
+        48, H * 0.4
+      );
+      const padBottom = clamp(
+        controlsEl ? wrapRect.bottom - controlsEl.getBoundingClientRect().top + 12 : 72,
+        40, H * 0.25
+      );
       const padX = Math.min(48, W * 0.03);
-      const s = Math.min((W - padX * 2) / mapW, (H - padTop - padBottom) / mapH);
-      setHatchScale(1 / s);
+      const availH = H - padTop - padBottom;
+      const s = Math.min((W - padX * 2) / mapW, availH / mapH);
+      viewScale = s;
       const vbW = W / s;
       const vbH = H / s;
       const vbX = -(vbW - mapW) / 2;
-      const vbY = -(padTop / s) - ((H - padTop - padBottom) / s - mapH) / 2;
+      const vbY = -(padTop / s) - (availH / s - mapH) / 2;
       svg.attr('viewBox', [vbX, vbY, vbW, vbH]).attr('preserveAspectRatio', 'xMidYMid meet');
       // Sin zoom (scale=1) el mapa queda bloqueado: translateExtent = viewBox.
       const extent = [[vbX, vbY], [vbX + vbW, vbY + vbH]];
       zoom.extent(extent).translateExtent(extent);
+
+      home = computeHome(vbX, vbY, vbW, vbH, availH);
+      const landscape = W > H;
+      // Si el usuario no ha tocado el mapa (o giró el móvil) se recoloca la vista inicial.
+      if (!userMoved || landscape !== lastLandscape) {
+        userMoved = false;
+        lastLandscape = landscape;
+        svg.interrupt();
+        svg.call(zoom.transform, home);
+      } else {
+        setHatchScale(1 / (s * currentK));
+      }
     }
-    window.addEventListener('resize', resize);
+    // ResizeObserver (no window.resize): también reacciona a la barra del navegador
+    // móvil, al giro de pantalla y a que la cabecera cambie de alto al cargar la fuente.
+    const resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(wrap);
+    if (headerEl) resizeObserver.observe(headerEl);
 
     fetch('/data/world-map.json')
       .then((res) => {
@@ -219,7 +310,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           })
           .on('mouseleave', () => tooltip.classList.remove('show'))
           .on('click', (event, d) => {
-            if (isUnavailable(d)) return;
+            if (isUnavailable(d)) {
+              if (touchOnly.matches) showToast(d.properties.name || 'Country');
+              return;
+            }
             onSelectRef.current?.(d);
           });
         countryPathsRef.current = countryPaths;
@@ -249,7 +343,9 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', resize);
+      clearTimeout(idleTimer);
+      clearTimeout(toastTimer);
+      resizeObserver.disconnect();
       svg.on('.zoom', null).on('.cursor', null);
       svg.interrupt();
       svg.selectAll('*').remove();
@@ -269,6 +365,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         <svg id="worldmap" ref={svgRef} />
       </div>
       <div className="tooltip" ref={tooltipRef} aria-hidden="true" />
+      <div className="map-toast" ref={toastRef} role="status" aria-live="polite" />
     </>
   );
 }

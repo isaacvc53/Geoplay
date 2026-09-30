@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!-- Created for MapSVG plugin: http://mapsvg.com -->
 <svg
+   fill="#6f9c76" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width=".5"
    xmlns:mapsvg="http://mapsvg.com"
    xmlns:dc="http://purl.org/dc/elements/1.1/"
    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
    mapsvg:geoViewBox="19.642502 81.857875 190.345967 41.185573"
+   viewBox="0 0 1224.449 760.6203"
    width="1224.449"
    height="760.6203">
   

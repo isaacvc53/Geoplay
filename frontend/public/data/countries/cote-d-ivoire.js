@@ -10,7 +10,7 @@ window.GEOTARIA_COUNTRY = {
   total: 14,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/ivory-coast.svg",
+  geoFile: "../data/geo/cote-d-ivoire.svg",
 
   guessPlaceholder: "Type a region…",
   submitLabel: "Check",
