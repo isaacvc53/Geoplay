@@ -4,7 +4,7 @@ window.GEOTARIA_COUNTRY = {
   kicker: "GeoPlay · Iran",
   title: "How many provinces of Iran can you name?",
   subtitle: "Type an Iranian province and the map will fill in.",
-  total: 30,
+  total: 31,
   quizSeconds: 15 * 60,
 
   geoFile: "../data/geo/iran.svg",
@@ -26,7 +26,7 @@ window.GEOTARIA_COUNTRY = {
   noneFoundMessage: "You haven't guessed any yet.",
   pausedMessage: "The quiz is paused.",
 
-  completeMessage: "You've completed all 30 provinces of Iran! 🇮🇷",
+  completeMessage: "You've completed all 31 provinces of Iran! 🇮🇷",
 
   timeUpMessage: "Time's up.",
 
@@ -40,6 +40,16 @@ window.GEOTARIA_COUNTRY = {
     "Could not load the map of Iran. Check your connection.",
 
   regions: [
+    {
+      id: "IR31",
+      display: "North Khorasan",
+      names: [
+        "North Khorasan",
+        "North Khorasan Province",
+        "Khorasan-e Shomali"
+      ],
+      region_id: null
+    },
     {
       id: "IR01",
       display: "East Azarbaijan",

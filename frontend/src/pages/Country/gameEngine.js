@@ -43,7 +43,12 @@ export function createGame({ country, texts, els, geoUrl }) {
   const RESET_TRANSITION_MS = prefersReducedMotion ? 0 : 220;
 
   // Copia de las regiones: loadRegions() les asigna region_id y no debe mutar los datos originales.
-  const regions = (country.regions || []).map((r) => ({ ...r }));
+  // Varios archivos de país usan `name` en vez de `display`: se unifica aquí para que
+  // los huecos, el tooltip y el orden nunca salgan vacíos.
+  const regions = (country.regions || []).map((r) => ({
+    ...r,
+    display: r.display || r.name || (r.names || [])[0] || r.id,
+  }));
   const featureByRegion = new Map();
   const solved = new Set();
   let localMode = false;
@@ -312,10 +317,13 @@ export function createGame({ country, texts, els, geoUrl }) {
 
     const shapes = Array.from(svgEl.querySelectorAll('.regions .country'));
     const byId = new Map();
+    const byIdLoose = new Map(); // ids sin guiones ni símbolos: "HT-AR" == "HTAR"
     const byName = new Map();
+    const looseId = (v) => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
     shapes.forEach((el) => {
       if (el.id && !byId.has(normalizeSafe(el.id))) byId.set(normalizeSafe(el.id), el);
+      if (el.id && !byIdLoose.has(looseId(el.id))) byIdLoose.set(looseId(el.id), el);
 
       const titleEl = el.querySelector('title');
       const label = el.getAttribute('title') || (titleEl ? titleEl.textContent : '');
@@ -323,7 +331,7 @@ export function createGame({ country, texts, els, geoUrl }) {
     });
 
     regions.forEach((r) => {
-      let el = document.getElementById('hex-' + r.id) || byId.get(normalizeSafe(r.id));
+      let el = document.getElementById('hex-' + r.id) || byId.get(normalizeSafe(r.id)) || byIdLoose.get(looseId(r.id));
 
       if (!el) {
         const candidateNames = [r.id, r.display, ...(r.names || [])];

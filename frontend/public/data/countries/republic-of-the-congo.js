@@ -7,7 +7,7 @@ window.GEOTARIA_COUNTRY = {
   total: 12,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/republic-of-congo.svg",
+  geoFile: "../data/geo/republic-of-the-congo.svg",
 
   guessPlaceholder: "Type a department…",
   submitLabel: "Check",

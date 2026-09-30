@@ -22,7 +22,8 @@ slugs=()
 for jsfile in countries/*.js; do
   [ -e "$jsfile" ] || continue   # carpeta vacía: no hacer nada raro
   slug=$(basename "$jsfile" .js)
-  if [ -f "geo/${slug}.svg" ]; then
+  # -s: el archivo existe y NO está vacío (hay .js de 0 bytes que no cargan nada).
+  if [ -s "$jsfile" ] && [ -s "geo/${slug}.svg" ]; then
     slugs+=("\"$slug\"")
   fi
 done

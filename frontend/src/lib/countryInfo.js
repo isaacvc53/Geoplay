@@ -55,7 +55,7 @@ export const COUNTRY_INFO = {
   "panama":          { en: "Panama",         slug: "panama",        topo: "panama",                  continent: "Americas" },
 
   "mexico":          { en: "Mexico",         slug: "mexico",        topo: "mexico",                  continent: "Americas" },
-  "estados unidos":  { en: "United States",  slug: "united-states", topo: "united states of america", continent: "Americas" },
+  "estados unidos":  { en: "United States",  slug: "usa",           topo: "united states of america", continent: "Americas" },
   "canada":          { en: "Canada",         slug: "canada",        topo: "canada",                  continent: "Americas" },
 };
 

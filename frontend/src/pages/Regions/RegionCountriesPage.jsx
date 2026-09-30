@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CONTINENTS, slugify, normalize } from '../../data/continents';
+import { CONTINENTS, slugify, normalize, fileSlug } from '../../data/continents';
 import './Regions.css';
 
 // Silhouettes live in public/data/geo/<slug>.svg (English file names).
@@ -13,10 +13,18 @@ const FALLBACK_SILHOUETTE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
 function CountryTile({ nameEn, geoSlug, iso, nameEs }) {
   const [flagHidden, setFlagHidden] = useState(false);
   const [silhouetteFailed, setSilhouetteFailed] = useState(false);
+  // Nombre real del archivo (p. ej. "usa" para United States / Estados Unidos).
+  const esSlug = slugify(nameEs);
+  let fileName = null;
+  if (fileSlug(geoSlug) !== geoSlug) fileName = fileSlug(geoSlug);
+  else if (fileSlug(esSlug) !== esSlug) fileName = fileSlug(esSlug);
+  const target = fileName || esSlug;
+  const silhouetteSlug = fileName || geoSlug;
 
   return (
-    // The link uses the SPANISH name's slug, as in the original (country.html?pais=...).
-    <Link className="tile" to={`/pais?pais=${slugify(nameEs)}`}>
+    // The link uses the real file slug when it differs; otherwise the SPANISH name's slug
+    // (country.html?pais=...), which CountryGamePage resolves through slugCandidates().
+    <Link className="tile" to={`/pais?pais=${target}`}>
       <img
         className="flag"
         loading="lazy"
@@ -30,7 +38,7 @@ function CountryTile({ nameEn, geoSlug, iso, nameEs }) {
           className={'silhouette' + (silhouetteFailed ? ' fallback' : '')}
           loading="lazy"
           alt=""
-          src={silhouetteFailed ? FALLBACK_SILHOUETTE : `${GEO_PATH}${geoSlug}.svg`}
+          src={silhouetteFailed ? FALLBACK_SILHOUETTE : `${GEO_PATH}${silhouetteSlug}.svg`}
           onError={() => setSilhouetteFailed(true)}
         />
       </div>

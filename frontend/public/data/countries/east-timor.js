@@ -10,7 +10,7 @@ window.GEOTARIA_COUNTRY = {
   total: 13,
   quizSeconds: 15 * 60,
 
-  geoFile: "../data/geo/timor-leste.svg",
+  geoFile: "../data/geo/east-timor.svg",
 
   guessPlaceholder: "Type a municipality…",
   submitLabel: "Check",
