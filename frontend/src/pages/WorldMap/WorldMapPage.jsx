@@ -1,24 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import * as d3 from 'd3';
-import { NUMERIC_TO_ISO } from '../../data/numericToIso';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import WorldMapCanvas from './WorldMapCanvas';
 import './WorldMap.css';
-
-// Para la mini silueta del panel: si el país es un MultiPolygon (p. ej. Rusia
-// con Kaliningrado) se queda solo el polígono de mayor área.
-function mainlandOnly(feature) {
-  if (feature?.geometry?.type !== 'MultiPolygon') return feature;
-  const coords = feature.geometry.coordinates;
-  let maxArea = -1;
-  let maxIdx = 0;
-  coords.forEach((poly, i) => {
-    const area = Math.abs(d3.geoArea({ type: 'Polygon', coordinates: poly }));
-    if (area > maxArea) { maxArea = area; maxIdx = i; }
-  });
-  return { ...feature, geometry: { type: 'Polygon', coordinates: coords[maxIdx] } };
-}
 
 export default function WorldMapPage() {
   const navigate = useNavigate();
@@ -43,19 +28,21 @@ export default function WorldMapPage() {
     el.replaceChildren();
     if (!selected) return undefined;
 
-    const previewFeature = mainlandOnly(selected);
-    const miniSvg = d3.select(el).append('svg')
-      .attr('viewBox', '0 0 200 200')
-      .attr('aria-hidden', 'true');
-    const miniProjection = d3.geoNaturalEarth1().fitSize([180, 180], previewFeature);
-    miniSvg.append('path').datum(previewFeature).attr('d', d3.geoPath(miniProjection));
+    // Silueta: si el país tiene varios polígonos (p. ej. Francia con la Guayana)
+    // se dibuja solo el más grande (`main`); el viewBox se ajusta a su caja.
+    const miniSvg = d3.select(el).append('svg').attr('aria-hidden', 'true');
+    const miniPath = miniSvg.append('path').attr('d', selected.main || selected.d);
+    const { x, y, width, height } = miniPath.node().getBBox();
+    const side = Math.max(width, height) * 1.1 || 1;
+    miniSvg.attr('viewBox', [x + width / 2 - side / 2, y + height / 2 - side / 2, side, side]);
 
     const raf = requestAnimationFrame(() => closeBtnRef.current?.focus());
     return () => cancelAnimationFrame(raf);
   }, [selected]);
 
   const name = selected?.properties?.name || 'Country';
-  const iso2 = selected ? NUMERIC_TO_ISO[String(selected.id || '').padStart(3, '0')] || '' : '';
+  // Código alfa-2 (las islas menores de EE. UU. vienen como UM-xx y no tienen bandera).
+  const iso2 = /^[A-Z]{2}$/.test(selected?.id || '') ? selected.id.toLowerCase() : '';
   const open = Boolean(selected);
 
   function explore() {
@@ -74,7 +61,7 @@ export default function WorldMapPage() {
           </Link>
           <div className="eyebrow-row">
             <h1>Atlas <em>World</em></h1>
-            <div className="coords">Natural Earth projection<br />select a country</div>
+            <div className="coords">drag to pan · scroll to zoom<br />select a country</div>
           </div>
         </header>
 

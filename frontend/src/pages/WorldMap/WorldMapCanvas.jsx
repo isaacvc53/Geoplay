@@ -1,18 +1,19 @@
 import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as d3 from 'd3';
-import { feature as topoFeature } from 'topojson-client';
-import { countrySlug, DISABLED_COUNTRIES } from '../../lib/worldMapSlugs';
+import { countrySlug } from '../../lib/worldMapSlugs';
 import { findAvailableCountries } from '../../lib/availability';
 
-// Mapa mundial con D3 (imperativo, NO en JSX): se monta UNA vez dentro de un
+// Mapa mundial a partir de world.svg (paths ya proyectados, sin d3.geo) con D3
+// para zoom/paneo (imperativo, NO en JSX): se monta UNA vez dentro de un
 // useEffect y se limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
 // Conserva las optimizaciones del original: capa GPU (will-change), throttling
 // del zoom con requestAnimationFrame, path.digits(1), non-scaling-stroke y
-// contain (estos dos últimos, en el CSS).
+// contain (estos dos últimos, en el CSS). Los datos vienen de
+// /data/world-map.json (ver scripts/build-world-map.py).
 //
 // Props:
-//   selected        feature actualmente abierta en el panel (para pintarla "active")
-//   onSelect(f)     se llama al hacer clic en un país disponible
+//   selected        país actualmente abierto en el panel (para pintarlo "active")
+//   onSelect(f)     se llama al hacer clic en un país disponible; f = { id, properties:{name,slug}, d, main? }
 //   ref             { zoomIn(), zoomOut(), reset() }
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
@@ -43,9 +44,8 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     let cancelled = false;
     let rafId = 0;
 
-    let width = wrap.clientWidth;
-    let height = wrap.clientHeight;
-    svg.attr('viewBox', [0, 0, width, height]);
+    // Extensión del mapa en coordenadas del SVG; se fija al cargar los datos.
+    let extent = [[0, 0], [1, 1]];
 
     const g = svg.append('g');
     // Capa de composición propia desde el principio (evita repintar en CPU
@@ -74,13 +74,8 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     hatch.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6)
       .attr('stroke', disabledLine).attr('stroke-width', 2);
 
-    const projection = d3.geoNaturalEarth1();
-    const path = d3.geoPath(projection);
-    // Menos decimales = "d" más cortos = menos trabajo por repintado.
-    path.digits(1);
-
-    const sphere = g.append('path').attr('class', 'sphere');
-    const graticuleG = g.append('path').attr('class', 'graticule');
+    // Fondo de océano fijo (fuera de `g`): no se desplaza con el paneo.
+    const ocean = svg.insert('rect', ':first-child').attr('class', 'sphere');
     const countriesG = g.append('g').attr('class', 'countries-group');
 
     // El evento 'zoom' llega más rápido de lo que la pantalla repinta:
@@ -111,36 +106,35 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       reset: () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity),
     };
 
-    function resize() {
-      width = wrap.clientWidth;
-      height = wrap.clientHeight;
-      svg.attr('viewBox', [0, 0, width, height]);
-      projection.fitSize([width * 0.92, height * 0.88], { type: 'Sphere' });
-      const [[x0, y0], [x1, y1]] = path.bounds({ type: 'Sphere' });
-      const dx = width - (x1 - x0);
-      const dy = height - (y1 - y0);
-      projection.translate([
-        projection.translate()[0] + dx / 2 - x0,
-        projection.translate()[1] + dy / 2 - y0 + height * 0.03,
-      ]);
-      sphere.attr('d', path({ type: 'Sphere' }));
-      graticuleG.attr('d', path(d3.geoGraticule10()));
-      countriesG.selectAll('path').attr('d', path);
-
-      // Sin zoom (scale=1) el mapa queda bloqueado: translateExtent = viewport.
-      zoom.extent([[0, 0], [width, height]])
-        .translateExtent([[0, 0], [width, height]]);
-    }
-    window.addEventListener('resize', resize);
-
-    fetch('/data/world-topology.json')
+    fetch('/data/world-map.json')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((worldData) => {
         if (cancelled) return;
-        const countries = topoFeature(worldData, worldData.objects.countries);
+        const { width: mapW, height: mapH } = worldData;
+        const features = worldData.countries.map((c) => ({
+          id: c.id,
+          properties: { name: c.name, slug: c.slug },
+          d: c.d,
+          main: c.main,
+        }));
+
+        // Márgenes: hueco arriba para la cabecera superpuesta y algo abajo
+        // para los controles de zoom.
+        const padX = mapW * 0.03;
+        const padTop = mapH * 0.17;
+        const padBottom = mapH * 0.09;
+        extent = [[-padX, -padTop], [mapW + padX, mapH + padBottom]];
+        const vbW = extent[1][0] - extent[0][0];
+        const vbH = extent[1][1] - extent[0][1];
+        svg.attr('viewBox', [extent[0][0], extent[0][1], vbW, vbH])
+          .attr('preserveAspectRatio', 'xMidYMid meet');
+        ocean.attr('x', extent[0][0]).attr('y', extent[0][1])
+          .attr('width', vbW).attr('height', vbH);
+        // Sin zoom (scale=1) el mapa queda bloqueado: translateExtent = viewBox.
+        zoom.extent(extent).translateExtent(extent);
 
         // availableSlugs === null significa "aún sin comprobar": mientras tanto
         // todos cuentan como disponibles, así el mapa es interactivo en cuanto
@@ -148,17 +142,16 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         let availableSlugs = null;
 
         function isUnavailable(f) {
-          if (DISABLED_COUNTRIES.has(f.properties.name)) return true;
           if (availableSlugs === null) return false;
           return !availableSlugs.has(countrySlug(f));
         }
 
         const countryPaths = countriesG.selectAll('path')
-          .data(countries.features)
+          .data(features)
           .join('path')
           .attr('class', 'country')
           .classed('disabled', isUnavailable)
-          .attr('d', path)
+          .attr('d', (d) => d.d)
           .on('mouseenter', (event, d) => {
             const name = d.properties.name || 'Country';
             const isDisabled = isUnavailable(d);
@@ -188,11 +181,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         countryPathsRef.current = countryPaths;
 
         setStatus('ready');
-        resize();
 
         // Comprobación de disponibilidad en segundo plano; luego se repintan
         // (rayado) los países sin archivos.
-        const allSlugs = countries.features.map(countrySlug).filter(Boolean);
+        const allSlugs = features.map(countrySlug).filter(Boolean);
         findAvailableCountries(allSlugs)
           .then((slugs) => {
             if (cancelled) return;
@@ -212,7 +204,6 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
-      window.removeEventListener('resize', resize);
       svg.on('.zoom', null).on('.cursor', null);
       svg.interrupt();
       svg.selectAll('*').remove();

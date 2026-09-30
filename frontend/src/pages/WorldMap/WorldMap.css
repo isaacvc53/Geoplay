@@ -82,7 +82,6 @@
   svg#worldmap.grabbing{ cursor:grabbing; }
 
   .sphere{ fill:url(#oceanGlow); }
-  .graticule{ fill:none; stroke:#1c4363; stroke-width:0.5; shape-rendering:geometricPrecision; vector-effect:non-scaling-stroke; }
 
   .country{
     fill:var(--land);
