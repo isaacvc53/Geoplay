@@ -1,0 +1,1578 @@
+{
+ "Albania": {
+  "slug_front": "albania",
+  "slug_archivo": "albania",
+  "iso": "al",
+  "en": "Albania",
+  "capital": "Tirana",
+  "continente": "Europa"
+ },
+ "Alemania": {
+  "slug_front": "germany",
+  "slug_archivo": "germany",
+  "iso": "de",
+  "en": "Germany",
+  "capital": "Berlín",
+  "continente": "Europa"
+ },
+ "Andorra": {
+  "slug_front": "andorra",
+  "slug_archivo": "andorra",
+  "iso": "ad",
+  "en": "Andorra",
+  "capital": "Andorra la Vieja",
+  "continente": "Europa"
+ },
+ "Austria": {
+  "slug_front": "austria",
+  "slug_archivo": "austria",
+  "iso": "at",
+  "en": "Austria",
+  "capital": "Viena",
+  "continente": "Europa"
+ },
+ "Bélgica": {
+  "slug_front": "belgium",
+  "slug_archivo": "belgium",
+  "iso": "be",
+  "en": "Belgium",
+  "capital": "Bruselas",
+  "continente": "Europa"
+ },
+ "Bielorrusia": {
+  "slug_front": "belarus",
+  "slug_archivo": "belarus",
+  "iso": "by",
+  "en": "Belarus",
+  "capital": "Minsk",
+  "continente": "Europa"
+ },
+ "Bosnia y Herzegovina": {
+  "slug_front": "bosnia-and-herzegovina",
+  "slug_archivo": "bosnia",
+  "iso": "ba",
+  "en": "Bosnia and Herzegovina",
+  "capital": "Sarajevo",
+  "continente": "Europa"
+ },
+ "Bulgaria": {
+  "slug_front": "bulgaria",
+  "slug_archivo": "bulgaria",
+  "iso": "bg",
+  "en": "Bulgaria",
+  "capital": "Sofía",
+  "continente": "Europa"
+ },
+ "Chipre": {
+  "slug_front": "cyprus",
+  "slug_archivo": "cyprus",
+  "iso": "cy",
+  "en": "Cyprus",
+  "capital": "Nicosia",
+  "continente": "Europa"
+ },
+ "Croacia": {
+  "slug_front": "croatia",
+  "slug_archivo": "croatia",
+  "iso": "hr",
+  "en": "Croatia",
+  "capital": "Zagreb",
+  "continente": "Europa"
+ },
+ "Dinamarca": {
+  "slug_front": "denmark",
+  "slug_archivo": "denmark",
+  "iso": "dk",
+  "en": "Denmark",
+  "capital": "Copenhague",
+  "continente": "Europa"
+ },
+ "Eslovaquia": {
+  "slug_front": "slovakia",
+  "slug_archivo": "slovakia",
+  "iso": "sk",
+  "en": "Slovakia",
+  "capital": "Bratislava",
+  "continente": "Europa"
+ },
+ "Eslovenia": {
+  "slug_front": "slovenia",
+  "slug_archivo": "slovenia",
+  "iso": "si",
+  "en": "Slovenia",
+  "capital": "Liubliana",
+  "continente": "Europa"
+ },
+ "España": {
+  "slug_front": "spain",
+  "slug_archivo": "spain",
+  "iso": "es",
+  "en": "Spain",
+  "capital": "Madrid",
+  "continente": "Europa"
+ },
+ "Estonia": {
+  "slug_front": "estonia",
+  "slug_archivo": "estonia",
+  "iso": "ee",
+  "en": "Estonia",
+  "capital": "Tallin",
+  "continente": "Europa"
+ },
+ "Finlandia": {
+  "slug_front": "finland",
+  "slug_archivo": "finland",
+  "iso": "fi",
+  "en": "Finland",
+  "capital": "Helsinki",
+  "continente": "Europa"
+ },
+ "Francia": {
+  "slug_front": "france",
+  "slug_archivo": "france",
+  "iso": "fr",
+  "en": "France",
+  "capital": "París",
+  "continente": "Europa"
+ },
+ "Grecia": {
+  "slug_front": "greece",
+  "slug_archivo": "greece",
+  "iso": "gr",
+  "en": "Greece",
+  "capital": "Atenas",
+  "continente": "Europa"
+ },
+ "Hungría": {
+  "slug_front": "hungary",
+  "slug_archivo": "hungary",
+  "iso": "hu",
+  "en": "Hungary",
+  "capital": "Budapest",
+  "continente": "Europa"
+ },
+ "Irlanda": {
+  "slug_front": "ireland",
+  "slug_archivo": "ireland",
+  "iso": "ie",
+  "en": "Ireland",
+  "capital": "Dublín",
+  "continente": "Europa"
+ },
+ "Islandia": {
+  "slug_front": "iceland",
+  "slug_archivo": "iceland",
+  "iso": "is",
+  "en": "Iceland",
+  "capital": "Reikiavik",
+  "continente": "Europa"
+ },
+ "Italia": {
+  "slug_front": "italy",
+  "slug_archivo": "italy",
+  "iso": "it",
+  "en": "Italy",
+  "capital": "Roma",
+  "continente": "Europa"
+ },
+ "Kosovo": {
+  "slug_front": "kosovo",
+  "slug_archivo": "kosovo",
+  "iso": "xk",
+  "en": "Kosovo",
+  "capital": "Pristina",
+  "continente": "Europa"
+ },
+ "Letonia": {
+  "slug_front": "latvia",
+  "slug_archivo": "latvia",
+  "iso": "lv",
+  "en": "Latvia",
+  "capital": "Riga",
+  "continente": "Europa"
+ },
+ "Liechtenstein": {
+  "slug_front": "liechtenstein",
+  "slug_archivo": "liechtenstein",
+  "iso": "li",
+  "en": "Liechtenstein",
+  "capital": "Vaduz",
+  "continente": "Europa"
+ },
+ "Lituania": {
+  "slug_front": "lithuania",
+  "slug_archivo": "lithuania",
+  "iso": "lt",
+  "en": "Lithuania",
+  "capital": "Vilna",
+  "continente": "Europa"
+ },
+ "Luxemburgo": {
+  "slug_front": "luxembourg",
+  "slug_archivo": "luxembourg",
+  "iso": "lu",
+  "en": "Luxembourg",
+  "capital": "Luxemburgo",
+  "continente": "Europa"
+ },
+ "Macedonia del Norte": {
+  "slug_front": "north-macedonia",
+  "slug_archivo": "macedonia",
+  "iso": "mk",
+  "en": "North Macedonia",
+  "capital": "Skopie",
+  "continente": "Europa"
+ },
+ "Malta": {
+  "slug_front": "malta",
+  "slug_archivo": "malta",
+  "iso": "mt",
+  "en": "Malta",
+  "capital": "La Valeta",
+  "continente": "Europa"
+ },
+ "Moldavia": {
+  "slug_front": "moldova",
+  "slug_archivo": "moldova",
+  "iso": "md",
+  "en": "Moldova",
+  "capital": "Chisináu",
+  "continente": "Europa"
+ },
+ "Mónaco": {
+  "slug_front": "monaco",
+  "slug_archivo": "monaco",
+  "iso": "mc",
+  "en": "Monaco",
+  "capital": "Mónaco",
+  "continente": "Europa"
+ },
+ "Montenegro": {
+  "slug_front": "montenegro",
+  "slug_archivo": "montenegro",
+  "iso": "me",
+  "en": "Montenegro",
+  "capital": "Podgorica",
+  "continente": "Europa"
+ },
+ "Noruega": {
+  "slug_front": "norway",
+  "slug_archivo": "norway",
+  "iso": "no",
+  "en": "Norway",
+  "capital": "Oslo",
+  "continente": "Europa"
+ },
+ "Países Bajos": {
+  "slug_front": "netherlands",
+  "slug_archivo": "netherlands",
+  "iso": "nl",
+  "en": "Netherlands",
+  "capital": "Ámsterdam",
+  "continente": "Europa"
+ },
+ "Polonia": {
+  "slug_front": "poland",
+  "slug_archivo": "poland",
+  "iso": "pl",
+  "en": "Poland",
+  "capital": "Varsovia",
+  "continente": "Europa"
+ },
+ "Portugal": {
+  "slug_front": "portugal",
+  "slug_archivo": "portugal",
+  "iso": "pt",
+  "en": "Portugal",
+  "capital": "Lisboa",
+  "continente": "Europa"
+ },
+ "Reino Unido": {
+  "slug_front": "united-kingdom",
+  "slug_archivo": "united-kingdom",
+  "iso": "gb",
+  "en": "United Kingdom",
+  "capital": "Londres",
+  "continente": "Europa"
+ },
+ "República Checa": {
+  "slug_front": "czech-republic",
+  "slug_archivo": "czechia",
+  "iso": "cz",
+  "en": "Czech Republic",
+  "capital": "Praga",
+  "continente": "Europa"
+ },
+ "Rumanía": {
+  "slug_front": "romania",
+  "slug_archivo": "romania",
+  "iso": "ro",
+  "en": "Romania",
+  "capital": "Bucarest",
+  "continente": "Europa"
+ },
+ "Rusia": {
+  "slug_front": "russia",
+  "slug_archivo": "russia",
+  "iso": "ru",
+  "en": "Russia",
+  "capital": "Moscú",
+  "continente": "Europa"
+ },
+ "San Marino": {
+  "slug_front": "san-marino",
+  "slug_archivo": "san-marino",
+  "iso": "sm",
+  "en": "San Marino",
+  "capital": "San Marino",
+  "continente": "Europa"
+ },
+ "Serbia": {
+  "slug_front": "serbia",
+  "slug_archivo": "serbia",
+  "iso": "rs",
+  "en": "Serbia",
+  "capital": "Belgrado",
+  "continente": "Europa"
+ },
+ "Suecia": {
+  "slug_front": "sweden",
+  "slug_archivo": "sweden",
+  "iso": "se",
+  "en": "Sweden",
+  "capital": "Estocolmo",
+  "continente": "Europa"
+ },
+ "Suiza": {
+  "slug_front": "switzerland",
+  "slug_archivo": "switzerland",
+  "iso": "ch",
+  "en": "Switzerland",
+  "capital": "Berna",
+  "continente": "Europa"
+ },
+ "Ucrania": {
+  "slug_front": "ukraine",
+  "slug_archivo": "ukraine",
+  "iso": "ua",
+  "en": "Ukraine",
+  "capital": "Kiev",
+  "continente": "Europa"
+ },
+ "Vaticano": {
+  "slug_front": "vatican-city",
+  "slug_archivo": "vatican-city",
+  "iso": "va",
+  "en": "Vatican City",
+  "capital": "Ciudad del Vaticano",
+  "continente": "Europa"
+ },
+ "Afganistán": {
+  "slug_front": "afghanistan",
+  "slug_archivo": "afghanistan",
+  "iso": "af",
+  "en": "Afghanistan",
+  "capital": "Kabul",
+  "continente": "Asia"
+ },
+ "Arabia Saudita": {
+  "slug_front": "saudi-arabia",
+  "slug_archivo": "saudi-arabia",
+  "iso": "sa",
+  "en": "Saudi Arabia",
+  "capital": "Riad",
+  "continente": "Asia"
+ },
+ "Armenia": {
+  "slug_front": "armenia",
+  "slug_archivo": "armenia",
+  "iso": "am",
+  "en": "Armenia",
+  "capital": "Ereván",
+  "continente": "Asia"
+ },
+ "Azerbaiyán": {
+  "slug_front": "azerbaijan",
+  "slug_archivo": "azerbaijan",
+  "iso": "az",
+  "en": "Azerbaijan",
+  "capital": "Bakú",
+  "continente": "Asia"
+ },
+ "Baréin": {
+  "slug_front": "bahrain",
+  "slug_archivo": "bahrain",
+  "iso": "bh",
+  "en": "Bahrain",
+  "capital": "Manama",
+  "continente": "Asia"
+ },
+ "Bangladés": {
+  "slug_front": "bangladesh",
+  "slug_archivo": "bangladesh",
+  "iso": "bd",
+  "en": "Bangladesh",
+  "capital": "Daca",
+  "continente": "Asia"
+ },
+ "Bután": {
+  "slug_front": "bhutan",
+  "slug_archivo": "bhutan",
+  "iso": "bt",
+  "en": "Bhutan",
+  "capital": "Timbu",
+  "continente": "Asia"
+ },
+ "Brunéi": {
+  "slug_front": "brunei",
+  "slug_archivo": "brunei",
+  "iso": "bn",
+  "en": "Brunei",
+  "capital": "Bandar Seri Begawan",
+  "continente": "Asia"
+ },
+ "Camboya": {
+  "slug_front": "cambodia",
+  "slug_archivo": "cambodia",
+  "iso": "kh",
+  "en": "Cambodia",
+  "capital": "Nom Pen",
+  "continente": "Asia"
+ },
+ "Catar": {
+  "slug_front": "qatar",
+  "slug_archivo": "qatar",
+  "iso": "qa",
+  "en": "Qatar",
+  "capital": "Doha",
+  "continente": "Asia"
+ },
+ "China": {
+  "slug_front": "china",
+  "slug_archivo": "china",
+  "iso": "cn",
+  "en": "China",
+  "capital": "Pekín",
+  "continente": "Asia"
+ },
+ "Corea del Norte": {
+  "slug_front": "north-korea",
+  "slug_archivo": "north-korea",
+  "iso": "kp",
+  "en": "North Korea",
+  "capital": "Pionyang",
+  "continente": "Asia"
+ },
+ "Corea del Sur": {
+  "slug_front": "south-korea",
+  "slug_archivo": "south-korea",
+  "iso": "kr",
+  "en": "South Korea",
+  "capital": "Seúl",
+  "continente": "Asia"
+ },
+ "Emiratos Árabes Unidos": {
+  "slug_front": "united-arab-emirates",
+  "slug_archivo": "united-arab-emirates",
+  "iso": "ae",
+  "en": "United Arab Emirates",
+  "capital": "Abu Dabi",
+  "continente": "Asia"
+ },
+ "Filipinas": {
+  "slug_front": "philippines",
+  "slug_archivo": "philippines",
+  "iso": "ph",
+  "en": "Philippines",
+  "capital": "Manila",
+  "continente": "Asia"
+ },
+ "Georgia": {
+  "slug_front": "georgia",
+  "slug_archivo": "georgia",
+  "iso": "ge",
+  "en": "Georgia",
+  "capital": "Tiflis",
+  "continente": "Asia"
+ },
+ "India": {
+  "slug_front": "india",
+  "slug_archivo": "india",
+  "iso": "in",
+  "en": "India",
+  "capital": "Nueva Delhi",
+  "continente": "Asia"
+ },
+ "Indonesia": {
+  "slug_front": "indonesia",
+  "slug_archivo": "indonesia",
+  "iso": "id",
+  "en": "Indonesia",
+  "capital": "Yakarta",
+  "continente": "Asia"
+ },
+ "Irak": {
+  "slug_front": "iraq",
+  "slug_archivo": "iraq",
+  "iso": "iq",
+  "en": "Iraq",
+  "capital": "Bagdad",
+  "continente": "Asia"
+ },
+ "Irán": {
+  "slug_front": "iran",
+  "slug_archivo": "iran",
+  "iso": "ir",
+  "en": "Iran",
+  "capital": "Teherán",
+  "continente": "Asia"
+ },
+ "Israel": {
+  "slug_front": "israel",
+  "slug_archivo": "israel",
+  "iso": "il",
+  "en": "Israel",
+  "capital": "Jerusalén",
+  "continente": "Asia"
+ },
+ "Japón": {
+  "slug_front": "japan",
+  "slug_archivo": "japan",
+  "iso": "jp",
+  "en": "Japan",
+  "capital": "Tokio",
+  "continente": "Asia"
+ },
+ "Jordania": {
+  "slug_front": "jordan",
+  "slug_archivo": "jordan",
+  "iso": "jo",
+  "en": "Jordan",
+  "capital": "Amán",
+  "continente": "Asia"
+ },
+ "Kazajistán": {
+  "slug_front": "kazakhstan",
+  "slug_archivo": "kazakhstan",
+  "iso": "kz",
+  "en": "Kazakhstan",
+  "capital": "Astaná",
+  "continente": "Asia"
+ },
+ "Kirguistán": {
+  "slug_front": "kyrgyzstan",
+  "slug_archivo": "kyrgyzstan",
+  "iso": "kg",
+  "en": "Kyrgyzstan",
+  "capital": "Biskek",
+  "continente": "Asia"
+ },
+ "Kuwait": {
+  "slug_front": "kuwait",
+  "slug_archivo": "kuwait",
+  "iso": "kw",
+  "en": "Kuwait",
+  "capital": "Kuwait",
+  "continente": "Asia"
+ },
+ "Laos": {
+  "slug_front": "laos",
+  "slug_archivo": "laos",
+  "iso": "la",
+  "en": "Laos",
+  "capital": "Vientián",
+  "continente": "Asia"
+ },
+ "Líbano": {
+  "slug_front": "lebanon",
+  "slug_archivo": "lebanon",
+  "iso": "lb",
+  "en": "Lebanon",
+  "capital": "Beirut",
+  "continente": "Asia"
+ },
+ "Malasia": {
+  "slug_front": "malaysia",
+  "slug_archivo": "malaysia",
+  "iso": "my",
+  "en": "Malaysia",
+  "capital": "Kuala Lumpur",
+  "continente": "Asia"
+ },
+ "Maldivas": {
+  "slug_front": "maldives",
+  "slug_archivo": "maldives",
+  "iso": "mv",
+  "en": "Maldives",
+  "capital": "Malé",
+  "continente": "Asia"
+ },
+ "Mongolia": {
+  "slug_front": "mongolia",
+  "slug_archivo": "mongolia",
+  "iso": "mn",
+  "en": "Mongolia",
+  "capital": "Ulán Bator",
+  "continente": "Asia"
+ },
+ "Myanmar": {
+  "slug_front": "myanmar",
+  "slug_archivo": "myanmar",
+  "iso": "mm",
+  "en": "Myanmar",
+  "capital": "Naipyidó",
+  "continente": "Asia"
+ },
+ "Nepal": {
+  "slug_front": "nepal",
+  "slug_archivo": "nepal",
+  "iso": "np",
+  "en": "Nepal",
+  "capital": "Katmandú",
+  "continente": "Asia"
+ },
+ "Omán": {
+  "slug_front": "oman",
+  "slug_archivo": "oman",
+  "iso": "om",
+  "en": "Oman",
+  "capital": "Mascate",
+  "continente": "Asia"
+ },
+ "Pakistán": {
+  "slug_front": "pakistan",
+  "slug_archivo": "pakistan",
+  "iso": "pk",
+  "en": "Pakistan",
+  "capital": "Islamabad",
+  "continente": "Asia"
+ },
+ "Palestina": {
+  "slug_front": "palestine",
+  "slug_archivo": "palestine",
+  "iso": "ps",
+  "en": "Palestine",
+  "capital": "Ramala",
+  "continente": "Asia"
+ },
+ "Singapur": {
+  "slug_front": "singapore",
+  "slug_archivo": "singapore",
+  "iso": "sg",
+  "en": "Singapore",
+  "capital": "Singapur",
+  "continente": "Asia"
+ },
+ "Siria": {
+  "slug_front": "syria",
+  "slug_archivo": "syria",
+  "iso": "sy",
+  "en": "Syria",
+  "capital": "Damasco",
+  "continente": "Asia"
+ },
+ "Sri Lanka": {
+  "slug_front": "sri-lanka",
+  "slug_archivo": "sri-lanka",
+  "iso": "lk",
+  "en": "Sri Lanka",
+  "capital": "Sri Jayawardenepura Kotte",
+  "continente": "Asia"
+ },
+ "Tailandia": {
+  "slug_front": "thailand",
+  "slug_archivo": "thailand",
+  "iso": "th",
+  "en": "Thailand",
+  "capital": "Bangkok",
+  "continente": "Asia"
+ },
+ "Taiwán": {
+  "slug_front": "taiwan",
+  "slug_archivo": "taiwan",
+  "iso": "tw",
+  "en": "Taiwan",
+  "capital": "Taipéi",
+  "continente": "Asia"
+ },
+ "Tayikistán": {
+  "slug_front": "tajikistan",
+  "slug_archivo": "tajikistan",
+  "iso": "tj",
+  "en": "Tajikistan",
+  "capital": "Dusambé",
+  "continente": "Asia"
+ },
+ "Timor Oriental": {
+  "slug_front": "timor-leste",
+  "slug_archivo": "east-timor",
+  "iso": "tl",
+  "en": "Timor-Leste",
+  "capital": "Dili",
+  "continente": "Asia"
+ },
+ "Turkmenistán": {
+  "slug_front": "turkmenistan",
+  "slug_archivo": "turkmenistan",
+  "iso": "tm",
+  "en": "Turkmenistan",
+  "capital": "Asjabad",
+  "continente": "Asia"
+ },
+ "Turquía": {
+  "slug_front": "turkey",
+  "slug_archivo": "turkey",
+  "iso": "tr",
+  "en": "Turkey",
+  "capital": "Ankara",
+  "continente": "Asia"
+ },
+ "Uzbekistán": {
+  "slug_front": "uzbekistan",
+  "slug_archivo": "uzbekistan",
+  "iso": "uz",
+  "en": "Uzbekistan",
+  "capital": "Taskent",
+  "continente": "Asia"
+ },
+ "Vietnam": {
+  "slug_front": "vietnam",
+  "slug_archivo": "vietnam",
+  "iso": "vn",
+  "en": "Vietnam",
+  "capital": "Hanói",
+  "continente": "Asia"
+ },
+ "Yemen": {
+  "slug_front": "yemen",
+  "slug_archivo": "yemen",
+  "iso": "ye",
+  "en": "Yemen",
+  "capital": "Saná",
+  "continente": "Asia"
+ },
+ "Angola": {
+  "slug_front": "angola",
+  "slug_archivo": "angola",
+  "iso": "ao",
+  "en": "Angola",
+  "capital": "Luanda",
+  "continente": "África"
+ },
+ "Argelia": {
+  "slug_front": "algeria",
+  "slug_archivo": "algeria",
+  "iso": "dz",
+  "en": "Algeria",
+  "capital": "Argel",
+  "continente": "África"
+ },
+ "Benín": {
+  "slug_front": "benin",
+  "slug_archivo": "benin",
+  "iso": "bj",
+  "en": "Benin",
+  "capital": "Porto Novo",
+  "continente": "África"
+ },
+ "Botsuana": {
+  "slug_front": "botswana",
+  "slug_archivo": "botswana",
+  "iso": "bw",
+  "en": "Botswana",
+  "capital": "Gaborone",
+  "continente": "África"
+ },
+ "Burkina Faso": {
+  "slug_front": "burkina-faso",
+  "slug_archivo": "burkina",
+  "iso": "bf",
+  "en": "Burkina Faso",
+  "capital": "Uagadugú",
+  "continente": "África"
+ },
+ "Burundi": {
+  "slug_front": "burundi",
+  "slug_archivo": "burundi",
+  "iso": "bi",
+  "en": "Burundi",
+  "capital": "Gitega",
+  "continente": "África"
+ },
+ "Cabo Verde": {
+  "slug_front": "cape-verde",
+  "slug_archivo": "cape-verde",
+  "iso": "cv",
+  "en": "Cape Verde",
+  "capital": "Praia",
+  "continente": "África"
+ },
+ "Camerún": {
+  "slug_front": "cameroon",
+  "slug_archivo": "camerun",
+  "iso": "cm",
+  "en": "Cameroon",
+  "capital": "Yaundé",
+  "continente": "África"
+ },
+ "Chad": {
+  "slug_front": "chad",
+  "slug_archivo": "chad",
+  "iso": "td",
+  "en": "Chad",
+  "capital": "Yamena",
+  "continente": "África"
+ },
+ "Comoras": {
+  "slug_front": "comoros",
+  "slug_archivo": "comoros",
+  "iso": "km",
+  "en": "Comoros",
+  "capital": "Moroni",
+  "continente": "África"
+ },
+ "Costa de Marfil": {
+  "slug_front": "ivory-coast",
+  "slug_archivo": "cote-d-ivoire",
+  "iso": "ci",
+  "en": "Ivory Coast",
+  "capital": "Yamusukro",
+  "continente": "África"
+ },
+ "Egipto": {
+  "slug_front": "egypt",
+  "slug_archivo": "egypt",
+  "iso": "eg",
+  "en": "Egypt",
+  "capital": "El Cairo",
+  "continente": "África"
+ },
+ "Eritrea": {
+  "slug_front": "eritrea",
+  "slug_archivo": "eritrea",
+  "iso": "er",
+  "en": "Eritrea",
+  "capital": "Asmara",
+  "continente": "África"
+ },
+ "Esuatini": {
+  "slug_front": "eswatini",
+  "slug_archivo": "eswatini",
+  "iso": "sz",
+  "en": "Eswatini",
+  "capital": "Mbabane",
+  "continente": "África"
+ },
+ "Etiopía": {
+  "slug_front": "ethiopia",
+  "slug_archivo": "ethiopia",
+  "iso": "et",
+  "en": "Ethiopia",
+  "capital": "Adís Abeba",
+  "continente": "África"
+ },
+ "Gabón": {
+  "slug_front": "gabon",
+  "slug_archivo": "gabon",
+  "iso": "ga",
+  "en": "Gabon",
+  "capital": "Libreville",
+  "continente": "África"
+ },
+ "Gambia": {
+  "slug_front": "gambia",
+  "slug_archivo": "gambia",
+  "iso": "gm",
+  "en": "Gambia",
+  "capital": "Banjul",
+  "continente": "África"
+ },
+ "Ghana": {
+  "slug_front": "ghana",
+  "slug_archivo": "ghana",
+  "iso": "gh",
+  "en": "Ghana",
+  "capital": "Accra",
+  "continente": "África"
+ },
+ "Guinea": {
+  "slug_front": "guinea",
+  "slug_archivo": "guinea",
+  "iso": "gn",
+  "en": "Guinea",
+  "capital": "Conakri",
+  "continente": "África"
+ },
+ "Guinea-Bisáu": {
+  "slug_front": "guinea-bissau",
+  "slug_archivo": "guinea-bissau",
+  "iso": "gw",
+  "en": "Guinea-Bissau",
+  "capital": "Bisáu",
+  "continente": "África"
+ },
+ "Guinea Ecuatorial": {
+  "slug_front": "equatorial-guinea",
+  "slug_archivo": "equatorial-guinea",
+  "iso": "gq",
+  "en": "Equatorial Guinea",
+  "capital": "Malabo",
+  "continente": "África"
+ },
+ "Kenia": {
+  "slug_front": "kenya",
+  "slug_archivo": "kenya",
+  "iso": "ke",
+  "en": "Kenya",
+  "capital": "Nairobi",
+  "continente": "África"
+ },
+ "Lesoto": {
+  "slug_front": "lesotho",
+  "slug_archivo": "lesotho",
+  "iso": "ls",
+  "en": "Lesotho",
+  "capital": "Maseru",
+  "continente": "África"
+ },
+ "Liberia": {
+  "slug_front": "liberia",
+  "slug_archivo": "liberia",
+  "iso": "lr",
+  "en": "Liberia",
+  "capital": "Monrovia",
+  "continente": "África"
+ },
+ "Libia": {
+  "slug_front": "libya",
+  "slug_archivo": "libya",
+  "iso": "ly",
+  "en": "Libya",
+  "capital": "Trípoli",
+  "continente": "África"
+ },
+ "Madagascar": {
+  "slug_front": "madagascar",
+  "slug_archivo": "madagascar",
+  "iso": "mg",
+  "en": "Madagascar",
+  "capital": "Antananarivo",
+  "continente": "África"
+ },
+ "Malaui": {
+  "slug_front": "malawi",
+  "slug_archivo": "malawi",
+  "iso": "mw",
+  "en": "Malawi",
+  "capital": "Lilongüe",
+  "continente": "África"
+ },
+ "Malí": {
+  "slug_front": "mali",
+  "slug_archivo": "mali",
+  "iso": "ml",
+  "en": "Mali",
+  "capital": "Bamako",
+  "continente": "África"
+ },
+ "Marruecos": {
+  "slug_front": "morocco",
+  "slug_archivo": "morocco",
+  "iso": "ma",
+  "en": "Morocco",
+  "capital": "Rabat",
+  "continente": "África"
+ },
+ "Mauricio": {
+  "slug_front": "mauritius",
+  "slug_archivo": "mauritius",
+  "iso": "mu",
+  "en": "Mauritius",
+  "capital": "Port Louis",
+  "continente": "África"
+ },
+ "Mauritania": {
+  "slug_front": "mauritania",
+  "slug_archivo": "mauritania",
+  "iso": "mr",
+  "en": "Mauritania",
+  "capital": "Nuakchot",
+  "continente": "África"
+ },
+ "Mozambique": {
+  "slug_front": "mozambique",
+  "slug_archivo": "mozambique",
+  "iso": "mz",
+  "en": "Mozambique",
+  "capital": "Maputo",
+  "continente": "África"
+ },
+ "Namibia": {
+  "slug_front": "namibia",
+  "slug_archivo": "namibia",
+  "iso": "na",
+  "en": "Namibia",
+  "capital": "Windhoek",
+  "continente": "África"
+ },
+ "Níger": {
+  "slug_front": "niger",
+  "slug_archivo": "niger",
+  "iso": "ne",
+  "en": "Niger",
+  "capital": "Niamey",
+  "continente": "África"
+ },
+ "Nigeria": {
+  "slug_front": "nigeria",
+  "slug_archivo": "nigeria",
+  "iso": "ng",
+  "en": "Nigeria",
+  "capital": "Abuya",
+  "continente": "África"
+ },
+ "República Centroafricana": {
+  "slug_front": "central-african-republic",
+  "slug_archivo": "central-african",
+  "iso": "cf",
+  "en": "Central African Republic",
+  "capital": "Bangui",
+  "continente": "África"
+ },
+ "República del Congo": {
+  "slug_front": "republic-of-the-congo",
+  "slug_archivo": "republic-of-the-congo",
+  "iso": "cg",
+  "en": "Republic of the Congo",
+  "capital": "Brazzaville",
+  "continente": "África"
+ },
+ "República Democrática del Congo": {
+  "slug_front": "democratic-republic-of-the-congo",
+  "slug_archivo": "democratic-republic-of-the-congo",
+  "iso": "cd",
+  "en": "Democratic Republic of the Congo",
+  "capital": "Kinsasa",
+  "continente": "África"
+ },
+ "Ruanda": {
+  "slug_front": "rwanda",
+  "slug_archivo": "rwanda",
+  "iso": "rw",
+  "en": "Rwanda",
+  "capital": "Kigali",
+  "continente": "África"
+ },
+ "Santo Tomé y Príncipe": {
+  "slug_front": "sao-tome-and-principe",
+  "slug_archivo": "sao-tome-and-principe",
+  "iso": "st",
+  "en": "São Tomé and Príncipe",
+  "capital": "Santo Tomé",
+  "continente": "África"
+ },
+ "Senegal": {
+  "slug_front": "senegal",
+  "slug_archivo": "senegal",
+  "iso": "sn",
+  "en": "Senegal",
+  "capital": "Dakar",
+  "continente": "África"
+ },
+ "Seychelles": {
+  "slug_front": "seychelles",
+  "slug_archivo": "seychelles",
+  "iso": "sc",
+  "en": "Seychelles",
+  "capital": "Victoria",
+  "continente": "África"
+ },
+ "Sierra Leona": {
+  "slug_front": "sierra-leone",
+  "slug_archivo": "sierra-leone",
+  "iso": "sl",
+  "en": "Sierra Leone",
+  "capital": "Freetown",
+  "continente": "África"
+ },
+ "Somalia": {
+  "slug_front": "somalia",
+  "slug_archivo": "somalia",
+  "iso": "so",
+  "en": "Somalia",
+  "capital": "Mogadiscio",
+  "continente": "África"
+ },
+ "Sudáfrica": {
+  "slug_front": "south-africa",
+  "slug_archivo": "south-africa",
+  "iso": "za",
+  "en": "South Africa",
+  "capital": "Pretoria",
+  "continente": "África"
+ },
+ "Sudán": {
+  "slug_front": "sudan",
+  "slug_archivo": "sudan",
+  "iso": "sd",
+  "en": "Sudan",
+  "capital": "Jartum",
+  "continente": "África"
+ },
+ "Sudán del Sur": {
+  "slug_front": "south-sudan",
+  "slug_archivo": "south-sudan",
+  "iso": "ss",
+  "en": "South Sudan",
+  "capital": "Yuba",
+  "continente": "África"
+ },
+ "Tanzania": {
+  "slug_front": "tanzania",
+  "slug_archivo": "tanzania",
+  "iso": "tz",
+  "en": "Tanzania",
+  "capital": "Dodoma",
+  "continente": "África"
+ },
+ "Togo": {
+  "slug_front": "togo",
+  "slug_archivo": "togo",
+  "iso": "tg",
+  "en": "Togo",
+  "capital": "Lomé",
+  "continente": "África"
+ },
+ "Túnez": {
+  "slug_front": "tunisia",
+  "slug_archivo": "tunisia",
+  "iso": "tn",
+  "en": "Tunisia",
+  "capital": "Túnez",
+  "continente": "África"
+ },
+ "Uganda": {
+  "slug_front": "uganda",
+  "slug_archivo": "uganda",
+  "iso": "ug",
+  "en": "Uganda",
+  "capital": "Kampala",
+  "continente": "África"
+ },
+ "Yibuti": {
+  "slug_front": "djibouti",
+  "slug_archivo": "djibouti",
+  "iso": "dj",
+  "en": "Djibouti",
+  "capital": "Yibuti",
+  "continente": "África"
+ },
+ "Zambia": {
+  "slug_front": "zambia",
+  "slug_archivo": "zambia",
+  "iso": "zm",
+  "en": "Zambia",
+  "capital": "Lusaka",
+  "continente": "África"
+ },
+ "Zimbabue": {
+  "slug_front": "zimbabwe",
+  "slug_archivo": "zimbabwe",
+  "iso": "zw",
+  "en": "Zimbabwe",
+  "capital": "Harare",
+  "continente": "África"
+ },
+ "Antigua y Barbuda": {
+  "slug_front": "antigua-and-barbuda",
+  "slug_archivo": "antigua-and-barbuda",
+  "iso": "ag",
+  "en": "Antigua and Barbuda",
+  "capital": "Saint John",
+  "continente": "El Caribe"
+ },
+ "Argentina": {
+  "slug_front": "argentina",
+  "slug_archivo": "argentina",
+  "iso": "ar",
+  "en": "Argentina",
+  "capital": "Buenos Aires",
+  "continente": "América del Sur"
+ },
+ "Bahamas": {
+  "slug_front": "bahamas",
+  "slug_archivo": "bahamas",
+  "iso": "bs",
+  "en": "Bahamas",
+  "capital": "Nasáu",
+  "continente": "El Caribe"
+ },
+ "Barbados": {
+  "slug_front": "barbados",
+  "slug_archivo": "barbados",
+  "iso": "bb",
+  "en": "Barbados",
+  "capital": "Bridgetown",
+  "continente": "El Caribe"
+ },
+ "Belice": {
+  "slug_front": "belize",
+  "slug_archivo": "belize",
+  "iso": "bz",
+  "en": "Belize",
+  "capital": "Belmopán",
+  "continente": "América Central"
+ },
+ "Bolivia": {
+  "slug_front": "bolivia",
+  "slug_archivo": "bolivia",
+  "iso": "bo",
+  "en": "Bolivia",
+  "capital": "Sucre",
+  "continente": "América del Sur"
+ },
+ "Brasil": {
+  "slug_front": "brazil",
+  "slug_archivo": "brazil",
+  "iso": "br",
+  "en": "Brazil",
+  "capital": "Brasilia",
+  "continente": "América del Sur"
+ },
+ "Canadá": {
+  "slug_front": "canada",
+  "slug_archivo": "canada",
+  "iso": "ca",
+  "en": "Canada",
+  "capital": "Ottawa",
+  "continente": "América del Norte"
+ },
+ "Chile": {
+  "slug_front": "chile",
+  "slug_archivo": "chile",
+  "iso": "cl",
+  "en": "Chile",
+  "capital": "Santiago",
+  "continente": "América del Sur"
+ },
+ "Colombia": {
+  "slug_front": "colombia",
+  "slug_archivo": "colombia",
+  "iso": "co",
+  "en": "Colombia",
+  "capital": "Bogotá",
+  "continente": "América del Sur"
+ },
+ "Costa Rica": {
+  "slug_front": "costa-rica",
+  "slug_archivo": "costa-rica",
+  "iso": "cr",
+  "en": "Costa Rica",
+  "capital": "San José",
+  "continente": "América Central"
+ },
+ "Cuba": {
+  "slug_front": "cuba",
+  "slug_archivo": "cuba",
+  "iso": "cu",
+  "en": "Cuba",
+  "capital": "La Habana",
+  "continente": "El Caribe"
+ },
+ "Dominica": {
+  "slug_front": "dominica",
+  "slug_archivo": "dominica",
+  "iso": "dm",
+  "en": "Dominica",
+  "capital": "Roseau",
+  "continente": "El Caribe"
+ },
+ "Ecuador": {
+  "slug_front": "ecuador",
+  "slug_archivo": "ecuador",
+  "iso": "ec",
+  "en": "Ecuador",
+  "capital": "Quito",
+  "continente": "América del Sur"
+ },
+ "El Salvador": {
+  "slug_front": "el-salvador",
+  "slug_archivo": "el-salvador",
+  "iso": "sv",
+  "en": "El Salvador",
+  "capital": "San Salvador",
+  "continente": "América Central"
+ },
+ "Estados Unidos": {
+  "slug_front": "united-states",
+  "slug_archivo": "usa",
+  "iso": "us",
+  "en": "United States",
+  "capital": "Washington D.C.",
+  "continente": "América del Norte"
+ },
+ "Granada": {
+  "slug_front": "grenada",
+  "slug_archivo": "grenada",
+  "iso": "gd",
+  "en": "Grenada",
+  "capital": "Saint George",
+  "continente": "El Caribe"
+ },
+ "Guatemala": {
+  "slug_front": "guatemala",
+  "slug_archivo": "guatemala",
+  "iso": "gt",
+  "en": "Guatemala",
+  "capital": "Ciudad de Guatemala",
+  "continente": "América Central"
+ },
+ "Guyana": {
+  "slug_front": "guyana",
+  "slug_archivo": "guyana",
+  "iso": "gy",
+  "en": "Guyana",
+  "capital": "Georgetown",
+  "continente": "América del Sur"
+ },
+ "Haití": {
+  "slug_front": "haiti",
+  "slug_archivo": "haiti",
+  "iso": "ht",
+  "en": "Haiti",
+  "capital": "Puerto Príncipe",
+  "continente": "El Caribe"
+ },
+ "Honduras": {
+  "slug_front": "honduras",
+  "slug_archivo": "honduras",
+  "iso": "hn",
+  "en": "Honduras",
+  "capital": "Tegucigalpa",
+  "continente": "América Central"
+ },
+ "Jamaica": {
+  "slug_front": "jamaica",
+  "slug_archivo": "jamaica",
+  "iso": "jm",
+  "en": "Jamaica",
+  "capital": "Kingston",
+  "continente": "El Caribe"
+ },
+ "México": {
+  "slug_front": "mexico",
+  "slug_archivo": "mexico",
+  "iso": "mx",
+  "en": "Mexico",
+  "capital": "Ciudad de México",
+  "continente": "América del Norte"
+ },
+ "Nicaragua": {
+  "slug_front": "nicaragua",
+  "slug_archivo": "nicaragua",
+  "iso": "ni",
+  "en": "Nicaragua",
+  "capital": "Managua",
+  "continente": "América Central"
+ },
+ "Panamá": {
+  "slug_front": "panama",
+  "slug_archivo": "panama",
+  "iso": "pa",
+  "en": "Panama",
+  "capital": "Ciudad de Panamá",
+  "continente": "América Central"
+ },
+ "Paraguay": {
+  "slug_front": "paraguay",
+  "slug_archivo": "paraguay",
+  "iso": "py",
+  "en": "Paraguay",
+  "capital": "Asunción",
+  "continente": "América del Sur"
+ },
+ "Perú": {
+  "slug_front": "peru",
+  "slug_archivo": "peru",
+  "iso": "pe",
+  "en": "Peru",
+  "capital": "Lima",
+  "continente": "América del Sur"
+ },
+ "República Dominicana": {
+  "slug_front": "dominican-republic",
+  "slug_archivo": "dominican-republic",
+  "iso": "do",
+  "en": "Dominican Republic",
+  "capital": "Santo Domingo",
+  "continente": "El Caribe"
+ },
+ "San Cristóbal y Nieves": {
+  "slug_front": "saint-kitts-and-nevis",
+  "slug_archivo": "saint-kitts-and-nevis",
+  "iso": "kn",
+  "en": "Saint Kitts and Nevis",
+  "capital": "Basseterre",
+  "continente": "El Caribe"
+ },
+ "San Vicente y las Granadinas": {
+  "slug_front": "saint-vincent-and-the-grenadines",
+  "slug_archivo": "saint-vincent-and-the-grenadines",
+  "iso": "vc",
+  "en": "Saint Vincent and the Grenadines",
+  "capital": "Kingstown",
+  "continente": "El Caribe"
+ },
+ "Santa Lucía": {
+  "slug_front": "saint-lucia",
+  "slug_archivo": "saint-lucia",
+  "iso": "lc",
+  "en": "Saint Lucia",
+  "capital": "Castries",
+  "continente": "El Caribe"
+ },
+ "Surinam": {
+  "slug_front": "suriname",
+  "slug_archivo": "suriname",
+  "iso": "sr",
+  "en": "Suriname",
+  "capital": "Paramaribo",
+  "continente": "América del Sur"
+ },
+ "Trinidad y Tobago": {
+  "slug_front": "trinidad-and-tobago",
+  "slug_archivo": "trinidad-and-tobago",
+  "iso": "tt",
+  "en": "Trinidad and Tobago",
+  "capital": "Puerto España",
+  "continente": "El Caribe"
+ },
+ "Uruguay": {
+  "slug_front": "uruguay",
+  "slug_archivo": "uruguay",
+  "iso": "uy",
+  "en": "Uruguay",
+  "capital": "Montevideo",
+  "continente": "América del Sur"
+ },
+ "Venezuela": {
+  "slug_front": "venezuela",
+  "slug_archivo": "venezuela",
+  "iso": "ve",
+  "en": "Venezuela",
+  "capital": "Caracas",
+  "continente": "América del Sur"
+ },
+ "Australia": {
+  "slug_front": "australia",
+  "slug_archivo": "australia",
+  "iso": "au",
+  "en": "Australia",
+  "capital": "Canberra",
+  "continente": "Oceanía"
+ },
+ "Fiyi": {
+  "slug_front": "fiji",
+  "slug_archivo": "fiji",
+  "iso": "fj",
+  "en": "Fiji",
+  "capital": "Suva",
+  "continente": "Oceanía"
+ },
+ "Islas Marshall": {
+  "slug_front": "marshall-islands",
+  "slug_archivo": "marshall-islands",
+  "iso": "mh",
+  "en": "Marshall Islands",
+  "capital": "Majuro",
+  "continente": "Oceanía"
+ },
+ "Islas Salomón": {
+  "slug_front": "solomon-islands",
+  "slug_archivo": "solomon-islands",
+  "iso": "sb",
+  "en": "Solomon Islands",
+  "capital": "Honiara",
+  "continente": "Oceanía"
+ },
+ "Kiribati": {
+  "slug_front": "kiribati",
+  "slug_archivo": "kiribati",
+  "iso": "ki",
+  "en": "Kiribati",
+  "capital": "Tarawa",
+  "continente": "Oceanía"
+ },
+ "Micronesia": {
+  "slug_front": "micronesia",
+  "slug_archivo": "micronesia",
+  "iso": "fm",
+  "en": "Micronesia",
+  "capital": "Palikir",
+  "continente": "Oceanía"
+ },
+ "Nauru": {
+  "slug_front": "nauru",
+  "slug_archivo": "nauru",
+  "iso": "nr",
+  "en": "Nauru",
+  "capital": "Yaren",
+  "continente": "Oceanía"
+ },
+ "Nueva Zelanda": {
+  "slug_front": "new-zealand",
+  "slug_archivo": "new-zealand",
+  "iso": "nz",
+  "en": "New Zealand",
+  "capital": "Wellington",
+  "continente": "Oceanía"
+ },
+ "Palaos": {
+  "slug_front": "palau",
+  "slug_archivo": "palau",
+  "iso": "pw",
+  "en": "Palau",
+  "capital": "Ngerulmud",
+  "continente": "Oceanía"
+ },
+ "Papúa Nueva Guinea": {
+  "slug_front": "papua-new-guinea",
+  "slug_archivo": "papua-new-guinea",
+  "iso": "pg",
+  "en": "Papua New Guinea",
+  "capital": "Port Moresby",
+  "continente": "Oceanía"
+ },
+ "Samoa": {
+  "slug_front": "samoa",
+  "slug_archivo": "samoa",
+  "iso": "ws",
+  "en": "Samoa",
+  "capital": "Apia",
+  "continente": "Oceanía"
+ },
+ "Tonga": {
+  "slug_front": "tonga",
+  "slug_archivo": "tonga",
+  "iso": "to",
+  "en": "Tonga",
+  "capital": "Nukualofa",
+  "continente": "Oceanía"
+ },
+ "Tuvalu": {
+  "slug_front": "tuvalu",
+  "slug_archivo": "tuvalu",
+  "iso": "tv",
+  "en": "Tuvalu",
+  "capital": "Funafuti",
+  "continente": "Oceanía"
+ },
+ "Vanuatu": {
+  "slug_front": "vanuatu",
+  "slug_archivo": "vanuatu",
+  "iso": "vu",
+  "en": "Vanuatu",
+  "capital": "Port Vila",
+  "continente": "Oceanía"
+ }
+}
