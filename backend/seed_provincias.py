@@ -14,7 +14,7 @@ guardan con language "en" (los ficheros son la base inglesa de GeoPlay y el
 backend acepta cualquier nombre de la región como respuesta válida). Si luego
 añades traducciones, inserta RegionName con language "es", etc.
 
-Requiere que el país exista (ejecuta antes seed_mundo.py); si no existe, lo
+Requiere que el país exista (ejecuta antes seed_paises_mundo.py); si no existe, lo
 crea a partir de MUNDO. Idempotente: si el país YA tiene regiones, lo omite
 entero (así no duplica nada ni toca lo sembrado a mano).
 
@@ -34,12 +34,12 @@ from database.connection import SessionLocal
 from models.country_db import Country
 from models.region_db import Region
 from models.region_name_db import RegionName
-from seed_mundo import MUNDO, continente_de
+from seed_paises_mundo import MUNDO, continente_de
 
 IDIOMA = "en"
 
 # ---------------------------------------------------------------------------
-# DATOS — clave = nombre del país en español (igual que en seed_mundo.MUNDO)
+# DATOS — clave = nombre del país en español (igual que en seed_paises_mundo.MUNDO)
 # ---------------------------------------------------------------------------
 
 PROVINCIAS = {
