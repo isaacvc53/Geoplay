@@ -6,14 +6,16 @@ Uso (desde frontend/):
     pip install svgpathtools
     python3 scripts/build-world-map.py
 
-Salida: { width, height, countries: [{ id, name, slug, d, main? }] }
+Salida: { width, height, graticule, countries: [{ id, name, slug, d, main? }] }
+  - graticule: path con meridianos/paralelos cada 10° (el SVG es Web Mercator;
+    se calcula a partir de mapsvg:geoViewBox)
   - id:   código ISO 3166-1 alfa-2 del SVG (o UM-xx para islas menores de EE. UU.)
   - slug: nombre de archivo en public/data/countries/<slug>.js (ver SLUG_OVERRIDES)
   - d:    path completo del país
   - main: solo si el país tiene varios polígonos; path (absoluto) del polígono
           más grande, para la silueta del panel.
 """
-import json, os, re, unicodedata, sys
+import json, math, os, re, unicodedata, sys
 from svgpathtools import parse_path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -51,6 +53,25 @@ w = float(re.search(r'\bwidth="([\d.]+)"', svg).group(1))
 h = float(re.search(r'\bheight="([\d.]+)"', svg).group(1))
 items = re.findall(r'<path\s+d="([^"]+)"\s+title="([^"]*)"\s+id="([^"]*)"', svg)
 
+# --- Cuadrícula (Mercator) -------------------------------------------------
+lon0, lat_top, lon1, lat_bot = map(float, re.search(
+    r'mapsvg:geoViewBox="([^"]+)"', svg).group(1).split())
+K = w / (lon1 - lon0)                      # px por grado de longitud
+
+def merc(lat):
+    return math.log(math.tan(math.pi / 4 + math.radians(lat) / 2))
+
+def gx(lon): return (lon - lon0) * K
+def gy(lat): return (merc(lat_top) - merc(lat)) * K * 180 / math.pi
+
+segs = []
+for lon in range(-170, 191, 10):
+    if lon0 < lon < lon1:
+        segs.append(f'M{gx(lon):.1f},0V{h:.1f}')
+for lat in range(-50, 81, 10):
+    segs.append(f'M0,{gy(lat):.1f}H{w:.1f}')
+graticule = ''.join(segs)
+
 countries = []
 for d, title, cid in items:
     name = re.sub(r'\s+', ' ', title).strip()
@@ -63,7 +84,7 @@ for d, title, cid in items:
 
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 with open(OUT, 'w', encoding='utf8') as f:
-    json.dump({'width': w, 'height': h, 'countries': countries}, f,
+    json.dump({'width': w, 'height': h, 'graticule': graticule, 'countries': countries}, f,
               ensure_ascii=False, separators=(',', ':'))
 print(f'{len(countries)} países -> {os.path.relpath(OUT)} '
       f'({os.path.getsize(OUT)/1024:.0f} KB)', file=sys.stderr)

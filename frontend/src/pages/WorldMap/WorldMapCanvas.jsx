@@ -44,8 +44,9 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     let cancelled = false;
     let rafId = 0;
 
-    // Extensión del mapa en coordenadas del SVG; se fija al cargar los datos.
-    let extent = [[0, 0], [1, 1]];
+    // Tamaño del mapa en coordenadas del SVG; se fija al cargar los datos.
+    let mapW = 0;
+    let mapH = 0;
 
     const g = svg.append('g');
     // Capa de composición propia desde el principio (evita repintar en CPU
@@ -74,8 +75,13 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     hatch.append('line').attr('x1', 0).attr('y1', 0).attr('x2', 0).attr('y2', 6)
       .attr('stroke', disabledLine).attr('stroke-width', 2);
 
-    // Fondo de océano fijo (fuera de `g`): no se desplaza con el paneo.
-    const ocean = svg.insert('rect', ':first-child').attr('class', 'sphere');
+    // Panel de océano (degradado + cuadrícula) dentro de `g`: hace zoom y
+    // paneo junto con los países, como antes la esfera.
+    const clip = defs.append('clipPath').attr('id', 'oceanClip');
+    const clipRect = clip.append('rect');
+    const ocean = g.append('rect').attr('class', 'sphere');
+    const graticuleG = g.append('path').attr('class', 'graticule')
+      .attr('clip-path', 'url(#oceanClip)');
     const countriesG = g.append('g').attr('class', 'countries-group');
 
     // El evento 'zoom' llega más rápido de lo que la pantalla repinta:
@@ -106,6 +112,27 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       reset: () => svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity),
     };
 
+    // Encaja el mapa en el visor (deja hueco arriba para la cabecera y abajo
+    // para los controles) y recalcula los límites de zoom/paneo.
+    function resize() {
+      if (!mapW) return;
+      const W = wrap.clientWidth;
+      const H = wrap.clientHeight;
+      const padTop = Math.min(168, H * 0.21);
+      const padBottom = 72;
+      const padX = Math.min(48, W * 0.03);
+      const s = Math.min((W - padX * 2) / mapW, (H - padTop - padBottom) / mapH);
+      const vbW = W / s;
+      const vbH = H / s;
+      const vbX = -(vbW - mapW) / 2;
+      const vbY = -(padTop / s) - ((H - padTop - padBottom) / s - mapH) / 2;
+      svg.attr('viewBox', [vbX, vbY, vbW, vbH]).attr('preserveAspectRatio', 'xMidYMid meet');
+      // Sin zoom (scale=1) el mapa queda bloqueado: translateExtent = viewBox.
+      const extent = [[vbX, vbY], [vbX + vbW, vbY + vbH]];
+      zoom.extent(extent).translateExtent(extent);
+    }
+    window.addEventListener('resize', resize);
+
     fetch('/data/world-map.json')
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -113,7 +140,14 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       })
       .then((worldData) => {
         if (cancelled) return;
-        const { width: mapW, height: mapH } = worldData;
+        mapW = worldData.width;
+        mapH = worldData.height;
+        const radius = Math.round(mapH * 0.035);
+        for (const r of [clipRect, ocean]) {
+          r.attr('x', 0).attr('y', 0).attr('width', mapW).attr('height', mapH)
+            .attr('rx', radius).attr('ry', radius);
+        }
+        graticuleG.attr('d', worldData.graticule);
         const features = worldData.countries.map((c) => ({
           id: c.id,
           properties: { name: c.name, slug: c.slug },
@@ -121,20 +155,6 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           main: c.main,
         }));
 
-        // Márgenes: hueco arriba para la cabecera superpuesta y algo abajo
-        // para los controles de zoom.
-        const padX = mapW * 0.03;
-        const padTop = mapH * 0.17;
-        const padBottom = mapH * 0.09;
-        extent = [[-padX, -padTop], [mapW + padX, mapH + padBottom]];
-        const vbW = extent[1][0] - extent[0][0];
-        const vbH = extent[1][1] - extent[0][1];
-        svg.attr('viewBox', [extent[0][0], extent[0][1], vbW, vbH])
-          .attr('preserveAspectRatio', 'xMidYMid meet');
-        ocean.attr('x', extent[0][0]).attr('y', extent[0][1])
-          .attr('width', vbW).attr('height', vbH);
-        // Sin zoom (scale=1) el mapa queda bloqueado: translateExtent = viewBox.
-        zoom.extent(extent).translateExtent(extent);
 
         // availableSlugs === null significa "aún sin comprobar": mientras tanto
         // todos cuentan como disponibles, así el mapa es interactivo en cuanto
@@ -181,6 +201,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         countryPathsRef.current = countryPaths;
 
         setStatus('ready');
+        resize();
 
         // Comprobación de disponibilidad en segundo plano; luego se repintan
         // (rayado) los países sin archivos.
@@ -204,6 +225,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     return () => {
       cancelled = true;
       cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', resize);
       svg.on('.zoom', null).on('.cursor', null);
       svg.interrupt();
       svg.selectAll('*').remove();
