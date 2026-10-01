@@ -8,13 +8,14 @@ import { useMatchActions } from './useMatchActions';
 import { useCountryPreload } from './useCountryPreload';
 import { createServerClock } from './serverClock';
 import PlayScreen from './PlayScreen';
+import CountryRoulette, { markRevealed, wasRevealed } from './CountryRoulette';
 import { TERMINAL_STATUSES, formatDuration } from './matchText';
 import './Match.css';
 
 // Match room (/partida/:id). It covers everything before the first guess:
 //   invited  -> the host waits, the guest accepts or declines
-//   ready    -> the random country is revealed and its map is preloaded; either player
-//               can press Start
+//   ready    -> the random country is revealed (with a roulette animation, once per match
+//               and tab) and its map is preloaded; either player can press Start
 //   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
 //               players (server clock), then the match clock runs and they race
 //   finished -> the result: PlayScreen again, with a final card and the map showing what
@@ -120,6 +121,15 @@ function MatchRoom({ id }) {
     : null;
   const preload = useCountryPreload(preloadSlug);
 
+  // The drawn country is revealed with a roulette, once per match and browser tab (a reload,
+  // or opening the match later, shows it straight away). Start waits until it has stopped.
+  const [animateReveal] = useState(() => !wasRevealed(id));
+  const [revealDone, setRevealDone] = useState(!animateReveal);
+  const revealing = Boolean(m && m.country && m.status === 'ready');
+  useEffect(() => {
+    if (revealing) markRevealed(id);
+  }, [revealing, id]);
+
   const goHome = () => navigate('/');
   const actions = useMatchActions({
     reload: poll.reload,
@@ -180,16 +190,18 @@ function MatchRoom({ id }) {
         </div>
       );
     } else if (m.status === 'ready') {
-      const canStart = preload.status === 'ready' && !disabled;
+      const canStart = preload.status === 'ready' && revealDone && !disabled;
       body = (
         <div className="mp-state">
           <h2>Match ready</h2>
           {m.country && (
-            <div className="mp-country">
-              <span className="mp-kicker">Your country</span>
-              <span className="mp-country-name">{m.country.nombre}</span>
-              <span className="mp-country-meta">{m.country.total_regions} regions · {length}</span>
-            </div>
+            <CountryRoulette
+              key={m.country.id}
+              name={m.country.nombre}
+              meta={`${m.country.total_regions} regions · ${length}`}
+              animate={animateReveal}
+              onDone={() => setRevealDone(true)}
+            />
           )}
           <MapStatus preload={preload} />
           <p className="mp-note">
@@ -200,7 +212,7 @@ function MatchRoom({ id }) {
               type="button"
               className="mp-btn primary"
               disabled={!canStart}
-              title={preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
+              title={!revealDone ? 'Drawing the country…' : preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
               onClick={() => actions.start(m.id)}
             >
               {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}

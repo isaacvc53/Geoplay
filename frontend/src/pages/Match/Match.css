@@ -93,6 +93,65 @@
   to{ opacity:1; transform:none; }
 }
 
+/* ---- country roulette (the random country being drawn) ---- */
+.match-page .mp-roulette{
+  --reel-h:72px; --spin-ms:4200ms; gap:10px;
+  transition:box-shadow .9s ease-out;
+}
+.match-page .mp-roulette.landed{
+  box-shadow:0 0 0 1px rgba(217,182,97,.5), 0 0 28px rgba(217,182,97,.25);
+  transition-duration:.35s;
+}
+.match-page .mp-reel{
+  position:relative; width:100%; height:calc(var(--reel-h) * 3); overflow:hidden;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+  transition:height .5s ease;
+}
+.match-page .mp-roulette.settled .mp-reel{
+  height:var(--reel-h);
+  -webkit-mask-image:none; mask-image:none;
+}
+.match-page .mp-reel-strip{
+  transform:translateY(calc(var(--reel-h) * var(--off) * -1));
+  will-change:transform;
+}
+.match-page .mp-roulette.spin .mp-reel-strip,
+.match-page .mp-roulette.landed .mp-reel-strip{
+  transition:transform var(--spin-ms) cubic-bezier(.1,.62,.12,1);
+}
+.match-page .mp-roulette.spin .mp-reel-strip{ animation:mpReelBlur var(--spin-ms) ease-out both; }
+.match-page .mp-roulette.settled .mp-reel-strip{ transition:transform .5s ease; }
+@keyframes mpReelBlur{
+  0%{ filter:blur(3px); }
+  45%{ filter:blur(2px); }
+  100%{ filter:blur(0); }
+}
+.match-page .mp-reel-item{
+  height:var(--reel-h); padding:0 8px; display:flex; align-items:center; justify-content:center;
+  text-align:center; font-family:'Fraunces',Georgia,serif; font-weight:600;
+  font-size:clamp(22px,5.4vw,32px); line-height:1.05; color:var(--parchment);
+  transition:color .35s ease, opacity .35s ease;
+}
+.match-page .mp-roulette.landed .mp-reel-item.win,
+.match-page .mp-roulette.settled .mp-reel-item.win{ color:var(--brass-bright); }
+.match-page .mp-roulette.landed .mp-reel-item:not(.win),
+.match-page .mp-roulette.settled .mp-reel-item:not(.win){ opacity:0; }
+/* the frame around the middle row while the reel spins */
+.match-page .mp-reel-sel{
+  position:absolute; left:0; right:0; top:var(--reel-h); height:var(--reel-h);
+  border-top:1px solid rgba(201,162,75,.55); border-bottom:1px solid rgba(201,162,75,.55);
+  pointer-events:none; transition:opacity .4s ease;
+}
+.match-page .mp-roulette.settled .mp-reel-sel{ opacity:0; }
+.match-page .mp-roulette .mp-country-meta{ opacity:0; transition:opacity .5s ease; }
+.match-page .mp-roulette.landed .mp-country-meta,
+.match-page .mp-roulette.settled .mp-country-meta{ opacity:1; }
+.match-page .mp-sr{
+  position:absolute; width:1px; height:1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap;
+}
+
 /* ---- map preload status ---- */
 .match-page .mp-load{
   display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px;
@@ -172,6 +231,8 @@
   .match-page .mp-card{ padding:22px 18px 26px; }
   .match-page .mp-avatar{ width:52px; height:52px; font-size:20px; }
   .match-page .mp-player-name{ font-size:16px; }
+  .match-page .mp-roulette{ --reel-h:64px; }
+  .match-page .mp-reel-item{ font-size:clamp(20px,6vw,26px); }
   .match-page .mp-count{ width:148px; height:148px; }
   .match-page .mp-count-num{ font-size:78px; }
   .match-page .mp-clock{ font-size:46px; }
