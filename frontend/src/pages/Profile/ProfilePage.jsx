@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import { avatarErrorMessage, squareAvatarBlob } from '../../lib/avatarImage';
+import { isoForCountry } from '../../data/countryIso';
 import { resolveDisplayName, resolveSlug, resolveTopoName } from '../../lib/countryInfo';
 import CountryPicker from './CountryPicker';
 import ProgressMap from './ProgressMap';
@@ -406,7 +407,10 @@ function ProfileView({ user, countries, onLogout }) {
   const worldProgress = useMemo(() => {
     const map = {};
     played.forEach((c) => {
-      map[normalizeName(resolveTopoName(c.country_name))] = { value: c.percentage, slug: resolveSlug(c.country_name) };
+      const entry = { value: c.percentage, slug: c.country_slug || resolveSlug(c.country_name) };
+      const iso = isoForCountry(c);
+      if (iso) map['iso:' + iso] = entry; // emparejado fiable por código ISO
+      map[normalizeName(resolveTopoName(c.country_name))] = entry; // respaldo por nombre
     });
     return map;
   }, [played]);

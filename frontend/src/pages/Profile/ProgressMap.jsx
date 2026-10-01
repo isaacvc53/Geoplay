@@ -2,11 +2,14 @@ import { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
 import { feature as topoFeature } from 'topojson-client';
 import { colorForPercentage, normalizeName } from './profileLogic';
+import { NUMERIC_TO_ISO } from '../../data/numericToIso';
 
 // Mapa coroplético imperativo (D3), sin reescribir en JSX. Sirve para:
 //  - variant "world":    países, empareja por nombre normalizado del topojson
 //  - variant "province": provincias/regiones de un país (mismo patrón visual)
 // `progress` = { [nombreNormalizado]: { value: 0-100, slug?: string } }.
+// En "world" también se acepta la clave por ISO alpha-2 (progress["iso:es"]), que es la
+// que se usa primero: el topojson trae nombres abreviados que no coinciden con el backend.
 // Solo los países con `slug` son clicables (onOpen(slug)).
 export default function ProgressMap({ variant = 'world', topology, objectKey = 'countries', progress, onOpen, style }) {
   const containerRef = useRef(null);
@@ -22,7 +25,13 @@ export default function ProgressMap({ variant = 'world', topology, objectKey = '
     const [width, height] = isWorld ? [820, 420] : [620, 420];
     const projection = (isWorld ? d3.geoNaturalEarth1() : d3.geoMercator()).fitSize([width, height], geo);
     const path = d3.geoPath(projection);
-    const entryOf = (d) => progress[normalizeName(d.properties.name)];
+    const entryOf = (d) => {
+      if (isWorld) {
+        const iso = NUMERIC_TO_ISO[String(d.id).padStart(3, '0')];
+        if (iso && progress['iso:' + iso]) return progress['iso:' + iso];
+      }
+      return progress[normalizeName(d.properties.name)];
+    };
 
     container.replaceChildren();
     const svg = d3.select(container)
