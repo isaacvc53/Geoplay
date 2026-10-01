@@ -137,11 +137,11 @@
   .sphere-rim-glow{ stroke:rgba(212,172,85,0.10); stroke-width:9; }
 
   /* Los países aparecen con un fundido suave al terminar de cargar. */
-  .countries-group, .labels-group{ opacity:0; transition:opacity 0.8s ease; }
-  svg#worldmap.ready .countries-group, svg#worldmap.ready .labels-group{ opacity:1; }
+  .countries-group{ opacity:0; transition:opacity 0.8s ease; }
+  svg#worldmap.ready .countries-group{ opacity:1; }
 
   .country{
-    fill:var(--tone, var(--land));
+    fill:var(--land);
     fill-opacity:0.95;
     stroke:rgba(6,18,28,0.9);
     stroke-width:0.55;
@@ -157,15 +157,8 @@
   }
   .country.active{ fill:var(--land-active); fill-opacity:1; }
 
-  .country.disabled{
-    fill:url(#disabledHatch);
-    fill-opacity:0.7;
-    stroke:rgba(6,18,28,0.55);
-    cursor:not-allowed;
-  }
-  @media (hover:hover){
-    .country.disabled:hover{ fill:url(#disabledHatch); fill-opacity:0.7; }
-  }
+  /* Países aún no disponibles: mismo color que el resto, solo cambia el cursor. */
+  .country.disabled{ cursor:not-allowed; }
 
   /* Anillos de resalte: brillo ancho + línea fina, ambos de grosor constante en pantalla. */
   .ring{ pointer-events:none; opacity:0; transition:opacity 0.14s ease; }
@@ -179,17 +172,6 @@
   .hover-ring.off .ring-line{ stroke:rgba(212,172,85,0.5); }
   .active-ring .ring-glow{ stroke:rgba(240,138,69,0.34); }
   .active-ring .ring-line{ stroke:#ffb878; stroke-width:2; }
-
-  /* Etiquetas: solo las de países donde caben; tamaño constante en pantalla. */
-  .map-label{
-    pointer-events:none;
-    text-anchor:middle; dominant-baseline:central;
-    font-family:Inter,system-ui,sans-serif; font-weight:600;
-    letter-spacing:0.07em; text-transform:uppercase;
-    fill:rgba(10,28,42,0.82);
-    stroke:rgba(246,238,215,0.55); stroke-linejoin:round; paint-order:stroke;
-  }
-  .map-label.dim{ fill:rgba(220,214,200,0.55); stroke:rgba(20,20,20,0.5); }
 
   .loading{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -284,27 +266,6 @@
   .zoom-controls button:last-child{ border-right:0; }
   .zoom-controls button:hover{ background:rgba(212,172,85,0.16); color:var(--brass-bright); }
   .zoom-controls button:active{ background:rgba(212,172,85,0.28); }
-
-  .legend{
-    position:absolute; bottom:30px; left:50%; transform:translateX(-50%);
-    z-index:20;
-    display:flex; align-items:center; gap:18px;
-    padding:8px 16px;
-    background:var(--glass);
-    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
-    border:1px solid var(--glass-line);
-    border-radius:0;
-    font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase;
-    color:rgba(246,241,228,0.78);
-    pointer-events:none;
-  }
-  .legend-item{ display:inline-flex; align-items:center; gap:8px; }
-  .legend-sw{ width:14px; height:10px; border-radius:0; display:inline-block; }
-  .legend-sw-open{ background:linear-gradient(90deg,#e9ddbd,#bccaa4,#adc6c9); box-shadow:0 0 0 1px rgba(255,255,255,0.18); }
-  .legend-sw-off{
-    background:repeating-linear-gradient(45deg,#5d5b57 0 2px,#3b3a38 2px 4px);
-    box-shadow:0 0 0 1px rgba(255,255,255,0.12);
-  }
 
   .scale{
     position:absolute; bottom:30px; right:40px; z-index:20;
@@ -432,12 +393,8 @@
 
   @media (prefers-reduced-motion: reduce){
     .panel, .panel-close, .overlay, .action-primary, .country,
-    .countries-group, .labels-group, .ring{ transition:none !important; }
+    .countries-group, .ring{ transition:none !important; }
     .loading, .loading::before{ animation:none !important; }
-  }
-
-  @media (max-width:900px){
-    .legend{ display:none; }
   }
 
   @media (max-width:640px){
@@ -481,7 +438,7 @@
     header .eyebrow-row{ padding-bottom:6px; }
     h1{ font-size:22px; }
     .btn-back{ margin-bottom:6px; padding:5px 10px; }
-    .coords, .scale, .legend{ display:none; }
+    .coords, .scale{ display:none; }
     .zoom-controls{ bottom:calc(10px + env(safe-area-inset-bottom,0px)); left:16px; }
     .zoom-controls button{ width:38px; height:38px; }
     .panel{ max-height:92vh; max-height:92dvh; }
