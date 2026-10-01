@@ -275,8 +275,17 @@ export const api = {
   // --- Multiplayer matches (1 vs 1) ---
 
   // Challenge an accepted friend. Resolves with the new match (status 'invited').
-  createMatch(username, durationSeconds) {
-    return this._post(`/matches`, { username, duration_seconds: durationSeconds });
+  // countryId (optional): the host picks the country; without it a random one is drawn
+  // when the friend accepts.
+  createMatch(username, durationSeconds, countryId = null) {
+    const body = { username, duration_seconds: durationSeconds };
+    if (countryId != null) body.country_id = countryId;
+    return this._post(`/matches`, body);
+  },
+
+  // Countries the host can pick when challenging: [{ id, slug, nombre, total_regions }].
+  getMatchCountries() {
+    return this._get(`/matches/countries`);
   },
 
   // -> { current: match | null, invitations: [match] }. Cheap: poll it from the menu.
@@ -288,7 +297,7 @@ export const api = {
     return this._get(`/matches/${encodeURIComponent(matchId)}`);
   },
 
-  // The invited player accepts: this is when the random country is drawn.
+  // The invited player accepts (if the host didn't pick a country, it is drawn now).
   acceptMatch(matchId) {
     return this._post(`/matches/${encodeURIComponent(matchId)}/accept`, {});
   },

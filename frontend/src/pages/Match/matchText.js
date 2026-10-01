@@ -14,6 +14,12 @@ export function opponentOf(match) {
   return match.my_role === 'host' ? match.guest : match.host;
 }
 
+// Country name shown in the multiplayer screens: the same one the match room and the roulette
+// already use (Country.nombre). Change it here to show English names everywhere at once.
+export function countryLabel(country) {
+  return country ? country.nombre : null;
+}
+
 export const TERMINAL_STATUSES = new Set(['declined', 'cancelled', 'expired', 'finished']);
 
 const ERROR_MESSAGES = {
@@ -21,6 +27,7 @@ const ERROR_MESSAGES = {
   already_in_match: 'You already have an open match. Finish or cancel it first.',
   friend_busy: 'Your friend is in another match right now. Try again in a moment.',
   invalid_duration: 'Choose a valid match length.',
+  country_not_playable: "That country isn't available for matches. Pick another one.",
   match_not_found: "This match doesn't exist anymore.",
   not_invited: 'Only the invited player can do that.',
   match_not_pending: 'This invitation is no longer available.',

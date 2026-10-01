@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useMatchActions } from '../Match/useMatchActions';
-import { formatDuration, opponentOf } from '../Match/matchText';
+import { countryLabel, formatDuration, opponentOf } from '../Match/matchText';
 import './Matches.css';
 
 // Strip under the top bar: tells you about a challenge you received, or about the
@@ -65,7 +65,8 @@ export default function MatchBanner({ matches, lastResult, onOpenFriends }) {
     content = (
       <>
         <p className="match-banner-text">
-          <strong>{first.host.username}</strong> challenged you to a {formatDuration(first.duration_seconds)} match.
+          <strong>{first.host.username}</strong> challenged you to a {formatDuration(first.duration_seconds)} match
+          {first.country_chosen && first.country ? <> on <strong>{countryLabel(first.country)}</strong></> : null}.
           {extra > 0 && (
             <>
               {' '}

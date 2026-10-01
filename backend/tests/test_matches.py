@@ -269,3 +269,89 @@ def test_ids_de_usuario_en_la_respuesta(client, db_session):
     m = invite(client, ana).json()
     assert m["host"]["user_id"] == user_id(client, ana)
     assert m["guest"]["user_id"] == user_id(client, bea)
+
+
+# ------------------------------------------------- país elegido por el anfitrión
+
+
+def invite_with_country(client, headers, country_id, username="bea", duration=180):
+    return client.post(
+        "/matches",
+        json={"username": username, "duration_seconds": duration, "country_id": country_id},
+        headers=headers,
+    )
+
+
+def test_listar_paises_jugables(client, db_session):
+    ana, _ = setup_pair(client, db_session)
+    make_country(db_session, "tiny", regions=("A", "B"))  # pocas regiones: no sale
+    make_country(db_session, "empty", regions=())
+    r = client.get("/matches/countries", headers=ana)
+    assert r.status_code == 200, r.text
+    assert [c["slug"] for c in r.json()] == ["spain"]
+    assert r.json()[0]["total_regions"] == 6
+
+
+def test_listar_paises_requiere_sesion(client, db_session):
+    assert client.get("/matches/countries").status_code in (401, 403)
+
+
+def test_retar_eligiendo_pais(client, db_session):
+    ana, bea = setup_pair(client, db_session)
+    other, _ = make_country(db_session, "france", regions=("A", "B", "C", "D", "E"))
+    r = invite_with_country(client, ana, other.id)
+    assert r.status_code == 201, r.text
+    m = r.json()
+    # El país ya se ve en la invitación, antes de aceptar.
+    assert m["status"] == "invited"
+    assert m["country"]["slug"] == "france"
+    assert m["country_chosen"] is True
+    # El invitado lo ve igual en su lista de invitaciones.
+    inv = client.get("/matches/mine", headers=bea).json()["invitations"]
+    assert inv[0]["country"]["slug"] == "france"
+
+
+def test_aceptar_mantiene_el_pais_elegido(client, db_session):
+    ana, bea = setup_pair(client, db_session)
+    other, _ = make_country(db_session, "france", regions=("A", "B", "C", "D", "E"))
+    # Con "spain" también disponible, el sorteo podría dar otro: debe salir siempre france.
+    for _ in range(10):
+        mid = invite_with_country(client, ana, other.id).json()["id"]
+        m = client.post(f"/matches/{mid}/accept", headers=bea).json()
+        assert m["status"] == "ready"
+        assert m["country"]["slug"] == "france"
+        assert m["country_chosen"] is True
+        client.delete(f"/matches/{mid}", headers=ana)
+
+
+def test_sin_elegir_pais_sigue_siendo_al_azar(client, db_session):
+    ana, bea = setup_pair(client, db_session)
+    m = invite(client, ana).json()
+    assert m["country"] is None
+    assert m["country_chosen"] is False
+    accepted = client.post(f"/matches/{m['id']}/accept", headers=bea).json()
+    assert accepted["country"]["slug"] == "spain"
+    assert accepted["country_chosen"] is False
+
+
+def test_no_se_puede_retar_con_un_pais_no_jugable(client, db_session):
+    ana, _ = setup_pair(client, db_session)
+    tiny, _ = make_country(db_session, "tiny", regions=("A", "B"))
+    r = invite_with_country(client, ana, tiny.id)
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "country_not_playable"
+    r = invite_with_country(client, ana, 99999)  # no existe
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "country_not_playable"
+    # No quedó ninguna partida abierta por el intento fallido.
+    assert client.get("/matches/mine", headers=ana).json()["current"] is None
+
+
+def test_pais_sin_mapa_en_el_frontend_no_se_puede_elegir(client, db_session, monkeypatch):
+    ana, _ = setup_pair(client, db_session)
+    other, _ = make_country(db_session, "france", regions=("A", "B", "C", "D", "E"))
+    monkeypatch.setattr(match_service, "_available_slugs", lambda: {"spain"})
+    assert [c["slug"] for c in client.get("/matches/countries", headers=ana).json()] == ["spain"]
+    r = invite_with_country(client, ana, other.id)
+    assert r.status_code == 400
+    assert r.json()["detail"]["code"] == "country_not_playable"

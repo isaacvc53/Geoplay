@@ -9,13 +9,14 @@ import { useCountryPreload } from './useCountryPreload';
 import { createServerClock } from './serverClock';
 import PlayScreen from './PlayScreen';
 import CountryRoulette, { markRevealed, wasRevealed } from './CountryRoulette';
-import { TERMINAL_STATUSES, formatDuration } from './matchText';
+import { TERMINAL_STATUSES, countryLabel, formatDuration } from './matchText';
 import './Match.css';
 
 // Match room (/partida/:id). It covers everything before the first guess:
 //   invited  -> the host waits, the guest accepts or declines
-//   ready    -> the random country is revealed (with a roulette animation, once per match
-//               and tab) and its map is preloaded; either player can press Start
+//   ready    -> the country is shown and its map preloaded; if it was drawn at random it
+//               is revealed with a roulette animation (once per match and tab), if the
+//               host picked it, it just appears; either player can press Start
 //   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
 //               players (server clock), then the match clock runs and they race
 //   finished -> the result: PlayScreen again, with a final card and the map showing what
@@ -121,10 +122,12 @@ function MatchRoom({ id }) {
     : null;
   const preload = useCountryPreload(preloadSlug);
 
-  // The drawn country is revealed with a roulette, once per match and browser tab (a reload,
-  // or opening the match later, shows it straight away). Start waits until it has stopped.
-  const [animateReveal] = useState(() => !wasRevealed(id));
-  const [revealDone, setRevealDone] = useState(!animateReveal);
+  // A randomly drawn country is revealed with a roulette, once per match and browser tab (a
+  // reload, or opening the match later, shows it straight away). A country the host picked
+  // has nothing to draw, so it skips the roulette. Start waits until the roulette stops.
+  const [seenReveal] = useState(() => wasRevealed(id));
+  const animateReveal = !seenReveal && Boolean(m) && !m.country_chosen;
+  const [revealDone, setRevealDone] = useState(false);
   const revealing = Boolean(m && m.country && m.status === 'ready');
   useEffect(() => {
     if (revealing) markRevealed(id);
@@ -163,7 +166,9 @@ function MatchRoom({ id }) {
         <div className="mp-state">
           <h2>Waiting for {rival.username}…</h2>
           <p className="mp-note">
-            Your {length} challenge was sent. A random country is drawn as soon as they accept.
+            {m.country_chosen && m.country
+              ? <>Your {length} challenge on {countryLabel(m.country)} was sent.</>
+              : <>Your {length} challenge was sent. A random country is drawn as soon as they accept.</>}
           </p>
           <ExpiryNote expiresAt={m.invite_expires_at} />
           <button type="button" className="mp-btn" disabled={disabled} onClick={() => actions.cancel(m.id)}>
@@ -176,7 +181,10 @@ function MatchRoom({ id }) {
         <div className="mp-state">
           <h2>{rival.username} challenged you</h2>
           <p className="mp-note">
-            A {length} match on a random country: whoever finds more regions in time wins.
+            {m.country_chosen && m.country
+              ? <>A {length} match on {countryLabel(m.country)}</>
+              : <>A {length} match on a random country</>}
+            : whoever finds more regions in time wins.
           </p>
           <ExpiryNote expiresAt={m.invite_expires_at} />
           <div className="mp-actions">

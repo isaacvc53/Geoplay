@@ -12,6 +12,9 @@ DEFAULT_DURATION = 180
 class MatchCreate(BaseModel):
     username: str = Field(min_length=1, max_length=50)
     duration_seconds: int = DEFAULT_DURATION
+    # País elegido por el anfitrión. None = al azar (se sortea cuando el invitado
+    # acepta). El servicio comprueba que sea un país jugable.
+    country_id: int | None = None
 
     @field_validator("username")
     @classmethod
@@ -36,6 +39,15 @@ class MatchCountry(BaseModel):
     total_regions: int
 
 
+class PlayableCountry(BaseModel):
+    """Un país que se puede elegir para retar (tiene regiones suficientes y mapa)."""
+
+    id: int
+    slug: str
+    nombre: str
+    total_regions: int
+
+
 class MatchOut(BaseModel):
     id: int
     status: Literal[
@@ -45,7 +57,11 @@ class MatchOut(BaseModel):
     duration_seconds: int
     host: MatchPlayer
     guest: MatchPlayer
-    country: MatchCountry | None = None  # None hasta que el invitado acepta
+    # None solo si va a ser al azar y el invitado aún no ha aceptado.
+    country: MatchCountry | None = None
+    # True si lo eligió el anfitrión; False si se sorteó (el frontend solo enseña
+    # la ruleta en ese caso).
+    country_chosen: bool = False
     created_at: UtcDatetime
     invite_expires_at: UtcDatetime | None = None  # solo mientras status == "invited"
     # Cuando status == "playing": started_at es el instante en que empieza a correr

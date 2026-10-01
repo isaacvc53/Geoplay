@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -8,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    false,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -18,8 +20,9 @@ from models.user_db import User
 from models.utc import now_utc_naive
 
 # Ciclo de vida de una partida 1 contra 1:
-#   invited  -> el anfitrión invitó a un amigo y espera respuesta
-#   ready    -> el invitado aceptó; el país ya está elegido al azar
+#   invited  -> el anfitrión invitó a un amigo y espera respuesta (con el país
+#               ya elegido por él, o sin país si va a ser al azar)
+#   ready    -> el invitado aceptó; el país ya está fijado (elegido o sorteado)
 #   playing  -> el anfitrión o el invitado pulsó "Start": cuenta atrás de 3 s y
 #               luego el tiempo corre. started_at es el instante en que EMPIEZA
 #               a contar el tiempo (ya incluye la cuenta atrás); ends_at es el final.
@@ -74,9 +77,20 @@ class Match(Base):
     # Tiempo total de la partida (lo elige el anfitrión al invitar).
     duration_seconds: Mapped[int] = mapped_column(Integer)
 
-    # Se elige al azar cuando el invitado acepta; hasta entonces es NULL.
+    # Dos formas de tener país:
+    #   - el anfitrión lo ELIGE al retar: country_id se rellena al crear la partida
+    #     y country_chosen = True (el invitado ve el país ya en la invitación);
+    #   - si no elige, se sortea al azar cuando el invitado acepta: hasta entonces
+    #     es NULL y country_chosen = False.
     country_id: Mapped[int | None] = mapped_column(
         ForeignKey("countries.id"), nullable=True
+    )
+    # Sirve para que el frontend sepa si debe enseñar la ruleta del sorteo (solo
+    # cuando fue al azar). OJO: columna añadida DESPUÉS de crear la tabla; create_all
+    # no la añade a una BD ya existente, por eso main.py ejecuta un ALTER TABLE ...
+    # ADD COLUMN IF NOT EXISTS al arrancar (solo en Postgres).
+    country_chosen: Mapped[bool] = mapped_column(
+        Boolean, default=False, server_default=false()
     )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now_utc_naive)

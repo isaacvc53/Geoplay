@@ -3,7 +3,15 @@ from contextlib import contextmanager
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from models.match import GuessIn, GuessOut, MatchAnswers, MatchCreate, MatchOut, MyMatches
+from models.match import (
+    GuessIn,
+    GuessOut,
+    MatchAnswers,
+    MatchCreate,
+    MatchOut,
+    MyMatches,
+    PlayableCountry,
+)
 from models.user_db import User
 from routes.auth import get_current_user, get_db
 from services import friends_service, match_service
@@ -31,10 +39,15 @@ def invitar_a_partida(
     usuario_actual: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Invita a un amigo a una partida 1 contra 1."""
+    """Invita a un amigo a una partida 1 contra 1. Con `country_id` eliges el país;
+    sin él se sortea al azar cuando tu amigo acepta."""
     with errores_de_partida():
         m = match_service.create_match(
-            db, usuario_actual, datos.username, datos.duration_seconds
+            db,
+            usuario_actual,
+            datos.username,
+            datos.duration_seconds,
+            datos.country_id,
         )
         return match_service.serialize(db, m, usuario_actual)
 
@@ -48,6 +61,15 @@ def mis_partidas(
     """Mi partida abierta + invitaciones recibidas. Pensada para consultarse
     cada pocos segundos desde el menú."""
     return match_service.get_mine(db, usuario_actual)
+
+
+@matches_router.get("/countries", response_model=list[PlayableCountry])
+def paises_jugables(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Países entre los que se puede elegir al retar (con regiones y mapa)."""
+    return match_service.list_playable_countries(db)
 
 
 @matches_router.get("/{match_id}", response_model=MatchOut)

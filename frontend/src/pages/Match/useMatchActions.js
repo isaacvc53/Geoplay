@@ -53,8 +53,8 @@ export function useMatchActions({ reload, onCreated, onAccepted, onDeclined, onC
   return {
     busy,
     error,
-    challenge: (username, duration) =>
-      run('challenge', () => api.createMatch(username, duration), onCreated ?? goToRoom),
+    challenge: (username, duration, countryId = null) =>
+      run('challenge', () => api.createMatch(username, duration, countryId), onCreated ?? goToRoom),
     accept: (id) => run(`accept:${id}`, () => api.acceptMatch(id), onAccepted ?? goToRoom),
     decline: (id) => run(`decline:${id}`, () => api.declineMatch(id), onDeclined),
     cancel: (id) => run(`cancel:${id}`, () => api.cancelMatch(id), onCancelled),

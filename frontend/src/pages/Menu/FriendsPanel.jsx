@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import UserAvatar from '../../components/UserAvatar';
 import { formatRelative } from '../Profile/profileLogic';
+import CountryPicker from '../Profile/CountryPicker';
 import { useMatchActions } from '../Match/useMatchActions';
-import { DEFAULT_DURATION, DURATIONS, formatDuration, opponentOf } from '../Match/matchText';
+import { DEFAULT_DURATION, DURATIONS, countryLabel, formatDuration, opponentOf } from '../Match/matchText';
 import './Friends.css';
 import './Matches.css';
 
@@ -50,10 +51,33 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
   const actions = useMatchActions({ reload: matches.reload });
   const [challengeUserId, setChallengeUserId] = useState(null); // friend whose challenge picker is open
   const [duration, setDuration] = useState(DEFAULT_DURATION);
+  const [countryId, setCountryId] = useState(''); // '' = random country (drawn when they accept)
+  const [countries, setCountries] = useState(null); // playable countries, loaded on first open
+  const [countriesFailed, setCountriesFailed] = useState(false);
+  const [countriesAttempt, setCountriesAttempt] = useState(0); // bumped by "Try again"
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(null); // key of the action in flight, or null
   const [message, setMessage] = useState(null); // { kind: 'ok' | 'error', text }
   const [confirmId, setConfirmId] = useState(null); // friendship waiting for "Confirm"
+
+  // The country list is fetched the first time a challenge picker opens. If it fails the
+  // challenge still works: it just stays a random country.
+  useEffect(() => {
+    if (challengeUserId == null || countries) return undefined;
+    let cancelled = false;
+    api.getMatchCountries()
+      .then((list) => { if (!cancelled) { setCountries(list); setCountriesFailed(false); } })
+      .catch(() => { if (!cancelled) setCountriesFailed(true); });
+    return () => { cancelled = true; };
+  }, [challengeUserId, countries, countriesAttempt]);
+
+  const countryOptions = useMemo(
+    () => (countries || [])
+      .map((c) => ({ id: c.id, label: countryLabel(c) }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'es')),
+    [countries]
+  );
+  const pickedCountry = countryOptions.find((o) => o.id === countryId);
 
   // Feedback messages fade after a few seconds so they don't linger forever.
   useEffect(() => {
@@ -169,6 +193,7 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
                     ? 'waiting for a reply'
                     : currentMatch.status === 'ready' ? 'ready to play' : 'in progress'}
                   {' · '}{formatDuration(currentMatch.duration_seconds)}
+                  {currentMatch.country && ` · ${countryLabel(currentMatch.country)}`}
                 </span>
               </span>
               <span className="friend-actions">
@@ -199,7 +224,7 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
                 <span className="friend-who">
                   <span className="friend-name">{m.host.username}</span>
                   <span className="friend-meta">
-                    challenged you · {formatDuration(m.duration_seconds)} · random country
+                    challenged you · {formatDuration(m.duration_seconds)} · {m.country_chosen && m.country ? countryLabel(m.country) : 'random country'}
                   </span>
                 </span>
                 <span className="friend-actions">
@@ -324,6 +349,8 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
                       aria-expanded={challengeUserId === f.user_id}
                       onClick={() => {
                         setConfirmId(null);
+                        // The picker always opens on "random country" (its input is remounted empty).
+                        setCountryId('');
                         setChallengeUserId((cur) => (cur === f.user_id ? null : f.user_id));
                       }}
                     >
@@ -383,15 +410,37 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
                         </button>
                       ))}
                     </div>
+                    <span className="challenge-picker-label" id={`cty-${f.user_id}`}>Country</span>
+                    {countriesFailed && !countries ? (
+                      <p className="challenge-note">
+                        Couldn&apos;t load the countries, so it will be a random one.{' '}
+                        <button type="button" className="match-banner-link" onClick={() => { setCountriesFailed(false); setCountriesAttempt((n) => n + 1); }}>
+                          Try again
+                        </button>
+                      </p>
+                    ) : (
+                      <div className="challenge-country">
+                        <CountryPicker
+                          key={f.user_id}
+                          options={countryOptions}
+                          allLabel="Random country"
+                          ariaLabel={`Country for your challenge to ${f.username}`}
+                          onSelect={setCountryId}
+                        />
+                      </div>
+                    )}
                     <p className="challenge-note">
-                      A random country is drawn when {f.username} accepts. Whoever finds more regions in time wins.
+                      {pickedCountry
+                        ? `${pickedCountry.label} it is. ${f.username} sees it in the invitation. `
+                        : `A random country is drawn when ${f.username} accepts. `}
+                      Whoever finds more regions in time wins.
                     </p>
                     <span className="friend-actions">
                       <button
                         type="button"
                         className="friend-btn primary"
                         disabled={disabled}
-                        onClick={() => actions.challenge(f.username, duration)}
+                        onClick={() => actions.challenge(f.username, duration, countryId === '' ? null : countryId)}
                       >
                         {actions.busy === 'challenge' ? 'Sending…' : 'Send challenge'}
                       </button>

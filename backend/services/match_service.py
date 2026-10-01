@@ -186,14 +186,20 @@ def _available_slugs() -> set[str] | None:
     return slugs
 
 
-def _pick_random_country(db: Session) -> Country:
-    """Sortea entre los países con suficientes regiones EN LA BD y que además
-    tienen mapa en el frontend (si no, los jugadores verían un error al empezar)."""
+def _playable_countries(db: Session) -> list:
+    """Países jugables en una partida: con suficientes regiones EN LA BD y que además
+    tienen mapa en el frontend (si no, los jugadores verían un error al empezar).
+    Cada fila trae id, slug, nombre y total (nº de regiones)."""
     global _warned_no_manifest
     rows = (
-        db.query(Country.id, Country.slug)
+        db.query(
+            Country.id,
+            Country.slug,
+            Country.nombre,
+            func.count(Region.id).label("total"),
+        )
         .join(Region, Region.country_id == Country.id)
-        .group_by(Country.id, Country.slug)
+        .group_by(Country.id, Country.slug, Country.nombre)
         .having(func.count(Region.id) >= MIN_REGIONS)
         .all()
     )
@@ -201,12 +207,25 @@ def _pick_random_country(db: Session) -> Country:
     if slugs is None:
         if not _warned_no_manifest:
             log.warning(
-                "No se encontró available-countries.json: se sortea entre todos los "
-                "países con regiones, aunque alguno no tenga mapa en el frontend."
+                "No se encontró available-countries.json: se usan todos los países "
+                "con regiones, aunque alguno no tenga mapa en el frontend."
             )
             _warned_no_manifest = True
-    else:
-        rows = [r for r in rows if r.slug in slugs]
+        return rows
+    return [r for r in rows if r.slug in slugs]
+
+
+def list_playable_countries(db: Session) -> list[dict]:
+    """Para el selector de país al retar, ordenados por nombre."""
+    rows = sorted(_playable_countries(db), key=lambda r: r.nombre)
+    return [
+        {"id": r.id, "slug": r.slug, "nombre": r.nombre, "total_regions": r.total}
+        for r in rows
+    ]
+
+
+def _pick_random_country(db: Session) -> Country:
+    rows = _playable_countries(db)
     if not rows:
         raise MatchError(
             "no_countries_available", "No hay países jugables para sortear", 503
@@ -256,6 +275,7 @@ def serialize(db: Session, m: Match, me: User) -> dict:
         "host": player(m.host, m.host_score),
         "guest": player(m.guest, m.guest_score),
         "country": country,
+        "country_chosen": bool(m.country_chosen),
         "created_at": m.created_at,
         "invite_expires_at": (
             m.created_at + INVITE_TTL if m.status == STATUS_INVITED else None
@@ -272,11 +292,27 @@ def serialize(db: Session, m: Match, me: User) -> dict:
 # ---------------------------------------------------------------- operaciones
 
 
-def create_match(db: Session, me: User, username: str, duration: int) -> Match:
+def create_match(
+    db: Session,
+    me: User,
+    username: str,
+    duration: int,
+    country_id: int | None = None,
+) -> Match:
+    """Invita a un amigo. Con `country_id` el anfitrión elige el país; sin él se
+    sortea al azar cuando el invitado acepta."""
     _expire_stale(db)
 
     if duration not in ALLOWED_DURATIONS:
         raise MatchError("invalid_duration", "Duración no permitida", 400)
+    # La validación va ANTES que las demás: un país no jugable no depende del estado
+    # de nadie y el mensaje es más útil que "tu amigo está ocupado".
+    if country_id is not None and country_id not in {
+        r.id for r in _playable_countries(db)
+    }:
+        raise MatchError(
+            "country_not_playable", "Ese país no está disponible para jugar", 400
+        )
 
     # Solo se puede invitar a amigos aceptados (lanza FriendsError si no lo es).
     target = friends_service.get_friend_user(db, me, username)
@@ -286,7 +322,13 @@ def create_match(db: Session, me: User, username: str, duration: int) -> Match:
     if _current_match(db, target.id) is not None:
         raise MatchError("friend_busy", "Tu amigo está en otra partida", 409)
 
-    m = Match(host_id=me.id, guest_id=target.id, duration_seconds=duration)
+    m = Match(
+        host_id=me.id,
+        guest_id=target.id,
+        duration_seconds=duration,
+        country_id=country_id,
+        country_chosen=country_id is not None,
+    )
     db.add(m)
     try:
         db.commit()
@@ -311,7 +353,8 @@ def accept_match(db: Session, me: User, match_id: int) -> Match:
     if _current_match(db, me.id) is not None:
         raise MatchError("already_in_match", "Ya estás en otra partida", 409)
 
-    m.country_id = _pick_random_country(db).id
+    if m.country_id is None:  # el anfitrión no eligió: se sortea ahora
+        m.country_id = _pick_random_country(db).id
     m.status = STATUS_READY
     m.accepted_at = now_utc_naive()
     try:

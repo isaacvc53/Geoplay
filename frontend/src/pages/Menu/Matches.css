@@ -45,3 +45,29 @@
 @media (max-width:760px){
   .menu-page .match-banner{ margin:0 14px 12px; }
 }
+
+/* Country selector inside the challenge picker (reuses the Profile CountryPicker markup,
+   whose own styles are scoped to the profile page). */
+.menu-page .challenge-country .country-picker{ position:relative; width:100%; }
+.menu-page .challenge-country .country-picker-input{
+  width:100%; max-width:none; box-sizing:border-box; min-height:38px;
+  background:transparent; border:1px solid var(--line); border-radius:var(--radius);
+  color:var(--parchment); font-family:inherit; font-size:14px; padding:8px 10px; cursor:text;
+}
+.menu-page .challenge-country .country-picker-input::placeholder{ color:var(--parchment-dim); opacity:1; }
+.menu-page .challenge-country .country-picker-input:hover,
+.menu-page .challenge-country .country-picker-input:focus{ border-color:var(--brass); outline:none; }
+.menu-page .challenge-country .country-picker-list{
+  position:absolute; z-index:20; top:calc(100% + 4px); left:0; right:0;
+  max-height:220px; overflow-y:auto;
+  background:var(--panel-bg); border:1px solid var(--brass); border-radius:var(--radius);
+  box-shadow:0 12px 28px var(--shadow);
+}
+.menu-page .challenge-country .country-picker-option{
+  padding:9px 12px; font-size:14px; color:var(--parchment-dim); cursor:pointer;
+}
+.menu-page .challenge-country .country-picker-option:hover,
+.menu-page .challenge-country .country-picker-option.active{
+  background:rgba(201,162,75,.12); color:var(--brass-bright);
+}
+.menu-page .challenge-country .country-picker-empty{ padding:9px 12px; font-size:14px; color:var(--parchment-dim); }

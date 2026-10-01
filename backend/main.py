@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 # Importar todos los modelos para que Base.metadata conozca todas las tablas
 from models.base import Base
@@ -32,6 +33,16 @@ async def lifespan(app: FastAPI):
     # create_all no añade índices a tablas ya existentes: este sí lo garantizamos.
     for index in RegionName.__table__.indexes:
         index.create(bind=engine, checkfirst=True)
+    # create_all tampoco añade COLUMNAS a tablas existentes: matches.country_chosen
+    # (país elegido por el anfitrión) llegó después de crear la tabla. Es idempotente.
+    if engine.dialect.name == "postgresql":
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE matches ADD COLUMN IF NOT EXISTS "
+                    "country_chosen BOOLEAN NOT NULL DEFAULT FALSE"
+                )
+            )
     yield
 
 
