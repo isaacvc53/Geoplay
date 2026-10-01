@@ -301,4 +301,10 @@ export const api = {
   cancelMatch(matchId) {
     return this._delete(`/matches/${encodeURIComponent(matchId)}`);
   },
+
+  // Either player presses Start: the server fixes the clock (3 s countdown, then the
+  // timer). Idempotent: if the match is already running it comes back unchanged.
+  startMatch(matchId) {
+    return this._post(`/matches/${encodeURIComponent(matchId)}/start`, {});
+  },
 };

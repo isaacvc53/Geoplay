@@ -25,6 +25,7 @@ const ERROR_MESSAGES = {
   not_invited: 'Only the invited player can do that.',
   match_not_pending: 'This invitation is no longer available.',
   match_not_cancellable: "This match can't be cancelled anymore.",
+  match_not_ready: "This match can't be started anymore.",
   no_countries_available: 'No countries are available to draw right now.',
 };
 

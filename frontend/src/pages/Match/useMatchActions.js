@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { matchErrorText } from './matchText';
 
-// Challenge / accept / decline / cancel with one shared "busy" + error state, so the
+// Challenge / accept / decline / cancel / start with one shared "busy" + error state, so the
 // menu banner, the friends drawer and the match room behave the same way.
 //
 // Options (all optional):
 //   reload       refresh the caller's data after every action
 //   onCreated    (match) after a challenge was sent   — default: go to the match room
 //   onAccepted   (match) after accepting              — default: go to the match room
-//   onDeclined / onCancelled                          — default: nothing (just reload)
-export function useMatchActions({ reload, onCreated, onAccepted, onDeclined, onCancelled } = {}) {
+//   onDeclined / onCancelled / onStarted              — default: nothing (just reload)
+export function useMatchActions({ reload, onCreated, onAccepted, onDeclined, onCancelled, onStarted } = {}) {
   const navigate = useNavigate();
   const [busy, setBusy] = useState(null); // key of the action in flight, or null
   const [error, setError] = useState(null);
@@ -58,5 +58,6 @@ export function useMatchActions({ reload, onCreated, onAccepted, onDeclined, onC
     accept: (id) => run(`accept:${id}`, () => api.acceptMatch(id), onAccepted ?? goToRoom),
     decline: (id) => run(`decline:${id}`, () => api.declineMatch(id), onDeclined),
     cancel: (id) => run(`cancel:${id}`, () => api.cancelMatch(id), onCancelled),
+    start: (id) => run(`start:${id}`, () => api.startMatch(id), onStarted),
   };
 }

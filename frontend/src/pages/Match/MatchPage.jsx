@@ -5,15 +5,25 @@ import { usePolled } from '../../lib/usePolled';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useMatchActions } from './useMatchActions';
+import { useCountryPreload } from './useCountryPreload';
+import { useServerNow } from './useServerNow';
+import { createServerClock, toMs } from './serverClock';
+import Countdown from './Countdown';
 import { TERMINAL_STATUSES, formatDuration } from './matchText';
 import './Match.css';
 
-// Match room (/partida/:id). Part 2 covers the waiting phase only:
+// Match room (/partida/:id). It covers everything before the first guess:
 //   invited  -> the host waits, the guest accepts or declines
-//   ready    -> the random country is revealed (starting the match comes in part 3)
-//   declined / cancelled / expired -> a closing message
-// The room asks the server for the match every 1.5 s, so both players see changes
-// (accepted, declined, cancelled...) almost instantly without any extra setup.
+//   ready    -> the random country is revealed and its map is preloaded; either player
+//               can press Start
+//   playing  -> 3-2-1 countdown, the same for both players (server clock), then the
+//               match clock runs (the playable map arrives in part 3C)
+//   declined / cancelled / expired / finished -> a closing message
+// The room asks the server for the match every second, so both players see changes
+// (accepted, started, cancelled...) almost instantly without any extra setup.
+
+// How long "Go!" stays on screen after the countdown reaches zero.
+const GO_FLASH_MS = 900;
 
 function Player({ player, isMe, role }) {
   return (
@@ -48,12 +58,91 @@ function Closed({ title, text }) {
   );
 }
 
+// Progress of the map preload, so nobody starts a match without the map on their device.
+function MapStatus({ preload }) {
+  if (preload.status === 'error') {
+    return (
+      <div className="mp-load error" role="status">
+        <span>Couldn&apos;t load the map.</span>
+        <button type="button" className="mp-btn" onClick={preload.retry}>Try again</button>
+      </div>
+    );
+  }
+  if (preload.status === 'ready') {
+    return <div className="mp-load ok" role="status">Map ready</div>;
+  }
+  return (
+    <div className="mp-load" role="status">
+      <span className="mp-spinner" aria-hidden="true" />
+      Loading the map…
+    </div>
+  );
+}
+
+// `mm:ss` left on the clock; rounds up so it never shows 0:00 while time remains.
+function formatClock(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+// status === 'playing'. Everything here is computed from the SERVER's clock: started_at
+// is when the match clock begins (the 3-2-1 comes before it) and ends_at when it stops.
+function Playing({ match, clock }) {
+  const now = useServerNow(clock);
+  const untilStart = toMs(match.started_at) - now;
+
+  if (untilStart > -GO_FLASH_MS) {
+    return (
+      <div className="mp-state">
+        <Countdown remainingMs={untilStart} />
+        <p className="mp-note mp-count-note">{untilStart > 0 ? 'Get ready.' : ''}</p>
+      </div>
+    );
+  }
+
+  const left = toMs(match.ends_at) - now;
+  return (
+    <div className="mp-state">
+      <div className="mp-country">
+        <span className="mp-kicker">Playing on</span>
+        <span className="mp-country-name">{match.country.nombre}</span>
+        <span className="mp-country-meta">{match.country.total_regions} regions</span>
+      </div>
+      <p className="mp-clock" aria-label="Time left">{formatClock(left)}</p>
+      <p className="mp-note">
+        {left > 0
+          ? 'The match is running. The playable map arrives in the next update.'
+          : 'Time is up. Waiting for the result…'}
+      </p>
+    </div>
+  );
+}
+
 function MatchRoom({ id }) {
   const navigate = useNavigate();
-  const poll = usePolled(() => api.getMatch(id), {
-    interval: 1500,
-    stopWhen: (m) => TERMINAL_STATUSES.has(m.status),
-  });
+  const [clock] = useState(createServerClock);
+  const poll = usePolled(
+    async () => {
+      const sentAt = Date.now();
+      const match = await api.getMatch(id);
+      clock.sample(match.server_time, sentAt, Date.now()); // keep the server clock fresh
+      return match;
+    },
+    {
+      // Short on purpose: when one player presses Start, the other one learns about it
+      // within a second and still sees most of the 3-2-1.
+      interval: 1000,
+      stopWhen: (m) => TERMINAL_STATUSES.has(m.status),
+    }
+  );
+  const m = poll.data;
+
+  // The map starts downloading as soon as the country is drawn (status 'ready').
+  const preloadSlug = m && m.country && (m.status === 'ready' || m.status === 'playing')
+    ? m.country.slug
+    : null;
+  const preload = useCountryPreload(preloadSlug);
+
   const goHome = () => navigate('/');
   const actions = useMatchActions({
     reload: poll.reload,
@@ -62,7 +151,6 @@ function MatchRoom({ id }) {
     onCancelled: goHome,
   });
   const disabled = Boolean(actions.busy);
-  const m = poll.data;
 
   let body;
   if (!poll.loaded) {
@@ -115,6 +203,7 @@ function MatchRoom({ id }) {
         </div>
       );
     } else if (m.status === 'ready') {
+      const canStart = preload.status === 'ready' && !disabled;
       body = (
         <div className="mp-state">
           <h2>Match ready</h2>
@@ -125,12 +214,19 @@ function MatchRoom({ id }) {
               <span className="mp-country-meta">{m.country.total_regions} regions · {length}</span>
             </div>
           )}
+          <MapStatus preload={preload} />
           <p className="mp-note">
-            You&apos;ll both play on the same map. Starting the match comes in the next update.
+            Either of you can start. You both get a 3-second countdown, then the clock runs.
           </p>
           <div className="mp-actions">
-            <button type="button" className="mp-btn primary" disabled title="Coming soon">
-              Start match (soon)
+            <button
+              type="button"
+              className="mp-btn primary"
+              disabled={!canStart}
+              title={preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
+              onClick={() => actions.start(m.id)}
+            >
+              {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}
             </button>
             <button type="button" className="mp-btn" disabled={disabled} onClick={() => actions.cancel(m.id)}>
               Leave match
@@ -138,6 +234,13 @@ function MatchRoom({ id }) {
           </div>
         </div>
       );
+    } else if (m.status === 'playing') {
+      body = <Playing match={m} clock={clock} />;
+    } else if (m.status === 'finished') {
+      // Bare-bones summary: the full result screen comes in part 3D.
+      const mine = isHost ? m.host : m.guest;
+      const title = m.winner_id == null ? 'Draw' : m.winner_id === mine.user_id ? 'You won' : `${rival.username} won`;
+      body = <Closed title={title} text={`Final score: you ${mine.score} – ${rival.score} ${rival.username}.`} />;
     } else if (m.status === 'declined') {
       body = (
         <Closed
@@ -150,7 +253,7 @@ function MatchRoom({ id }) {
     } else if (m.status === 'expired') {
       body = <Closed title="Challenge expired" text="Nobody started the match in time." />;
     } else {
-      body = <Closed title="Match in progress" text="Playing the match isn't available yet." />;
+      body = <Closed title="Match not available" text="This match can't be shown." />;
     }
   }
 
