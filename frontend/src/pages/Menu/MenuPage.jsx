@@ -175,7 +175,7 @@ export default function MenuPage() {
             <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Roadmap</a>
             <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Multiplayer</a>
             <Link to="/mapa-mundial">World map</Link>
-            <Link to="/modo">Countries</Link>
+            <Link to="/modo">Regions</Link>
             <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
@@ -251,18 +251,6 @@ export default function MenuPage() {
           </div>
         </Drawer>
 
-        <section className="welcome" aria-label="Welcome">
-          <div>
-            <p className="welcome-eyebrow">{loggedIn ? 'Welcome back' : 'Geography training'}</p>
-            <h1 className="welcome-title">
-              {loggedIn && user
-                ? <>Ready to explore, <em>{user.username}</em>?</>
-                : <>Learn the world, <em>one map at a time</em>.</>}
-            </h1>
-          </div>
-          {!loggedIn && <Link to="/login" className="signin">Sign in</Link>}
-        </section>
-
         <main className="layout">
           {/* 1: roadmap */}
           <a className="panel roadmap soon-card" href="#" onClick={noop} aria-disabled="true" tabIndex={-1}>
@@ -330,23 +318,28 @@ export default function MenuPage() {
             </div>
           </Link>
 
-          {/* 4: countries list */}
-          <Link className="panel side-card" to="/modo">
+          {/* 4: play by region (/modo): type the countries of the world or of one continent */}
+          <Link className="panel side-card regions-card" to="/modo">
             <div>
               <div className="head">
                 <div className="icon-circle">
                   <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M12 21s7-7.7 7-13A7 7 0 1 0 5 8c0 5.3 7 13 7 13z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                    <circle cx="12" cy="8" r="2.4" stroke="currentColor" strokeWidth="1.4" />
+                    <path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    <path d="M13 7l4 4" stroke="currentColor" strokeWidth="1.4" />
                   </svg>
                 </div>
               </div>
               <div className="body">
-                <div className="widget-title">Countries</div>
-                <p className="widget-desc">Browse the full list and jump straight into any country.</p>
+                <div className="widget-title">Play by region</div>
+                <p className="widget-desc">Name every country from memory: the whole world or one continent at a time.</p>
+                <div className="chips" aria-label="Available regions">
+                  {['World', 'Europe', 'Asia', 'Africa', 'Americas', 'Oceania'].map((r) => (
+                    <span className="chip" key={r}>{r}</span>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="foot"><span className="pill live">Available</span><span>{availableCount ? `${availableCount} maps →` : '→'}</span></div>
+            <div className="foot"><span className="pill live">Available</span><span>Choose a region →</span></div>
           </Link>
 
           {/* 5: statistics */}
