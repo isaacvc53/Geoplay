@@ -6,9 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import { useMatchActions } from './useMatchActions';
 import { useCountryPreload } from './useCountryPreload';
-import { useServerNow } from './useServerNow';
-import { createServerClock, toMs } from './serverClock';
-import Countdown from './Countdown';
+import { createServerClock } from './serverClock';
+import PlayScreen from './PlayScreen';
 import { TERMINAL_STATUSES, formatDuration } from './matchText';
 import './Match.css';
 
@@ -16,14 +15,13 @@ import './Match.css';
 //   invited  -> the host waits, the guest accepts or declines
 //   ready    -> the random country is revealed and its map is preloaded; either player
 //               can press Start
-//   playing  -> 3-2-1 countdown, the same for both players (server clock), then the
-//               match clock runs (the playable map arrives in part 3C)
-//   declined / cancelled / expired / finished -> a closing message
+//   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
+//               players (server clock), then the match clock runs and they race
+//   finished -> if you were playing, PlayScreen stays up with a final card; otherwise
+//               (you open the link later) a bare-bones summary
+//   declined / cancelled / expired -> a closing message
 // The room asks the server for the match every second, so both players see changes
 // (accepted, started, cancelled...) almost instantly without any extra setup.
-
-// How long "Go!" stays on screen after the countdown reaches zero.
-const GO_FLASH_MS = 900;
 
 function Player({ player, isMe, role }) {
   return (
@@ -79,41 +77,20 @@ function MapStatus({ preload }) {
   );
 }
 
-// `mm:ss` left on the clock; rounds up so it never shows 0:00 while time remains.
-function formatClock(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
-}
-
-// status === 'playing'. Everything here is computed from the SERVER's clock: started_at
-// is when the match clock begins (the 3-2-1 comes before it) and ends_at when it stops.
-function Playing({ match, clock }) {
-  const now = useServerNow(clock);
-  const untilStart = toMs(match.started_at) - now;
-
-  if (untilStart > -GO_FLASH_MS) {
-    return (
-      <div className="mp-state">
-        <Countdown remainingMs={untilStart} />
-        <p className="mp-note mp-count-note">{untilStart > 0 ? 'Get ready.' : ''}</p>
-      </div>
-    );
-  }
-
-  const left = toMs(match.ends_at) - now;
+// The centred card with the brand header that wraps every screen except the playable one.
+function Card({ children }) {
   return (
-    <div className="mp-state">
-      <div className="mp-country">
-        <span className="mp-kicker">Playing on</span>
-        <span className="mp-country-name">{match.country.nombre}</span>
-        <span className="mp-country-meta">{match.country.total_regions} regions</span>
+    <div className="match-page">
+      <div className="mp-card">
+        <div className="mp-brand">
+          <Link className="mp-brand-id" to="/">
+            <div className="mark">G</div>
+            <span className="word">Geo<i>taria</i></span>
+          </Link>
+          <span className="mp-brand-tag">1 vs 1</span>
+        </div>
+        {children}
       </div>
-      <p className="mp-clock" aria-label="Time left">{formatClock(left)}</p>
-      <p className="mp-note">
-        {left > 0
-          ? 'The match is running. The playable map arrives in the next update.'
-          : 'Time is up. Waiting for the result…'}
-      </p>
     </div>
   );
 }
@@ -137,8 +114,13 @@ function MatchRoom({ id }) {
   );
   const m = poll.data;
 
+  // Once this player has seen the match running, the playable screen stays up when it ends
+  // (final card on top of the map) instead of dropping to the bare summary.
+  const [played, setPlayed] = useState(false);
+  if (m && m.status === 'playing' && !played) setPlayed(true);
+
   // The map starts downloading as soon as the country is drawn (status 'ready').
-  const preloadSlug = m && m.country && (m.status === 'ready' || m.status === 'playing')
+  const preloadSlug = m && m.country && (m.status === 'ready' || m.status === 'playing' || (m.status === 'finished' && played))
     ? m.country.slug
     : null;
   const preload = useCountryPreload(preloadSlug);
@@ -234,8 +216,6 @@ function MatchRoom({ id }) {
           </div>
         </div>
       );
-    } else if (m.status === 'playing') {
-      body = <Playing match={m} clock={clock} />;
     } else if (m.status === 'finished') {
       // Bare-bones summary: the full result screen comes in part 3D.
       const mine = isHost ? m.host : m.guest;
@@ -257,8 +237,13 @@ function MatchRoom({ id }) {
     }
   }
 
+  // The match is running (or just ended and this player was in it): full-screen game.
+  if (m && m.country && (m.status === 'playing' || (m.status === 'finished' && played))) {
+    return <PlayScreen match={m} clock={clock} preload={preload} reload={poll.reload} />;
+  }
+
   return (
-    <>
+    <Card>
       {m && (
         <div className="mp-versus" aria-label="Players">
           <Player player={m.host} isMe={m.my_role === 'host'} role="host" />
@@ -269,7 +254,7 @@ function MatchRoom({ id }) {
       {m && poll.error && <p className="mp-warn">Connection lost — retrying…</p>}
       {actions.error && <p className="mp-error" role="alert">{actions.error}</p>}
       {body}
-    </>
+    </Card>
   );
 }
 
@@ -285,20 +270,7 @@ export default function MatchPage() {
   if (!loggedIn) return <Navigate to="/login" replace />;
   const valid = /^\d+$/.test(id || '');
 
-  return (
-    <div className="match-page">
-      <div className="mp-card">
-        <div className="mp-brand">
-          <Link className="mp-brand-id" to="/">
-            <div className="mark">G</div>
-            <span className="word">Geo<i>taria</i></span>
-          </Link>
-          <span className="mp-brand-tag">1 vs 1</span>
-        </div>
-        {valid
-          ? <MatchRoom key={id} id={id} />
-          : <Closed title="Match not found" text="That link isn't valid." />}
-      </div>
-    </div>
-  );
+  return valid
+    ? <MatchRoom key={id} id={id} />
+    : <Card><Closed title="Match not found" text="That link isn't valid." /></Card>;
 }

@@ -1,0 +1,89 @@
+/* Playable screen of a 1 vs 1 match. It reuses the single-player game (Country.css,
+   scoped to .country-page) and adds the scoreboard on top plus two covers: the 3-2-1
+   and the final card. The covers use .match-page so Countdown keeps its styles. */
+
+.country-page.mpg{ position:relative; }
+
+/* ---- scoreboard: [menu] [me] [clock + country] [rival] ---- */
+.country-page .mpg-bar{
+  flex:0 0 auto;
+  display:grid; grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px;
+  padding:12px 18px 0;
+}
+.country-page .mpg-side{ display:flex; align-items:center; gap:10px; min-width:0; }
+.country-page .mpg-side:last-child{ flex-direction:row-reverse; text-align:right; }
+.country-page .mpg-avatar{
+  flex:none; width:40px; height:40px; border-radius:50%;
+  border:1px solid var(--line); background:rgba(201,162,75,.06);
+  display:grid; place-items:center; overflow:hidden;
+  font:600 16px Fraunces, Georgia, serif; color:var(--accent);
+  transition:border-color var(--ease);
+}
+.country-page .mpg-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.country-page .mpg-side.me .mpg-avatar{ border-color:var(--accent); }
+.country-page .mpg-who{ display:flex; flex-direction:column; min-width:0; }
+.country-page .mpg-name{
+  font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.country-page .mpg-score{
+  font:600 28px/1.05 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--ink);
+  transition:color var(--ease);
+}
+.country-page .mpg-side.lead .mpg-score{ color:var(--accent); }
+
+.country-page .mpg-mid{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:96px; }
+.country-page .mpg-clock{
+  font:600 30px/1 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--ink);
+}
+.country-page .mpg-clock.low{ color:var(--danger); }
+.country-page .mpg-country{
+  max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent);
+}
+
+/* ---- covers: the 3-2-1 and the final card ---- */
+.country-page .mpg-cover.match-page{
+  position:absolute; inset:0; z-index:40;
+  min-height:0; padding:24px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  background-color:rgba(8,22,34,.94); background-image:none;
+  transition:background-color .35s ease;
+}
+/* While "Go!" shows the match is already running: let the player type right away. */
+.country-page .mpg-cover.match-page.go{ background-color:transparent; pointer-events:none; }
+.country-page .mpg-cover.match-page.end{ background-color:rgba(8,22,34,.82); }
+
+.country-page .mpg-end-card{
+  width:100%; max-width:380px; padding:26px 26px 28px;
+  display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;
+  background:var(--panel); border:1px solid var(--line); box-shadow:0 20px 48px rgba(3,9,15,.6);
+  animation:geotaria-rise .4s cubic-bezier(.2,.8,.2,1) both;
+}
+.country-page .mpg-end-card h2{ margin:0; font:500 30px/1.15 Fraunces, Georgia, serif; color:var(--ink); }
+.country-page .mpg-final{
+  margin:6px 0 0; display:flex; align-items:baseline; gap:12px;
+  font:600 54px/1 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--accent);
+}
+.country-page .mpg-final-sep{ color:var(--muted); font-size:38px; }
+.country-page .mpg-final-names{ margin:0 0 8px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+
+@media (max-width:720px){
+  .country-page .mpg-bar{
+    grid-template-columns:44px minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;
+  }
+  .country-page .mpg-avatar{ width:32px; height:32px; font-size:13px; }
+  .country-page .mpg-score{ font-size:22px; }
+  .country-page .mpg-name{ font-size:10.5px; }
+  .country-page .mpg-mid{ min-width:70px; }
+  .country-page .mpg-clock{ font-size:23px; }
+  .country-page .mpg-country{ display:none; }
+}
+@media (max-width:420px){
+  /* Names don't fit next to the clock on a narrow phone: avatars + scores only. */
+  .country-page .mpg-name{ display:none; }
+}
+@media (prefers-reduced-motion:reduce){
+  .country-page .mpg-end-card{ animation:none; }
+  .country-page .mpg-cover.match-page{ transition:none; }
+}

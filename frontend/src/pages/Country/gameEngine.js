@@ -17,7 +17,19 @@ import * as d3 from 'd3';
 import { api } from '../../lib/api';
 import { normalizeText, findLocalGuess, findExactLocalMatch, hasLongerCandidate } from '../../lib/textMatch';
 
-export function createGame({ country, texts, els, geoUrl }) {
+// MODO ONLINE (partida 1 contra 1, ver pages/Match): si se pasa `online`, el motor no
+// decide nada por su cuenta. Cada intento se manda al servidor (`online.guess`) y solo se
+// pinta lo que el servidor confirma. No hay pantalla de inicio, ni rendirse, ni resultado:
+// quien lo monta controla la fase con setPhase('waiting' | 'playing' | 'ended').
+//   online = {
+//     guess(text)   -> Promise<{ result: 'correct'|'already'|'wrong', region_id, name, score }>
+//     loadAnswers() -> Promise<number[]>   region_id ya acertados (al recargar la página)
+//     onScore(n)    se llama cada vez que cambia mi número de aciertos
+//     onReady()     el mapa está pintado y listo para jugar
+//     errorText(err) -> string   texto para un fallo de red / de la partida
+//   }
+export function createGame({ country, texts, els, geoUrl, online }) {
+  const isOnline = Boolean(online);
   // Nodos capturados UNA vez: en StrictMode React suelta los refs antes de ejecutar
   // el cleanup, así que destroy() no puede volver a leerlos de `els`.
   const svgEl = els.svg;
@@ -92,6 +104,11 @@ export function createGame({ country, texts, els, geoUrl }) {
     countEl.textContent = solved.size;
     totalEl.textContent = TOTAL;
     progressBar.style.width = (TOTAL ? Math.min(100, (solved.size / TOTAL) * 100) : 0) + '%';
+
+    if (isOnline) {
+      if (online.onScore) online.onScore(solved.size);
+      return; // aquí termina la partida el servidor, no el motor
+    }
 
     if (phase === 'playing' && regions.length && solved.size === regions.length) {
       endQuiz('complete');
@@ -530,22 +547,32 @@ export function createGame({ country, texts, els, geoUrl }) {
 
   // ---------------- REGION SOLVED ----------------
 
-  function addSolved(region) {
+  // opts.quiet: pinta sin toast, feedback ni animación (al recuperar una partida).
+  // opts.clear: false = no vacía el campo de texto (en online el jugador puede haber
+  // empezado a escribir otra región mientras el servidor respondía).
+  function addSolved(region, opts = {}) {
     if (!region || solved.has(region.id)) return;
+    const quiet = Boolean(opts.quiet);
+    const clear = opts.clear !== false;
 
     solved.add(region.id);
 
     const el = featureByRegion.get(region.id);
     if (el) {
       el.classed('found', true).classed('revealed-missing', false);
-      flash(el.node(), 'just-found');
+      if (!quiet) flash(el.node(), 'just-found');
     }
 
     paintSlot(region, 'solved');
     const slot = slotById.get(region.id);
-    if (slot) {
+    if (slot && !quiet) {
       flash(slot, 'just');
       revealSlot(slot);
+    }
+
+    if (quiet) {
+      updateCount();
+      return;
     }
 
     // Primero el feedback y luego updateCount(): si esta era la última región,
@@ -555,8 +582,8 @@ export function createGame({ country, texts, els, geoUrl }) {
     setFeedback(texts.correctPrefix + (region.display || ''), 'ok');
     updateCount();
 
-    guessEl.value = '';
-    guessEl.focus();
+    if (clear) guessEl.value = '';
+    if (!guessEl.disabled) guessEl.focus();
   }
 
   // ---------------- BACKEND: LOAD REGIONS ----------------
@@ -601,6 +628,11 @@ export function createGame({ country, texts, els, geoUrl }) {
     const raw = guessEl.value.trim();
     if (!raw) return;
 
+    if (isOnline) {
+      submitOnline(raw, false);
+      return;
+    }
+
     // Siempre primero en local (instantáneo, sin red): los nombres válidos ya
     // están en `regions`. Al backend solo se pregunta si lo local no encuentra nada.
     let region = findLocalGuess(regions, raw);
@@ -630,6 +662,86 @@ export function createGame({ country, texts, els, geoUrl }) {
     }
 
     addSolved(region);
+  }
+
+  // ---------------- ONLINE: the server decides ----------------
+
+  const inFlight = new Set(); // textos normalizados ya enviados y sin respuesta
+
+  // La región local que corresponde a la respuesta del servidor. region_id solo está
+  // en las regiones que loadRegions() pudo casar; si no, se busca por el nombre.
+  function regionFromServer(data) {
+    if (data.region_id != null) {
+      const byId = regions.find((r) => r.region_id === data.region_id);
+      if (byId) return byId;
+    }
+    const key = normalizeSafe(data.name);
+    if (!key) return null;
+    return regions.find((r) => (r.names || []).some((n) => normalizeSafe(n) === key)) || null;
+  }
+
+  // silent = intento automático al teclear: un fallo no molesta con mensajes.
+  async function submitOnline(raw, silent) {
+    const key = normalizeSafe(raw);
+    if (!key || inFlight.has(key)) return;
+    inFlight.add(key);
+    try {
+      const data = await online.guess(raw);
+      if (disposed) return;
+      // Aunque el tiempo acabe de terminar aquí, un acierto que el servidor ya contó se pinta.
+      const stillTyping = guessEl.value.trim() !== raw.trim();
+
+      if (data.result === 'wrong') {
+        if (!silent && phase === 'playing') {
+          setFeedback(texts.notFoundMessage, 'no');
+          guessEl.select();
+        }
+        return;
+      }
+
+      const region = regionFromServer(data);
+      if (data.result === 'correct') {
+        if (region) addSolved(region, { clear: !stillTyping });
+        else setFeedback(texts.correctPrefix + (data.name || ''), 'ok'); // sin hueco en el mapa
+        return;
+      }
+
+      // 'already': normalmente ya la tengo pintada; si no (p. ej. falló la recuperación), se pinta.
+      if (region && !solved.has(region.id)) {
+        addSolved(region, { clear: !stillTyping });
+      } else if (!silent) {
+        setFeedback(texts.alreadyFoundMessage);
+        guessEl.select();
+      }
+    } catch (err) {
+      if (disposed) return;
+      if (!silent || phase === 'playing') {
+        setFeedback(online.errorText ? online.errorText(err) : texts.notFoundMessage, 'no');
+      }
+    } finally {
+      inFlight.delete(key);
+    }
+  }
+
+  // Fase que pide quien monta el juego. Se aplica en cuanto el mapa está listo.
+  let desired = 'waiting';
+  let ready = false;
+
+  function applyDesired() {
+    if (!isOnline || !ready || disposed) return;
+    if (desired === 'playing' && phase === 'idle') {
+      phase = 'playing';
+      guessEl.disabled = false;
+      submitBtn.disabled = false;
+      setFeedback('');
+      guessEl.focus();
+    } else if (desired === 'ended' && phase !== 'ended') {
+      phase = 'ended';
+      guessEl.disabled = true;
+      submitBtn.disabled = true;
+      guessEl.blur();
+      revealMissingOnMap(); // para que el jugador vea qué se le escapó
+    }
   }
 
   // ---------------- CONTROLS ----------------
@@ -684,15 +796,18 @@ export function createGame({ country, texts, els, geoUrl }) {
     const region = findExactLocalMatch(regions, raw, solved);
     if (!region || solved.has(region.id)) return;
 
+    // Online solo se usa lo local para saber CUÁNDO preguntar; el acierto lo confirma el servidor.
+    const accept = () => (isOnline ? submitOnline(raw, true) : addSolved(region));
+
     if (hasLongerCandidate(regions, region, raw, solved)) {
       liveTimer = setTimeout(() => {
         if (disposed || phase !== 'playing') return;
         if (guessEl.value.trim() !== raw || solved.has(region.id)) return;
-        addSolved(region);
+        accept();
       }, LIVE_WAIT_MS);
       return;
     }
-    addSolved(region);
+    accept();
   });
 
   // ---------------- LOAD GEOMETRY ----------------
@@ -739,6 +854,29 @@ export function createGame({ country, texts, els, geoUrl }) {
 
   // ---------------- BOOTSTRAP ----------------
 
+  // Online: casa las regiones con el backend, repinta lo ya acertado (recarga a mitad de
+  // partida) y avisa de que se puede jugar.
+  async function bootstrapOnline() {
+    await loadRegions();
+    if (disposed) return;
+
+    try {
+      const ids = await online.loadAnswers();
+      if (disposed) return;
+      (ids || []).forEach((id) => {
+        const region = regions.find((r) => r.region_id === id);
+        if (region) addSolved(region, { quiet: true });
+      });
+    } catch (err) {
+      console.warn('Could not recover the answers of this match', err);
+    }
+
+    loadingOverlay.classList.add('hidden');
+    ready = true;
+    if (online.onReady) online.onReady();
+    applyDesired();
+  }
+
   async function bootstrap() {
     // Recuadros vacíos ya desde el principio (así el mapa se calcula con su tamaño final).
     buildSlots();
@@ -764,6 +902,11 @@ export function createGame({ country, texts, els, geoUrl }) {
       mapRendered = true;
       updateCount();
 
+      if (isOnline) {
+        await bootstrapOnline();
+        return;
+      }
+
       loadingOverlay.classList.add('hidden');
       showIntro();
 
@@ -782,6 +925,11 @@ export function createGame({ country, texts, els, geoUrl }) {
   bootstrap();
 
   return {
+    // Solo online: 'waiting' (cuenta atrás) | 'playing' | 'ended'.
+    setPhase(next) {
+      desired = next;
+      applyDesired();
+    },
     destroy() {
       disposed = true;
       cancelAnimationFrame(resultRaf);

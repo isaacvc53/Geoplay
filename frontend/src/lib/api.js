@@ -307,4 +307,16 @@ export const api = {
   startMatch(matchId) {
     return this._post(`/matches/${encodeURIComponent(matchId)}/start`, {});
   },
+
+  // Submit a name during a running match. The SERVER decides: -> { result: 'correct' |
+  // 'already' | 'wrong', region_id, name, score, status }. Only 'correct' scores.
+  guessMatch(matchId, text) {
+    return this._post(`/matches/${encodeURIComponent(matchId)}/guess`, { text });
+  },
+
+  // -> { mine: [region_id], opponent: [region_id] | null }. Lets a reload mid-match
+  // repaint what I had already found. The rival's regions only show once it's over.
+  getMatchAnswers(matchId) {
+    return this._get(`/matches/${encodeURIComponent(matchId)}/answers`);
+  },
 };

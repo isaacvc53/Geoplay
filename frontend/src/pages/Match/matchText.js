@@ -26,6 +26,8 @@ const ERROR_MESSAGES = {
   match_not_pending: 'This invitation is no longer available.',
   match_not_cancellable: "This match can't be cancelled anymore.",
   match_not_ready: "This match can't be started anymore.",
+  match_not_playing: 'The match is over.',
+  match_not_started: 'Wait for the countdown to finish.',
   no_countries_available: 'No countries are available to draw right now.',
 };
 
