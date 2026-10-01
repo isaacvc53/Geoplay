@@ -1,6 +1,6 @@
 from contextlib import contextmanager
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from models.match import (
@@ -8,6 +8,7 @@ from models.match import (
     GuessOut,
     MatchAnswers,
     MatchCreate,
+    MatchHistory,
     MatchOut,
     MyMatches,
     PlayableCountry,
@@ -70,6 +71,18 @@ def paises_jugables(
 ):
     """Países entre los que se puede elegir al retar (con regiones y mapa)."""
     return match_service.list_playable_countries(db)
+
+
+@matches_router.get("/history", response_model=MatchHistory)
+def historial_de_partidas(
+    limit: int = Query(20, ge=1, le=50),
+    offset: int = Query(0, ge=0),
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mis partidas terminadas, de la más reciente a la más antigua, con mi balance
+    de victorias/derrotas/empates. Paginado con limit/offset."""
+    return match_service.get_history(db, usuario_actual, limit, offset)
 
 
 @matches_router.get("/{match_id}", response_model=MatchOut)

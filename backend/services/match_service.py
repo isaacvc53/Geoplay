@@ -7,10 +7,10 @@ from pathlib import Path
 
 from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from models.country_db import Country
-from models.match import ALLOWED_DURATIONS
+from models.match import ALLOWED_DURATIONS, UNTIMED
 from models.match_db import (
     OPEN_STATUSES,
     STATUS_CANCELLED,
@@ -41,6 +41,13 @@ READY_TTL = timedelta(minutes=15)
 # Un país solo puede salir sorteado si tiene al menos estas regiones: con menos
 # la partida sería trivial. (Los países del quiz mundial no tienen regiones.)
 MIN_REGIONS = 5
+
+# Una partida SIN tiempo (duration_seconds == 0) no tiene cuenta atrás de final, pero sí un
+# tope de seguridad: si a la hora nadie la ha completado ni abandonado, se cierra y gana
+# quien lleve más aciertos (empate si van igualados). Sin él, un jugador que cierra la
+# pestaña dejaría a los dos bloqueados para siempre. Se guarda en `ends_at`: así el cierre
+# automático (_finish_due) funciona igual que con tiempo; el frontend lo ignora como reloj.
+UNTIMED_CAP = timedelta(minutes=60)
 
 # Cuenta atrás entre pulsar "Start" y que empiece a correr el tiempo.
 COUNTDOWN = timedelta(seconds=3)
@@ -233,6 +240,17 @@ def _pick_random_country(db: Session) -> Country:
     return db.get(Country, random.choice(rows).id)
 
 
+def _end_reason(m: Match, total_regions: int) -> str:
+    """Por qué terminó una partida: "completed" (alguien halló todas las regiones),
+    "time" (se acabó el tiempo; en una partida sin tiempo, el tope de seguridad) o
+    "forfeit" (alguien abandonó)."""
+    if total_regions and max(m.host_score, m.guest_score) >= total_regions:
+        return "completed"
+    if m.finished_at and m.ends_at and m.finished_at >= m.ends_at:
+        return "time"
+    return "forfeit"
+
+
 def serialize(db: Session, m: Match, me: User) -> dict:
     """Convierte la partida al formato de MatchOut, visto desde `me`."""
     country = None
@@ -249,15 +267,11 @@ def serialize(db: Session, m: Match, me: User) -> dict:
             "total_regions": total or 0,
         }
 
-    end_reason = None
-    if m.status == STATUS_FINISHED:
-        total_regions = country["total_regions"] if country else 0
-        if total_regions and max(m.host_score, m.guest_score) >= total_regions:
-            end_reason = "completed"
-        elif m.finished_at and m.ends_at and m.finished_at >= m.ends_at:
-            end_reason = "time"
-        else:
-            end_reason = "forfeit"
+    end_reason = (
+        _end_reason(m, country["total_regions"] if country else 0)
+        if m.status == STATUS_FINISHED
+        else None
+    )
 
     def player(u: User, score: int) -> dict:
         return {
@@ -432,7 +446,8 @@ def start_match(db: Session, me: User, match_id: int) -> Match:
     now = now_utc_naive()
     m.status = STATUS_PLAYING
     m.started_at = now + COUNTDOWN
-    m.ends_at = m.started_at + timedelta(seconds=m.duration_seconds)
+    span = UNTIMED_CAP if m.duration_seconds == UNTIMED else timedelta(seconds=m.duration_seconds)
+    m.ends_at = m.started_at + span
     db.commit()
     db.refresh(m)
     return m
@@ -533,6 +548,92 @@ def get_answers(db: Session, me: User, match_id: int) -> dict:
     return {
         "mine": ids(me.id),
         "opponent": ids(rival_id) if m.status == STATUS_FINISHED else None,
+    }
+
+
+def get_history(db: Session, me: User, limit: int, offset: int) -> dict:
+    """Mis partidas terminadas (las canceladas, rechazadas y caducadas no cuentan),
+    de la más reciente a la más antigua, más mi balance de victorias/derrotas/empates.
+    No hay tabla nueva: `matches` ya conserva todo lo necesario."""
+    _expire_stale(db)  # cierra las partidas cuyo tiempo ya pasó
+    mine = and_(
+        Match.status == STATUS_FINISHED,
+        or_(Match.host_id == me.id, Match.guest_id == me.id),
+    )
+
+    wins = losses = draws = 0
+    for winner_id, n in (
+        db.query(Match.winner_id, func.count(Match.id)).filter(mine).group_by(Match.winner_id)
+    ):
+        if winner_id is None:
+            draws += n
+        elif winner_id == me.id:
+            wins += n
+        else:
+            losses += n
+
+    rows = (
+        db.query(Match)
+        .options(selectinload(Match.host), selectinload(Match.guest), selectinload(Match.country))
+        .filter(mine)
+        .order_by(func.coalesce(Match.finished_at, Match.created_at).desc(), Match.id.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    # Nº de regiones de cada país, en una sola consulta (no una por partida).
+    country_ids = {m.country_id for m in rows if m.country_id is not None}
+    totals = (
+        dict(
+            db.query(Region.country_id, func.count(Region.id))
+            .filter(Region.country_id.in_(country_ids))
+            .group_by(Region.country_id)
+            .all()
+        )
+        if country_ids
+        else {}
+    )
+
+    items = []
+    for m in rows:
+        is_host = m.host_id == me.id
+        rival = m.guest if is_host else m.host
+        total = totals.get(m.country_id, 0)
+        items.append(
+            {
+                "id": m.id,
+                "result": (
+                    "draw" if m.winner_id is None else "win" if m.winner_id == me.id else "loss"
+                ),
+                "duration_seconds": m.duration_seconds,
+                "country": (
+                    {
+                        "id": m.country.id,
+                        "slug": m.country.slug,
+                        "nombre": m.country.nombre,
+                        "total_regions": total,
+                    }
+                    if m.country
+                    else None
+                ),
+                "my_score": m.host_score if is_host else m.guest_score,
+                "opponent": {
+                    "user_id": rival.id,
+                    "username": rival.username,
+                    "avatar_updated_at": rival.avatar_updated_at,
+                    "score": m.guest_score if is_host else m.host_score,
+                },
+                "started_at": m.started_at,
+                "finished_at": m.finished_at,
+                "end_reason": _end_reason(m, total),
+            }
+        )
+
+    return {
+        "items": items,
+        "total": wins + losses + draws,
+        "record": {"wins": wins, "losses": losses, "draws": draws},
     }
 
 

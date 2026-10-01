@@ -275,12 +275,21 @@ export const api = {
   // --- Multiplayer matches (1 vs 1) ---
 
   // Challenge an accepted friend. Resolves with the new match (status 'invited').
+  // durationSeconds 0 = no time limit (first to find every region wins).
   // countryId (optional): the host picks the country; without it a random one is drawn
   // when the friend accepts.
   createMatch(username, durationSeconds, countryId = null) {
     const body = { username, duration_seconds: durationSeconds };
     if (countryId != null) body.country_id = countryId;
     return this._post(`/matches`, body);
+  },
+
+  // My finished matches, newest first, plus my record:
+  // -> { items: [{ id, result: 'win'|'loss'|'draw', duration_seconds, country, my_score,
+  //                opponent: { username, score, ... }, finished_at, end_reason }],
+  //      total, record: { wins, losses, draws } }
+  getMatchHistory(limit = 10, offset = 0) {
+    return this._get(`/matches/history?limit=${limit}&offset=${offset}`);
   },
 
   // Countries the host can pick when challenging: [{ id, slug, nombre, total_regions }].

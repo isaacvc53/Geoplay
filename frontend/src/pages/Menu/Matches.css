@@ -71,3 +71,18 @@
   background:rgba(201,162,75,.12); color:var(--brass-bright);
 }
 .menu-page .challenge-country .country-picker-empty{ padding:9px 12px; font-size:14px; color:var(--parchment-dim); }
+
+/* Match history (friends drawer) */
+.menu-page .history-record{ margin:0 0 10px; font-size:13px; color:var(--parchment-dim); }
+.menu-page .history-record b{ color:var(--parchment); font-weight:700; }
+.menu-page .history-record b.win{ color:var(--brass-bright); }
+.menu-page .history-record b.loss{ color:var(--rust); }
+.menu-page .history-result{
+  display:inline-block; padding:1px 7px; border-radius:var(--radius);
+  font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  border:1px solid var(--line); color:var(--parchment-dim);
+}
+.menu-page .history-result.win{ border-color:var(--brass); background:rgba(201,162,75,.16); color:var(--brass-bright); }
+.menu-page .history-result.loss{ border-color:var(--rust); background:var(--rust-bg); color:var(--rust); }
+.menu-page .history-score{ color:var(--parchment); font-weight:600; font-variant-numeric:tabular-nums; }
+.menu-page .history-more{ margin-top:10px; align-self:flex-start; }

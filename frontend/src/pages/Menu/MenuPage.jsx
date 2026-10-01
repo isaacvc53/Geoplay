@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import FriendsPanel from './FriendsPanel';
+import { useMatchHistory } from './useMatchHistory';
 import { useFriends } from './useFriends';
 import { useMyMatches } from './useMyMatches';
 import MatchBanner from './MatchBanner';
@@ -149,6 +150,7 @@ export default function MenuPage() {
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
   const matches = useMyMatches(loggedIn);
+  const history = useMatchHistory(loggedIn);
   const lastResult = useLastResult(loggedIn, Boolean(matches.current));
   const availableCount = useAvailableCount();
   // Badge on the friends icon: friend requests + challenges waiting for an answer.
@@ -185,9 +187,10 @@ export default function MenuPage() {
   // Refresh friends and requests every time the drawer is opened.
   const reloadFriends = friends.reload;
   const reloadMatches = matches.reload;
+  const reloadHistory = history.reload;
   useEffect(() => {
-    if (openDrawer === 'friends' && loggedIn) { reloadFriends(); reloadMatches(); }
-  }, [openDrawer, loggedIn, reloadFriends, reloadMatches]);
+    if (openDrawer === 'friends' && loggedIn) { reloadFriends(); reloadMatches(); reloadHistory(); }
+  }, [openDrawer, loggedIn, reloadFriends, reloadMatches, reloadHistory]);
 
   const toggle = (name) => setOpenDrawer((cur) => (cur === name ? null : name));
   const close = () => setOpenDrawer(null);
@@ -236,7 +239,7 @@ export default function MenuPage() {
 
         {/* Friends */}
         <Drawer id="friendsDrawer" label="Friends" title="Friends" open={openDrawer === 'friends'} onClose={close}>
-          <FriendsPanel loggedIn={loggedIn} friends={friends} matches={matches} />
+          <FriendsPanel loggedIn={loggedIn} friends={friends} matches={matches} history={history} />
         </Drawer>
 
         {/* Achievements */}
@@ -320,7 +323,7 @@ export default function MenuPage() {
               onClick={(e) => { e.preventDefault(); setOpenDrawer('friends'); }}
             >
               <MultiplayerBody
-                desc="Challenge a friend to a 1 vs 1: the same random country, whoever finds more regions in time wins."
+                desc="Challenge a friend to a 1 vs 1 on the same country: against the clock or with no time limit."
                 pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : 'Available'}
                 action={loggedIn ? 'Pick a friend →' : 'Sign in to play →'}
               />

@@ -9,7 +9,7 @@ import { useCountryPreload } from './useCountryPreload';
 import { createServerClock } from './serverClock';
 import PlayScreen from './PlayScreen';
 import CountryRoulette, { markRevealed, wasRevealed } from './CountryRoulette';
-import { TERMINAL_STATUSES, countryLabel, formatDuration } from './matchText';
+import { TERMINAL_STATUSES, countryLabel, describeMatch, formatDuration, isUntimed } from './matchText';
 import './Match.css';
 
 // Match room (/partida/:id). It covers everything before the first guess:
@@ -160,6 +160,7 @@ function MatchRoom({ id }) {
     const isHost = m.my_role === 'host';
     const rival = isHost ? m.guest : m.host;
     const length = formatDuration(m.duration_seconds);
+    const untimed = isUntimed(m.duration_seconds);
 
     if (m.status === 'invited' && isHost) {
       body = (
@@ -167,8 +168,8 @@ function MatchRoom({ id }) {
           <h2>Waiting for {rival.username}…</h2>
           <p className="mp-note">
             {m.country_chosen && m.country
-              ? <>Your {length} challenge on {countryLabel(m.country)} was sent.</>
-              : <>Your {length} challenge was sent. A random country is drawn as soon as they accept.</>}
+              ? <>Your {untimed ? 'untimed' : length} challenge on {countryLabel(m.country)} was sent.</>
+              : <>Your {untimed ? 'untimed' : length} challenge was sent. A random country is drawn as soon as they accept.</>}
           </p>
           <ExpiryNote expiresAt={m.invite_expires_at} />
           <button type="button" className="mp-btn" disabled={disabled} onClick={() => actions.cancel(m.id)}>
@@ -182,9 +183,11 @@ function MatchRoom({ id }) {
           <h2>{rival.username} challenged you</h2>
           <p className="mp-note">
             {m.country_chosen && m.country
-              ? <>A {length} match on {countryLabel(m.country)}</>
-              : <>A {length} match on a random country</>}
-            : whoever finds more regions in time wins.
+              ? <>{describeMatch(m.duration_seconds, { capital: true })} on {countryLabel(m.country)}</>
+              : <>{describeMatch(m.duration_seconds, { capital: true })} on a random country</>}
+            {untimed
+              ? ': no clock, the first to find every region wins.'
+              : ': whoever finds more regions in time wins.'}
           </p>
           <ExpiryNote expiresAt={m.invite_expires_at} />
           <div className="mp-actions">
@@ -213,7 +216,9 @@ function MatchRoom({ id }) {
           )}
           <MapStatus preload={preload} />
           <p className="mp-note">
-            Either of you can start. You both get a 3-second countdown, then the clock runs.
+            {untimed
+              ? 'Either of you can start. You both get a 3-second countdown, then the race begins: the first to find every region wins.'
+              : 'Either of you can start. You both get a 3-second countdown, then the clock runs.'}
           </p>
           <div className="mp-actions">
             <button

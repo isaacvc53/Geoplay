@@ -5,7 +5,7 @@ import UserAvatar from '../../components/UserAvatar';
 import { formatRelative } from '../Profile/profileLogic';
 import CountryPicker from '../Profile/CountryPicker';
 import { useMatchActions } from '../Match/useMatchActions';
-import { DEFAULT_DURATION, DURATIONS, countryLabel, formatDuration, opponentOf } from '../Match/matchText';
+import { DEFAULT_DURATION, DURATIONS, countryLabel, formatDuration, isUntimed, opponentOf } from '../Match/matchText';
 import './Friends.css';
 import './Matches.css';
 
@@ -45,7 +45,19 @@ function Avatar({ name }) {
   return <span className="friend-avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>;
 }
 
-export default function FriendsPanel({ loggedIn, friends, matches }) {
+const RESULT_LABEL = { win: 'Won', loss: 'Lost', draw: 'Draw' };
+
+// "Won · Spain · 3 min · 12–9 · 2d ago" pieces for one finished match.
+function historyMeta(h) {
+  const parts = [];
+  if (h.country) parts.push(countryLabel(h.country));
+  parts.push(formatDuration(h.duration_seconds));
+  if (h.end_reason === 'forfeit') parts.push(h.result === 'win' ? 'they left' : 'you left');
+  parts.push(formatRelative(h.finished_at));
+  return parts.join(' · ');
+}
+
+export default function FriendsPanel({ loggedIn, friends, matches, history }) {
   const { data, error, loading, reload } = friends;
   const { current: currentMatch, invitations } = matches;
   const actions = useMatchActions({ reload: matches.reload });
@@ -433,7 +445,9 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
                       {pickedCountry
                         ? `${pickedCountry.label} it is. ${f.username} sees it in the invitation. `
                         : `A random country is drawn when ${f.username} accepts. `}
-                      Whoever finds more regions in time wins.
+                      {isUntimed(duration)
+                        ? 'No clock: the first to find every region wins (it ends after 60 min at most).'
+                        : 'Whoever finds more regions in time wins.'}
                     </p>
                     <span className="friend-actions">
                       <button
@@ -453,6 +467,47 @@ export default function FriendsPanel({ loggedIn, friends, matches }) {
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {history && history.total > 0 && (
+        <section className="friends-section">
+          <h3>Match history <span className="friends-count">{history.total}</span></h3>
+          {history.record && (
+            <p className="history-record" aria-label="Your record">
+              <b className="win">{history.record.wins}</b> won ·{' '}
+              <b className="loss">{history.record.losses}</b> lost ·{' '}
+              <b>{history.record.draws}</b> {history.record.draws === 1 ? 'draw' : 'draws'}
+            </p>
+          )}
+          <ul>
+            {history.items.map((h) => (
+              <li className="friend-row" key={h.id}>
+                <UserAvatar className="friend-avatar" userId={h.opponent.user_id} name={h.opponent.username} version={h.opponent.avatar_updated_at} />
+                <span className="friend-who">
+                  <span className="friend-name">
+                    <span className={`history-result ${h.result}`}>{RESULT_LABEL[h.result]}</span>
+                    {' '}vs {h.opponent.username}
+                  </span>
+                  <span className="friend-meta">
+                    <span className="history-score">{h.my_score}–{h.opponent.score}</span>
+                    {' · '}{historyMeta(h)}
+                  </span>
+                </span>
+                <span className="friend-actions">
+                  <Link className="friend-btn" to={`/partida/${h.id}`}>View</Link>
+                </span>
+              </li>
+            ))}
+          </ul>
+          {history.error && (
+            <p className="challenge-note">Couldn&apos;t load more matches. Check your connection.</p>
+          )}
+          {history.hasMore && (
+            <button type="button" className="friend-btn history-more" disabled={history.loadingMore} onClick={history.loadMore}>
+              {history.loadingMore ? 'Loading…' : 'Show more'}
+            </button>
+          )}
         </section>
       )}
 

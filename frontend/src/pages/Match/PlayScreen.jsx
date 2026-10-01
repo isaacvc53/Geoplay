@@ -8,7 +8,7 @@ import '../Country/Country.css';
 import Countdown from './Countdown';
 import { useServerNow } from './useServerNow';
 import { toMs } from './serverClock';
-import { matchErrorText } from './matchText';
+import { formatElapsed, isUntimed, matchErrorText } from './matchText';
 import { clearPending, markPending } from './pendingResult';
 import './MatchPlay.css';
 
@@ -20,6 +20,8 @@ import './MatchPlay.css';
 //     the server confirms is painted.
 //   - Everything about time comes from the SERVER clock (started_at / ends_at), so both
 //     players see the same 3-2-1 and the same time left.
+//   - An untimed match (duration_seconds 0) shows the time ELAPSED counting up instead. Its
+//     ends_at is only the server's safety cap, so it never drives the clock or the phase.
 //   - The rival's score comes from the match poll that MatchRoom already runs every
 //     second; mine is updated instantly from the confirmed guesses.
 
@@ -67,9 +69,18 @@ function summarize(match, mine, rival) {
   const won = match.winner_id === mine.user_id;
   const title = draw ? 'Draw' : won ? 'You won' : `${rival.username} won`;
   let reason = '';
-  if (match.end_reason === 'time') reason = 'Time is up.';
-  else if (match.end_reason === 'completed') reason = won ? 'You found every region.' : `${rival.username} found every region.`;
-  else if (match.end_reason === 'forfeit') reason = won ? `${rival.username} left the match.` : 'You left the match.';
+  if (match.end_reason === 'time') {
+    // Untimed: the only way to reach `time` is the server's safety cap.
+    const capMin = Math.round((toMs(match.ends_at) - toMs(match.started_at)) / 60000);
+    reason = isUntimed(match.duration_seconds)
+      ? `Nobody finished within ${capMin} minutes, so the most regions won.`
+      : 'Time is up.';
+  } else if (match.end_reason === 'completed') {
+    const took = isUntimed(match.duration_seconds) && match.finished_at && match.started_at
+      ? ` in ${formatElapsed(toMs(match.finished_at) - toMs(match.started_at))}`
+      : '';
+    reason = won ? `You found every region${took}.` : `${rival.username} found every region${took}.`;
+  } else if (match.end_reason === 'forfeit') reason = won ? `${rival.username} left the match.` : 'You left the match.';
   return { title, reason, won, draw };
 }
 
@@ -97,8 +108,9 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   const mine = isHost ? match.host : match.guest;
   const rival = isHost ? match.guest : match.host;
 
+  const untimed = isUntimed(match.duration_seconds);
   const untilStart = toMs(match.started_at) - now; // > 0: still counting down
-  const left = toMs(match.ends_at) - now;
+  const left = untimed ? Infinity : toMs(match.ends_at) - now;
   const over = match.status !== 'playing';
   const phase = over || left <= 0 ? 'ended' : untilStart > 0 ? 'waiting' : 'playing';
 
@@ -168,8 +180,14 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   const texts = useMemo(() => (data ? buildTexts(data.country, data.slug) : null), [data]);
 
   const showCover = !over && untilStart > -GO_FLASH_MS;
-  const clockMs = phase === 'waiting' ? match.duration_seconds * 1000 : Math.max(0, left);
-  const low = phase === 'playing' && left <= LOW_TIME_MS;
+  // Timed: the time left (the full length while waiting). Untimed: the time elapsed, which
+  // stays at 0:00 during the 3-2-1 and, once over, at the moment the match ended.
+  const stoppedAt = over && match.finished_at ? toMs(match.finished_at) : null;
+  const elapsedMs = Math.max(0, (stoppedAt ?? now) - toMs(match.started_at));
+  const clockMs = untimed
+    ? (phase === 'waiting' ? 0 : elapsedMs)
+    : phase === 'waiting' ? match.duration_seconds * 1000 : Math.max(0, left);
+  const low = !untimed && phase === 'playing' && left <= LOW_TIME_MS;
   const summary = over ? summarize(match, mine, rival) : null;
   const split = over ? breakdown(answers, match.country.total_regions) : null;
   const rivalIds = over && answers ? answers.opponent : null;
@@ -222,7 +240,9 @@ export default function PlayScreen({ match, clock, preload, reload }) {
           </Link>
           <Side player={mine} score={myScore} isMe leading={myScore > rivalScore} />
           <div className="mpg-mid">
-            <span className={'mpg-clock' + (low ? ' low' : '')} aria-label="Time left">{formatClock(clockMs)}</span>
+            <span className={'mpg-clock' + (low ? ' low' : '')} aria-label={untimed ? 'Time elapsed' : 'Time left'}>
+              {untimed ? formatElapsed(clockMs) : formatClock(clockMs)}
+            </span>
             <span className="mpg-country">{match.country.nombre}</span>
           </div>
           <Side player={rival} score={rivalScore} isMe={false} leading={rivalScore > myScore} />

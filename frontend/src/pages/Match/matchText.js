@@ -1,12 +1,29 @@
 // Texts and small helpers shared by every multiplayer screen (UI is in English,
 // like the menu). The backend answers with a stable `code`; the texts live here.
 
-export const DURATIONS = [60, 120, 180, 300];
+export const DURATIONS = [60, 120, 180, 300, 0]; // 0 = no time limit
 export const DEFAULT_DURATION = 180;
+export const UNTIMED = 0;
 
+export const isUntimed = (seconds) => seconds === UNTIMED;
+
+// "3 min", or "No limit" for an untimed match (chips, small meta lines).
 export function formatDuration(seconds) {
+  if (isUntimed(seconds)) return 'No limit';
   const minutes = seconds / 60;
   return Number.isInteger(minutes) ? `${minutes} min` : `${seconds} s`;
+}
+
+// For sentences: "a 3 min match" / "an untimed match" (capital: "A 3 min match").
+export function describeMatch(seconds, { capital = false } = {}) {
+  const text = isUntimed(seconds) ? 'an untimed match' : `a ${formatDuration(seconds)} match`;
+  return capital ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+}
+
+// "m:ss" from milliseconds, rounded down (time elapsed in an untimed match).
+export function formatElapsed(ms) {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
 // The other player, seen from my side of the match.

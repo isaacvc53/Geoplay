@@ -5,7 +5,10 @@ from pydantic import BaseModel, Field, field_validator
 from models.utc import UtcDatetime
 
 # Duraciones permitidas (segundos). El servicio las vuelve a comprobar.
-ALLOWED_DURATIONS = (60, 120, 180, 300)
+# 0 = partida SIN tiempo: gana quien halle antes todas las regiones (ver UNTIMED_CAP
+# en match_service: tope de seguridad para que nadie quede bloqueado para siempre).
+ALLOWED_DURATIONS = (60, 120, 180, 300, 0)
+UNTIMED = 0
 DEFAULT_DURATION = 180
 
 
@@ -78,6 +81,34 @@ class MatchOut(BaseModel):
     # Hora del servidor al responder: sirve para calcular cuánto se adelanta o
     # atrasa el reloj del navegador y que la cuenta atrás sea la misma para los dos.
     server_time: UtcDatetime
+
+
+class MatchRecord(BaseModel):
+    """Balance de partidas terminadas, visto desde mí."""
+
+    wins: int = 0
+    losses: int = 0
+    draws: int = 0
+
+
+class MatchHistoryItem(BaseModel):
+    """Una partida terminada, vista desde mí (para la lista del historial)."""
+
+    id: int
+    result: Literal["win", "loss", "draw"]
+    duration_seconds: int  # 0 = sin tiempo
+    country: MatchCountry | None = None
+    my_score: int
+    opponent: MatchPlayer  # su `score` es el del rival
+    started_at: UtcDatetime | None = None
+    finished_at: UtcDatetime | None = None
+    end_reason: Literal["time", "completed", "forfeit"] | None = None
+
+
+class MatchHistory(BaseModel):
+    items: list[MatchHistoryItem]  # de la más reciente a la más antigua
+    total: int  # partidas terminadas en total (para saber si hay más páginas)
+    record: MatchRecord
 
 
 class MyMatches(BaseModel):
