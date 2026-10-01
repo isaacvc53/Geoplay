@@ -9,9 +9,11 @@ import Countdown from './Countdown';
 import { useServerNow } from './useServerNow';
 import { toMs } from './serverClock';
 import { matchErrorText } from './matchText';
+import { clearPending, markPending } from './pendingResult';
 import './MatchPlay.css';
 
-// The playable screen of a 1 vs 1 match (status 'playing', and 'finished' right after).
+// The playable screen of a 1 vs 1 match: status 'playing' and also 'finished' (the result:
+// the same map, now showing what each player found).
 //
 //   - Same map, input and name boxes as the single-player game (CountryGame), driven by
 //     the same engine in "online" mode: every guess goes to the server, and only what
@@ -71,10 +73,25 @@ function summarize(match, mine, rival) {
   return { title, reason, won, draw };
 }
 
+// Who found what, from the two lists of region ids the server gives once it's over.
+function breakdown(answers, total) {
+  if (!answers || !answers.opponent) return null;
+  const mine = new Set(answers.mine);
+  const theirs = new Set(answers.opponent);
+  const both = [...mine].filter((id) => theirs.has(id)).length;
+  const onlyMine = mine.size - both;
+  const onlyTheirs = theirs.size - both;
+  return { onlyMine, onlyTheirs, both, nobody: Math.max(0, total - (onlyMine + onlyTheirs + both)) };
+}
+
 export default function PlayScreen({ match, clock, preload, reload }) {
   const now = useServerNow(clock);
   const [myLocal, setMyLocal] = useState(0); // my confirmed hits, painted instantly
   const [dismissed, setDismissed] = useState(false); // "View map" on the final card
+  const [answers, setAnswers] = useState(null); // { mine, opponent } once the match is over
+  const [confirmLeave, setConfirmLeave] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState(null);
 
   const isHost = match.my_role === 'host';
   const mine = isHost ? match.host : match.guest;
@@ -112,6 +129,41 @@ export default function PlayScreen({ match, clock, preload, reload }) {
     [matchId]
   );
 
+  // Remember the match while it runs; forget it once its result is on screen.
+  useEffect(() => {
+    if (match.status === 'playing') markPending(matchId);
+    else clearPending(matchId);
+  }, [match.status, matchId]);
+
+  // Over: ask for both players' regions (the server only reveals the rival's now).
+  useEffect(() => {
+    if (!over) return undefined;
+    let cancelled = false;
+    let timer = null;
+    const load = (attempt) => {
+      api.getMatchAnswers(matchId)
+        .then((res) => { if (!cancelled) setAnswers(res); })
+        .catch(() => { if (!cancelled && attempt < 3) timer = setTimeout(() => load(attempt + 1), 1500 * (attempt + 1)); });
+    };
+    load(0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [over, matchId]);
+
+  // Leaving: during the 3-2-1 it just cancels; with the clock running the rival wins.
+  async function leave() {
+    setLeaving(true);
+    setLeaveError(null);
+    try {
+      await api.cancelMatch(matchId);
+    } catch (err) {
+      setLeaveError(matchErrorText(err));
+    } finally {
+      setConfirmLeave(false);
+      setLeaving(false);
+      reloadRef.current(); // shows the outcome (cancelled / finished), or whatever the server says now
+    }
+  }
+
   const data = preload.status === 'ready' ? preload.data : null;
   const texts = useMemo(() => (data ? buildTexts(data.country, data.slug) : null), [data]);
 
@@ -119,6 +171,46 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   const clockMs = phase === 'waiting' ? match.duration_seconds * 1000 : Math.max(0, left);
   const low = phase === 'playing' && left <= LOW_TIME_MS;
   const summary = over ? summarize(match, mine, rival) : null;
+  const split = over ? breakdown(answers, match.country.total_regions) : null;
+  const rivalIds = over && answers ? answers.opponent : null;
+  const counting = untilStart > 0;
+
+  // Bottom bar of the game screen. Memoised: this component re-renders ten times a second
+  // (the clock) and the game below must not.
+  const bottom = useMemo(() => {
+    if (over) {
+      return (
+        <>
+          <div className="left-actions">
+            {dismissed && <button type="button" className="secondary" onClick={() => setDismissed(false)}>Show result</button>}
+          </div>
+          <div className="right-actions"><Link className="btn-ghost mpg-link" to="/">Back to menu</Link></div>
+        </>
+      );
+    }
+    if (confirmLeave) {
+      return (
+        <>
+          <p className="mpg-confirm" role="alert">
+            {counting ? 'Leave before it starts? No penalty.' : `Leave the match? ${rival.username} wins.`}
+          </p>
+          <div className="right-actions">
+            <button type="button" className="secondary" disabled={leaving} onClick={() => setConfirmLeave(false)}>Stay</button>
+            <button type="button" className="secondary danger" disabled={leaving} onClick={leave}>{leaving ? 'Leaving…' : 'Leave'}</button>
+          </div>
+        </>
+      );
+    }
+    return (
+      <>
+        <div className="left-actions">
+          <button type="button" className="secondary" onClick={() => setConfirmLeave(true)}>Leave match</button>
+        </div>
+        {leaveError && <p className="mpg-confirm" role="alert">{leaveError}</p>}
+      </>
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `leave` only reads refs/stable setters
+  }, [over, dismissed, confirmLeave, counting, leaving, leaveError, rival.username, matchId]);
 
   return (
     <div className="country-page mpg">
@@ -144,6 +236,8 @@ export default function PlayScreen({ match, clock, preload, reload }) {
             geoUrl={data.geoUrl}
             online={online}
             phase={phase}
+            rivalIds={rivalIds}
+            bottom={bottom}
           />
         ) : (
           <MapLoading preload={preload} />
@@ -169,6 +263,14 @@ export default function PlayScreen({ match, clock, preload, reload }) {
               <span>{rival.score}</span>
             </p>
             <p className="mpg-final-names">You · {rival.username}</p>
+            {split && (
+              <ul className="mpg-split" aria-label="Who found what">
+                <li><i className="sw mine" aria-hidden="true" />Only you<b>{split.onlyMine}</b></li>
+                <li><i className="sw rival" aria-hidden="true" />Only {rival.username}<b>{split.onlyTheirs}</b></li>
+                <li><i className="sw mine" aria-hidden="true" />Both (gold)<b>{split.both}</b></li>
+                <li><i className="sw none" aria-hidden="true" />Nobody<b>{split.nobody}</b></li>
+              </ul>
+            )}
             <div className="mp-actions">
               <button type="button" className="mp-btn" onClick={() => setDismissed(true)}>View map</button>
               <Link className="mp-btn primary" to="/">Back to menu</Link>

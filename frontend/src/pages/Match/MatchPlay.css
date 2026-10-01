@@ -68,6 +68,28 @@
 .country-page .mpg-final-sep{ color:var(--muted); font-size:38px; }
 .country-page .mpg-final-names{ margin:0 0 8px; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
 
+/* ---- bottom bar (leave / back) ---- */
+.country-page .mpg-confirm{ margin:0; flex:1 1 180px; font-size:13px; color:var(--ink); }
+.country-page .mpg .secondary.danger, .country-page .secondary.danger{ border-color:var(--danger); color:var(--danger); }
+.country-page .mpg-link{
+  display:inline-flex; align-items:center; text-decoration:none; padding:0 14px; min-height:36px;
+  font:600 13px Inter, sans-serif; color:var(--ink);
+}
+
+/* ---- who found what (final card) ---- */
+.country-page .mpg-split{
+  list-style:none; margin:2px 0 10px; padding:0; width:100%;
+  display:flex; flex-direction:column; gap:6px; text-align:left;
+}
+.country-page .mpg-split li{
+  display:flex; align-items:center; gap:10px; font-size:13px; color:var(--muted);
+}
+.country-page .mpg-split li b{ margin-left:auto; color:var(--ink); font-variant-numeric:tabular-nums; }
+.country-page .mpg-split .sw{ flex:none; width:12px; height:12px; border-radius:2px; }
+.country-page .mpg-split .sw.mine{ background:var(--found); }
+.country-page .mpg-split .sw.rival{ background:var(--rival); }
+.country-page .mpg-split .sw.none{ background:var(--missing); }
+
 @media (max-width:720px){
   .country-page .mpg-bar{
     grid-template-columns:44px minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;

@@ -17,8 +17,8 @@ import './Match.css';
 //               can press Start
 //   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
 //               players (server clock), then the match clock runs and they race
-//   finished -> if you were playing, PlayScreen stays up with a final card; otherwise
-//               (you open the link later) a bare-bones summary
+//   finished -> the result: PlayScreen again, with a final card and the map showing what
+//               each player found (also when the link is opened later)
 //   declined / cancelled / expired -> a closing message
 // The room asks the server for the match every second, so both players see changes
 // (accepted, started, cancelled...) almost instantly without any extra setup.
@@ -114,13 +114,8 @@ function MatchRoom({ id }) {
   );
   const m = poll.data;
 
-  // Once this player has seen the match running, the playable screen stays up when it ends
-  // (final card on top of the map) instead of dropping to the bare summary.
-  const [played, setPlayed] = useState(false);
-  if (m && m.status === 'playing' && !played) setPlayed(true);
-
   // The map starts downloading as soon as the country is drawn (status 'ready').
-  const preloadSlug = m && m.country && (m.status === 'ready' || m.status === 'playing' || (m.status === 'finished' && played))
+  const preloadSlug = m && m.country && (m.status === 'ready' || m.status === 'playing' || m.status === 'finished')
     ? m.country.slug
     : null;
   const preload = useCountryPreload(preloadSlug);
@@ -217,7 +212,7 @@ function MatchRoom({ id }) {
         </div>
       );
     } else if (m.status === 'finished') {
-      // Bare-bones summary: the full result screen comes in part 3D.
+      // Fallback only: a finished match always has a country, so it normally gets PlayScreen.
       const mine = isHost ? m.host : m.guest;
       const title = m.winner_id == null ? 'Draw' : m.winner_id === mine.user_id ? 'You won' : `${rival.username} won`;
       body = <Closed title={title} text={`Final score: you ${mine.score} – ${rival.score} ${rival.username}.`} />;
@@ -237,8 +232,8 @@ function MatchRoom({ id }) {
     }
   }
 
-  // The match is running (or just ended and this player was in it): full-screen game.
-  if (m && m.country && (m.status === 'playing' || (m.status === 'finished' && played))) {
+  // Running or finished: full-screen game / result (the same map, now with both players' regions).
+  if (m && m.country && (m.status === 'playing' || m.status === 'finished')) {
     return <PlayScreen match={m} clock={clock} preload={preload} reload={poll.reload} />;
   }
 

@@ -5,12 +5,13 @@ import './Matches.css';
 
 // Strip under the top bar: tells you about a challenge you received, or about the
 // match you have open, without having to open the friends drawer.
-export default function MatchBanner({ matches, onOpenFriends }) {
+export default function MatchBanner({ matches, lastResult, onOpenFriends }) {
   const { current, invitations, reload } = matches;
   const actions = useMatchActions({ reload });
   const disabled = Boolean(actions.busy);
 
-  if (!current && invitations.length === 0) return null;
+  const finished = !current && lastResult && lastResult.result;
+  if (!current && invitations.length === 0 && !finished) return null;
 
   let content;
   if (current) {
@@ -23,10 +24,12 @@ export default function MatchBanner({ matches, onOpenFriends }) {
             ? <>Waiting for <strong>{rival}</strong> to accept your challenge.</>
             : current.status === 'ready'
               ? <>Your match against <strong>{rival}</strong> is ready.</>
-              : <>Match against <strong>{rival}</strong> in progress.</>}
+              : <>Match against <strong>{rival}</strong> is <strong>in progress</strong>. Jump back in!</>}
         </p>
         <span className="friend-actions">
-          <Link className="friend-btn primary" to={`/partida/${current.id}`}>Open</Link>
+          <Link className="friend-btn primary" to={`/partida/${current.id}`}>
+            {current.status === 'playing' ? 'Rejoin' : 'Open'}
+          </Link>
           {(waiting || current.status === 'ready') && (
             <button
               type="button"
@@ -37,6 +40,22 @@ export default function MatchBanner({ matches, onOpenFriends }) {
               {waiting ? 'Cancel' : 'Leave'}
             </button>
           )}
+        </span>
+      </>
+    );
+  } else if (finished) {
+    const m = lastResult.result;
+    const rival = opponentOf(m).username;
+    const mine = m.my_role === 'host' ? m.host : m.guest;
+    const verdict = m.winner_id == null ? 'ended in a draw' : m.winner_id === mine.user_id ? 'was won by you' : `was won by ${rival}`;
+    content = (
+      <>
+        <p className="match-banner-text">
+          Your match against <strong>{rival}</strong> {verdict}.
+        </p>
+        <span className="friend-actions">
+          <Link className="friend-btn primary" to={`/partida/${m.id}`} onClick={lastResult.dismiss}>View result</Link>
+          <button type="button" className="friend-btn" onClick={lastResult.dismiss}>Dismiss</button>
         </span>
       </>
     );

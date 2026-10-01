@@ -6,11 +6,12 @@ import { createGame } from './gameEngine';
 //   - CountryGamePage (modo individual, sin `online`)
 //   - la partida 1 contra 1 (pages/Match), con `online` y `phase`; ver gameEngine.js.
 
-function CountryGame({ country, texts, geoUrl, online, phase = 'waiting' }) {
+function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalIds = null, bottom = null }) {
   const els = useRef({});
   const setEl = (name) => (node) => { els.current[name] = node; };
   const gameRef = useRef(null);
   const phaseRef = useRef(phase);
+  const rivalRef = useRef(rivalIds);
   const onlineRef = useRef(online);
   const isOnline = Boolean(online);
 
@@ -31,7 +32,10 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting' }) {
       : undefined;
     const game = createGame({ country, texts, geoUrl, els: { ...els.current }, online: proxy });
     gameRef.current = game;
-    if (isOnline) game.setPhase(phaseRef.current);
+    if (isOnline) {
+      game.setPhase(phaseRef.current);
+      if (rivalRef.current) game.showRivalAnswers(rivalRef.current);
+    }
     return () => {
       gameRef.current = null;
       game.destroy();
@@ -43,6 +47,12 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting' }) {
     phaseRef.current = phase;
     if (gameRef.current) gameRef.current.setPhase(phase);
   }, [phase]);
+
+  // Online, partida terminada: pinta lo que acertó el rival.
+  useEffect(() => {
+    rivalRef.current = rivalIds;
+    if (gameRef.current && rivalIds) gameRef.current.showRivalAnswers(rivalIds);
+  }, [rivalIds]);
 
   // Los elementos cuyo texto/clases controla el motor (contadores, feedback, pista, toast,
   // pantalla de inicio y de resultado) se renderizan SIN hijos dinámicos:
@@ -111,12 +121,15 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting' }) {
       {/* One box per name to guess: empty until guessed (the engine fills them). */}
       <div className="slots" ref={setEl('slots')} role="list" aria-label={texts.slotsLabel} />
 
-      <div className="bottom" style={isOnline ? { display: 'none' } : undefined}>
-        <div className="left-actions">
+      {/* Online: los botones del motor siguen aquí (los necesita) pero ocultos; la barra
+          inferior solo muestra lo que pase quien monta la partida (`bottom`). */}
+      <div className="bottom" style={isOnline && !bottom ? { display: 'none' } : undefined}>
+        {bottom}
+        <div className="left-actions" style={isOnline ? { display: 'none' } : undefined}>
           <button ref={setEl('giveUp')} className="secondary" type="button" disabled>{texts.giveUpLabel}</button>
           <button ref={setEl('viewResult')} className="secondary hidden" type="button">{texts.viewResultLabel}</button>
         </div>
-        <div className="right-actions">
+        <div className="right-actions" style={isOnline ? { display: 'none' } : undefined}>
           <button ref={setEl('reset')} className="secondary" type="button">{texts.resetLabel}</button>
         </div>
       </div>

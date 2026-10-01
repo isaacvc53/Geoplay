@@ -31,6 +31,7 @@
   --found: #c9a24b;
   --missing: #8fbde0;
   --missing-hover: #a8cdea;
+  --rival: #c9723f; /* online: lo que acertó el rival */
 
   --ease: 160ms cubic-bezier(.4, 0, .2, 1);
 
@@ -251,6 +252,9 @@
   .country.just-found { animation: geotaria-found-flash .7s ease-out; }
   .country.revealed-missing { fill: var(--missing); stroke: var(--map-stroke); }
   .country.revealed-missing:hover { fill: var(--missing-hover); }
+  /* Online: regiones que solo acertó el rival (se ven al terminar la partida). */
+  .country.rival-found { fill: var(--rival); stroke: var(--map-stroke); }
+  .country.rival-found:hover { filter: brightness(1.1); }
 
   .map-tools {
     position: absolute;
@@ -500,6 +504,13 @@
     border: 1px solid rgba(143, 189, 224, .5);
     background: rgba(143, 189, 224, .1);
     color: #b9d5ea;
+    font-weight: 500;
+  }
+  .slot.rival {
+    line-height: 26px;
+    border: 1px solid rgba(224, 137, 90, .55);
+    background: rgba(224, 137, 90, .14);
+    color: #f0c3a8;
     font-weight: 500;
   }
   .slot.just { animation: geotaria-slot-pop .45s ease-out; }

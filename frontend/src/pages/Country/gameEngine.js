@@ -134,11 +134,12 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     );
   }
 
-  // state: 'empty' | 'solved' | 'missed' (los que faltaban al terminar)
+  // state: 'empty' | 'solved' | 'missed' (los que faltaban al terminar) | 'rival' (online:
+  // solo los acertó el rival)
   function paintSlot(region, state) {
     const slot = slotById.get(region.id);
     if (!slot) return;
-    slot.className = 'slot' + (state === 'solved' ? ' filled' : state === 'missed' ? ' missed' : '');
+    slot.className = 'slot' + (state === 'solved' ? ' filled' : state === 'missed' ? ' missed' : state === 'rival' ? ' rival' : '');
     slot.textContent = state === 'empty' ? '' : region.display || '';
     slot.title = state === 'empty' ? '' : region.display || '';
     slot.setAttribute('aria-label', state === 'empty' ? texts.slotEmpty : region.display || '');
@@ -166,10 +167,30 @@ export function createGame({ country, texts, els, geoUrl, online }) {
   function revealMissingOnMap() {
     regions.forEach((r) => {
       const el = featureByRegion.get(r.id);
-      if (el) el.classed('revealed-missing', !solved.has(r.id));
-      if (!solved.has(r.id)) paintSlot(r, 'missed');
+      const theirs = heldByRival(r);
+      if (el) el.classed('revealed-missing', !solved.has(r.id) && !theirs);
+      if (!solved.has(r.id)) paintSlot(r, theirs ? 'rival' : 'missed');
     });
     hintEl.textContent = texts.hintTextRevealed;
+  }
+
+  // ---------------- ONLINE: the rival's regions (shown once the match is over) ----------------
+
+  let rivalSet = null; // Set de region_id que acertó el rival, o null si aún no se conocen
+
+  function heldByRival(region) {
+    return Boolean(rivalSet && region.region_id != null && rivalSet.has(region.region_id));
+  }
+
+  // Las que solo acertó el rival se pintan aparte; las que acertamos los dos siguen en mi color.
+  function paintRival() {
+    if (!rivalSet || !mapRendered) return;
+    regions.forEach((r) => {
+      if (solved.has(r.id) || !heldByRival(r)) return;
+      const el = featureByRegion.get(r.id);
+      if (el) el.classed('revealed-missing', false).classed('rival-found', true);
+      paintSlot(r, 'rival');
+    });
   }
 
   // ---------------- START ----------------
@@ -741,6 +762,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       submitBtn.disabled = true;
       guessEl.blur();
       revealMissingOnMap(); // para que el jugador vea qué se le escapó
+      paintRival();
     }
   }
 
@@ -929,6 +951,12 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     setPhase(next) {
       desired = next;
       applyDesired();
+    },
+    // Solo online, con la partida terminada: ids (region_id) que acertó el rival.
+    showRivalAnswers(ids) {
+      rivalSet = new Set(ids || []);
+      if (phase === 'ended') revealMissingOnMap(); // recoloca "fallada" -> "del rival"
+      paintRival();
     },
     destroy() {
       disposed = true;

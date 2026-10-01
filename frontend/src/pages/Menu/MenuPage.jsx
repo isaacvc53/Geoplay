@@ -7,6 +7,7 @@ import FriendsPanel from './FriendsPanel';
 import { useFriends } from './useFriends';
 import { useMyMatches } from './useMyMatches';
 import MatchBanner from './MatchBanner';
+import { useLastResult } from './useLastResult';
 import './Menu.css';
 
 // ---------- small presentational pieces ----------
@@ -39,6 +40,30 @@ function IconTrophy({ className = 'icon' }) {
       <path d="M7 4h10v3.2c0 3-2.2 5.3-5 5.3s-5-2.3-5-5.3V4z" stroke="currentColor" strokeWidth="1.4" />
       <path d="M12 12.5V17m-3 3h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
+  );
+}
+
+// Inside the Multiplayer card (a link to the match or a button that opens the friends drawer).
+function MultiplayerBody({ desc, pill, action }) {
+  return (
+    <>
+      <div>
+        <div className="head">
+          <div className="icon-circle">
+            <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" strokeWidth="1.4" />
+              <path d="M12 13.5V9.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+        <div className="body">
+          <div className="widget-title">Multiplayer</div>
+          <p className="widget-desc">{desc}</p>
+        </div>
+      </div>
+      <div className="foot"><span className="pill live">{pill}</span><span>{action}</span></div>
+    </>
   );
 }
 
@@ -124,6 +149,7 @@ export default function MenuPage() {
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
   const matches = useMyMatches(loggedIn);
+  const lastResult = useLastResult(loggedIn, Boolean(matches.current));
   const availableCount = useAvailableCount();
   // Badge on the friends icon: friend requests + challenges waiting for an answer.
   const pendingRequests = (friends.data ? friends.data.incoming.length : 0) + matches.invitations.length;
@@ -206,7 +232,7 @@ export default function MenuPage() {
           </nav>
         </div>
 
-        <MatchBanner matches={matches} onOpenFriends={() => setOpenDrawer('friends')} />
+        <MatchBanner matches={matches} lastResult={lastResult} onOpenFriends={() => setOpenDrawer('friends')} />
 
         {/* Friends */}
         <Drawer id="friendsDrawer" label="Friends" title="Friends" open={openDrawer === 'friends'} onClose={close}>
@@ -275,25 +301,31 @@ export default function MenuPage() {
             </div>
           </a>
 
-          {/* 2: multiplayer */}
-          <a className="panel side-card soon-card" href="#" onClick={noop} aria-disabled="true" tabIndex={-1}>
-            <div>
-              <div className="head">
-                <div className="icon-circle">
-                  <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" strokeWidth="1.4" />
-                    <path d="M12 13.5V9.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                    <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                  </svg>
-                </div>
-              </div>
-              <div className="body">
-                <div className="widget-title">Multiplayer</div>
-                <p className="widget-desc">Compete against other players.</p>
-              </div>
-            </div>
-            <div className="foot"><span className="pill soon">Coming soon</span><span>—</span></div>
-          </a>
+          {/* 2: multiplayer. Challenges start from the friends drawer; with a match open
+              the card takes you straight back to it. */}
+          {matches.current && matches.current.status !== 'invited' ? (
+            <Link className="panel side-card regions-card" to={`/partida/${matches.current.id}`}>
+              <MultiplayerBody
+                desc="You have a match open against a friend."
+                pill={matches.current.status === 'playing' ? 'In progress' : 'Ready'}
+                action={matches.current.status === 'playing' ? 'Rejoin the match →' : 'Open the match →'}
+              />
+            </Link>
+          ) : (
+            <a
+              className="panel side-card regions-card"
+              href="#"
+              aria-haspopup="dialog"
+              aria-controls="friendsDrawer"
+              onClick={(e) => { e.preventDefault(); setOpenDrawer('friends'); }}
+            >
+              <MultiplayerBody
+                desc="Challenge a friend to a 1 vs 1: the same random country, whoever finds more regions in time wins."
+                pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : 'Available'}
+                action={loggedIn ? 'Pick a friend →' : 'Sign in to play →'}
+              />
+            </a>
+          )}
 
           {/* 3: select a country (hero) */}
           <Link className="hero" to="/mapa-mundial">
