@@ -9,12 +9,16 @@ import { findAvailableCountries } from '../../lib/availability';
 //
 // Por qué canvas: con SVG el navegador rasteriza el grupo y, durante un gesto de zoom,
 // solo escala ese bitmap (el mapa se veía borroso hasta soltar). Aquí cada fotograma se
-// vuelve a dibujar en vectores a la resolución REAL de la pantalla (devicePixelRatio),
-// así que el mapa está nítido en todo momento: al hacer zoom, al alejar y al moverlo.
+// vuelve a dibujar en vectores a la resolución REAL de la pantalla, así que el mapa
+// está nítido al hacer zoom, al alejar y al moverlo.
 //
-// Rendimiento: todos los países comparten estilo, así que se unen en UN solo Path2D y
-// se rellenan/trazan de una vez (3 pasadas por fotograma, no 257 × 2). El hover se
-// calcula con isPointInPath sobre cajas envolventes (nada de 257 elementos en el DOM).
+// Rendimiento (importante en ordenador, donde el canvas es mucho más grande que en móvil):
+//  - Todos los países comparten estilo: se unen en UN solo Path2D (fill + stroke).
+//  - El sombreado del océano (degradado, brillo, sombra de borde) es suave y estático:
+//    se pinta UNA vez en un bitmap y cada fotograma solo se estampa (drawImage).
+//  - El hover (isPointInPath sobre paths enormes) NO se calcula mientras haces zoom o
+//    arrastras, y se limita a ~20 veces por segundo; se recalcula al soltar.
+//  - Resolución del canvas limitada por número de píxeles.
 //
 // El SVG de origen está en proyección Equal Earth (meridiano central ~12,65°E); su
 // descripción viaja en `projection` dentro de world-map.json (ver build-world-map.py).
@@ -35,19 +39,27 @@ const MAX_ZOOM = 20;
 // seguir alejando hasta ver el mundo entero (zoom 1).
 const MAX_HOME_ZOOM = 4;
 
-// Tope de píxeles del canvas (evita buffers enormes en monitores 4K / zoom del navegador).
-const MAX_CANVAS_PIXELS = 12e6;
+// Tope de píxeles del canvas: un monitor grande o un portátil retina llenan mucho más
+// que un móvil, y redibujar millones de píxeles por fotograma es lo que hace ir lento.
+// 4 M deja el móvil a resolución completa y un 1080p a 1x; pantallas mayores bajan un poco.
+const MAX_CANVAS_PIXELS = 4e6;
 // Duración del fundido del resalte (hover / país abierto).
 const FADE_MS = 140;
+// Mínimo entre dos cálculos de hover (ms).
+const PICK_MIN_MS = 50;
 // Tolerancia (px de pantalla) para acertar países diminutos (Malta, Singapur...).
 const PICK_TOLERANCE_MOUSE = 8;
 const PICK_TOLERANCE_TOUCH = 14;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-// Halo exterior de la esfera y sombreado interior: [ancho en px, opacidad].
-const HALO = [[40, 0.022], [26, 0.032], [14, 0.048], [7, 0.07]];
+// Halo exterior de la esfera [ancho en px, opacidad] y sombreado interior (va dentro
+// del bitmap del océano; los anchos se escalan al tamaño del mapa).
+const HALO = [[30, 0.03], [12, 0.06]];
 const SHADE = [[84, 0.07], [52, 0.09], [28, 0.12], [12, 0.16]];
+// Resolución del bitmap del océano (px por unidad del mapa) y margen alrededor.
+const OCEAN_RES = 1.5;
+const OCEAN_MARGIN = 8;
 
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
@@ -99,9 +111,12 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     let cancelled = false;
     let frameId = 0;
     let toastTimer = 0;
+    let gestureTimer = 0;
     let lastT = 0;
+    let lastPickT = 0;
     let needPick = false;
     let pressed = false;
+    let gesturing = false; // zoom/paneo en curso: no se calcula el hover
 
     // Geometría del visor y del mapa.
     let W = 0;
@@ -121,12 +136,11 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     let features = [];
     let allLand = null;
     let sphere = null;
+    let oceanBitmap = null;
     let gratMinor = null;
     let gratMajor = null;
     let equator = null;
     let parallels = null;
-    let oceanGrad = null;
-    let sheenGrad = null;
     let availableSlugs = null; // null = "aún sin comprobar": todos cuentan como disponibles
 
     let pointer = null; // posición del ratón relativa al canvas
@@ -137,6 +151,45 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     function isUnavailable(f) {
       if (availableSlugs === null) return false;
       return !availableSlugs.has(countrySlug(f));
+    }
+
+    // Océano suave y estático (degradado + brillo + sombra de borde) en un bitmap: se
+    // pinta una vez y luego solo se estampa. Al ser degradados suaves no se nota la
+    // resolución, y el borde de la esfera sigue nítido porque se recorta con el path.
+    function buildOceanBitmap() {
+      const bmp = document.createElement('canvas');
+      bmp.width = Math.ceil((mapW + OCEAN_MARGIN * 2) * OCEAN_RES);
+      bmp.height = Math.ceil((mapH + OCEAN_MARGIN * 2) * OCEAN_RES);
+      const o = bmp.getContext('2d');
+      o.scale(OCEAN_RES, OCEAN_RES);
+      o.translate(OCEAN_MARGIN, OCEAN_MARGIN);
+
+      const ocean = o.createRadialGradient(mapW * 0.34, mapH * 0.3, 0, mapW * 0.34, mapH * 0.3, mapW * 0.85);
+      ocean.addColorStop(0, '#2b7fa6');
+      ocean.addColorStop(0.35, '#17597e');
+      ocean.addColorStop(0.7, '#0d3553');
+      ocean.addColorStop(1, '#06192a');
+      o.fillStyle = ocean;
+      o.fill(sphere);
+
+      o.save();
+      o.clip(sphere);
+      // Brillo suave arriba a la izquierda (como luz sobre un globo).
+      const sheen = o.createRadialGradient(mapW * 0.3, mapH * 0.16, 0, mapW * 0.3, mapH * 0.16, mapW * 0.5);
+      sheen.addColorStop(0, 'rgba(180,225,255,0.14)');
+      sheen.addColorStop(1, 'rgba(180,225,255,0)');
+      o.fillStyle = sheen;
+      o.fillRect(-OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
+      // Sombreado interior hacia el borde (da volumen de esfera).
+      const unit = mapW / 1400;
+      o.strokeStyle = '#02070d';
+      SHADE.forEach(([w, a]) => {
+        o.globalAlpha = a;
+        o.lineWidth = w * unit;
+        o.stroke(sphere);
+      });
+      o.restore();
+      return bmp;
     }
 
     // ---------- Dibujo ----------
@@ -150,22 +203,12 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       });
       ctx.globalAlpha = 1;
 
-      ctx.fillStyle = oceanGrad;
-      ctx.fill(sphere);
-
       ctx.save();
       ctx.clip(sphere);
-      // Brillo suave arriba a la izquierda (como luz sobre un globo).
-      ctx.fillStyle = sheenGrad;
-      ctx.fillRect(-mapW * 0.1, -mapH * 0.1, mapW * 1.2, mapH * 1.2);
-      // Sombreado interior hacia el borde (da volumen de esfera).
-      ctx.strokeStyle = '#02070d';
-      SHADE.forEach(([w, a]) => {
-        ctx.globalAlpha = a;
-        ctx.lineWidth = w * u;
-        ctx.stroke(sphere);
-      });
-      ctx.globalAlpha = 1;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(oceanBitmap, -OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
+      ctx.restore();
 
       // Cuadrícula: cada 10° tenue, cada 30° dorada, ecuador y trópicos/círculos polares.
       ctx.lineWidth = 0.5 * u;
@@ -183,17 +226,9 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       ctx.strokeStyle = 'rgba(212,172,85,0.30)';
       ctx.stroke(parallels);
       ctx.restore();
-      ctx.restore();
     }
 
     function drawLand(u) {
-      // Reflejo de costa: aura clara en el agua (la mitad interior queda tapada por la tierra).
-      ctx.strokeStyle = 'rgb(130,205,238)';
-      ctx.globalAlpha = 0.13;
-      ctx.lineWidth = 6 * u;
-      ctx.stroke(allLand);
-      ctx.globalAlpha = 1;
-
       ctx.fillStyle = LAND;
       ctx.fill(allLand);
       ctx.strokeStyle = 'rgba(6,18,28,0.9)';
@@ -228,12 +263,12 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         ctx.stroke(fx.f.path);
         ctx.globalAlpha = 1;
       }
-      if (touchOnly.matches) {
-        // En táctil el "hover" se queda pegado tras tocar: no hay anillo de hover.
-      } else if (hoverFx.f && isUnavailable(hoverFx.f)) {
-        ring(hoverFx, 'rgba(212,172,85,0.10)', 'rgba(212,172,85,0.5)', 1.7);
-      } else {
-        ring(hoverFx, 'rgba(255,214,130,0.38)', '#fff6dc', 2);
+      if (!touchOnly.matches) { // en táctil el "hover" se queda pegado tras tocar
+        if (hoverFx.f && isUnavailable(hoverFx.f)) {
+          ring(hoverFx, 'rgba(212,172,85,0.10)', 'rgba(212,172,85,0.5)', 1.7);
+        } else {
+          ring(hoverFx, 'rgba(255,214,130,0.38)', '#fff6dc', 2);
+        }
       }
       ring(activeFx, 'rgba(240,138,69,0.34)', '#ffb878', 2);
     }
@@ -260,7 +295,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * (view.x - k * vbX), dpr * (view.y - k * vbY));
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
-      if (sphere) drawOcean(u);
+      if (oceanBitmap) drawOcean(u);
       drawLand(u);
       if (sphere) drawRim(u);
     }
@@ -287,10 +322,20 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     function frame(now) {
       frameId = 0;
       if (cancelled) return;
-      if (needPick) { needPick = false; updateHover(); }
+      let again = false;
+      if (needPick) {
+        // El hover es lo más caro: nunca durante un gesto, y con un mínimo entre cálculos.
+        if (!gesturing && now - lastPickT >= PICK_MIN_MS) {
+          needPick = false;
+          lastPickT = now;
+          updateHover();
+        } else if (!gesturing) {
+          again = true;
+        }
+      }
       const animating = stepFx(now);
       draw();
-      if (animating) schedule();
+      if (animating || again) schedule();
     }
 
     function schedule() {
@@ -376,6 +421,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     }
 
     // ---------- Zoom / paneo ----------
+    function endGesture() {
+      gesturing = false;
+      if (pointer) { needPick = true; schedule(); }
+    }
     const zoom = d3.zoom()
       .scaleExtent([1, MAX_ZOOM])
       // Un toque en pantalla táctil nunca es tan quieto como un clic de ratón.
@@ -383,7 +432,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       .on('zoom', (event) => {
         if (event.sourceEvent) userMoved = true; // gesto real (no una llamada del código)
         view = event.transform;
-        if (pointer) needPick = true; // lo que hay bajo el cursor cambia al mover/zoom
+        // Mientras se mueve/zoomea no se calcula el hover; se recalcula al parar.
+        gesturing = true;
+        clearTimeout(gestureTimer);
+        gestureTimer = setTimeout(endGesture, 90);
         schedule();
       });
     sel.call(zoom);
@@ -502,8 +554,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       W = w;
       H = h;
       dpr = clamp(Math.min(window.devicePixelRatio || 1, Math.sqrt(MAX_CANVAS_PIXELS / (w * h))), 1, 3);
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
+      const cw = Math.round(w * dpr);
+      const ch = Math.round(h * dpr);
+      if (canvas.width !== cw) canvas.width = cw;
+      if (canvas.height !== ch) canvas.height = ch;
 
       const wrapRect = wrap.getBoundingClientRect();
       const padTop = clamp(
@@ -583,15 +637,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
             type: 'MultiLineString',
             coordinates: [23.4363, -23.4363, 66.5636, -66.5636].map(parallel),
           }));
-          // Degradados en coordenadas del mapa: se mueven y escalan con el zoom.
-          oceanGrad = ctx.createRadialGradient(mapW * 0.34, mapH * 0.3, 0, mapW * 0.34, mapH * 0.3, mapW * 0.85);
-          oceanGrad.addColorStop(0, '#2b7fa6');
-          oceanGrad.addColorStop(0.35, '#17597e');
-          oceanGrad.addColorStop(0.7, '#0d3553');
-          oceanGrad.addColorStop(1, '#06192a');
-          sheenGrad = ctx.createRadialGradient(mapW * 0.3, mapH * 0.16, 0, mapW * 0.3, mapH * 0.16, mapW * 0.5);
-          sheenGrad.addColorStop(0, 'rgba(180,225,255,0.14)');
-          sheenGrad.addColorStop(1, 'rgba(180,225,255,0)');
+          oceanBitmap = buildOceanBitmap();
         } else {
           console.warn('world-map.json sin `projection` válida: se dibuja el mapa sin esfera ni cuadrícula.');
         }
@@ -656,6 +702,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       cancelled = true;
       cancelAnimationFrame(frameId);
       clearTimeout(toastTimer);
+      clearTimeout(gestureTimer);
       resizeObserver.disconnect();
       window.removeEventListener('resize', resize);
       window.removeEventListener('mouseup', onMouseUp);
