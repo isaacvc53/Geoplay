@@ -90,6 +90,26 @@ function computeHomeStats(countries) {
   };
 }
 
+// Number of playable countries, from the manifest the deploy already generates
+// (/data/available-countries.json). With the SPA fallback a missing file answers 200 with
+// the app's HTML, so that response type is discarded. If anything fails, null = hidden.
+function useAvailableCount() {
+  const [count, setCount] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/data/available-countries.json')
+      .then((res) => {
+        const type = (res.headers.get('content-type') || '').toLowerCase();
+        if (!res.ok || type.includes('text/html')) throw new Error('no manifest');
+        return res.json();
+      })
+      .then((list) => { if (!cancelled && Array.isArray(list) && list.length) setCount(list.length); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+  return count;
+}
+
 // ---------- page ----------
 
 export default function MenuPage() {
@@ -101,6 +121,7 @@ export default function MenuPage() {
   const [stats, setStats] = useState(null);
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
+  const availableCount = useAvailableCount();
   const pendingRequests = friends.data ? friends.data.incoming.length : 0;
 
   // The decorative map is ~1.2 MB of path data: load it in its own chunk.
@@ -151,8 +172,8 @@ export default function MenuPage() {
             <span className="word">Geo<i>taria</i></span>
           </a>
           <nav className="mainnav">
-            <a href="#" onClick={noop} className="disabled">Roadmap</a>
-            <a href="#" onClick={noop} className="disabled">Multiplayer</a>
+            <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Roadmap</a>
+            <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Multiplayer</a>
             <Link to="/mapa-mundial">World map</Link>
             <Link to="/modo">Countries</Link>
             <Link to="/perfil">Statistics</Link>
@@ -230,9 +251,21 @@ export default function MenuPage() {
           </div>
         </Drawer>
 
+        <section className="welcome" aria-label="Welcome">
+          <div>
+            <p className="welcome-eyebrow">{loggedIn ? 'Welcome back' : 'Geography training'}</p>
+            <h1 className="welcome-title">
+              {loggedIn && user
+                ? <>Ready to explore, <em>{user.username}</em>?</>
+                : <>Learn the world, <em>one map at a time</em>.</>}
+            </h1>
+          </div>
+          {!loggedIn && <Link to="/login" className="signin">Sign in</Link>}
+        </section>
+
         <main className="layout">
           {/* 1: roadmap */}
-          <a className="panel roadmap" href="#" onClick={noop}>
+          <a className="panel roadmap soon-card" href="#" onClick={noop} aria-disabled="true" tabIndex={-1}>
             <div className="roadmap-head">
               <h2>Roadmap</h2>
               <span className="pill soon">Coming soon</span>
@@ -248,7 +281,7 @@ export default function MenuPage() {
           </a>
 
           {/* 2: multiplayer */}
-          <a className="panel side-card" href="#" onClick={noop}>
+          <a className="panel side-card soon-card" href="#" onClick={noop} aria-disabled="true" tabIndex={-1}>
             <div>
               <div className="head">
                 <div className="icon-circle">
@@ -284,13 +317,16 @@ export default function MenuPage() {
             <p className="hero-sub">Pick a region of the world and start naming its divisions.</p>
             <div className="map-wrap">
               <svg className="worldmap" viewBox="0 0 1010 666" aria-hidden="true">
-                {worldPaths.map((d, i) => <path key={i} d={d} />)}
+                <g>{worldPaths.map((d, i) => <path key={i} d={d} />)}</g>
               </svg>
               <div className="scale-bar"><div className="bar" /><span>2,000 km</span></div>
             </div>
             <div className="hero-foot">
-              <span className="pill live">Available</span>
-              <span className="cta">Open atlas</span>
+              <span className="hero-meta">
+                <span className="pill live">Available</span>
+                {availableCount && <span className="hero-count">{availableCount} countries</span>}
+              </span>
+              <span className="cta">Open atlas <span className="arrow" aria-hidden="true">→</span></span>
             </div>
           </Link>
 
@@ -310,7 +346,7 @@ export default function MenuPage() {
                 <p className="widget-desc">Browse the full list and jump straight into any country.</p>
               </div>
             </div>
-            <div className="foot"><span className="pill live">Available</span><span>→</span></div>
+            <div className="foot"><span className="pill live">Available</span><span>{availableCount ? `${availableCount} maps →` : '→'}</span></div>
           </Link>
 
           {/* 5: statistics */}
@@ -367,7 +403,9 @@ export default function MenuPage() {
             <div className="stats-foot">
               {stats
                 ? <>See the full breakdown on your <Link to="/perfil">profile</Link>, or <Link to="/comparar">compare with a friend</Link>.</>
-                : 'Play a round to start building your stats.'}
+                : loggedIn
+                  ? 'Play a round to start building your stats.'
+                  : <><Link to="/login">Sign in</Link> to save your stats and pick up where you left off.</>}
             </div>
           </div>
         </main>
