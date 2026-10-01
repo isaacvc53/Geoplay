@@ -34,7 +34,8 @@ html, body { background: var(--g-bg); }
 .worldquiz-page.worldquiz-page,
 .auth-page.auth-page,
 .profile-page.profile-page,
-.compare-page.compare-page {
+.compare-page.compare-page,
+.match-page.match-page {
   --radius: 0px;
   background-color: var(--g-bg);
   background-image: var(--g-backdrop);

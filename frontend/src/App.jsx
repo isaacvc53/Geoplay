@@ -10,6 +10,7 @@ import WorldMapPage from './pages/WorldMap/WorldMapPage';
 import CountryGamePage from './pages/Country/CountryGamePage';
 import ProfilePage from './pages/Profile/ProfilePage';
 import ComparePage from './pages/Compare/ComparePage';
+import MatchPage from './pages/Match/MatchPage';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/pais" element={<CountryGamePage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/comparar" element={<ComparePage />} />
+          <Route path="/partida/:id" element={<MatchPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

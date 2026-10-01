@@ -12,6 +12,7 @@ from models.region_name_db import RegionName
 from models.user_db import User  # noqa: F401
 from models.progress_db import GameSession, GameSessionAnswer  # noqa: F401
 from models.friendship_db import Friendship  # noqa: F401
+from models.match_db import Match  # noqa: F401
 
 from database.connection import engine
 from routes.countries import country_router
@@ -20,6 +21,7 @@ from routes.auth import auth_router
 from routes.progress import progress_router
 from routes.friends import friends_router
 from routes.compare import compare_router
+from routes.matches import matches_router
 
 
 @asynccontextmanager
@@ -75,3 +77,4 @@ app.include_router(auth_router)
 app.include_router(progress_router)
 app.include_router(friends_router)
 app.include_router(compare_router)
+app.include_router(matches_router)

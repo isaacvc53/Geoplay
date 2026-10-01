@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import UserAvatar from '../../components/UserAvatar';
 import { formatRelative } from '../Profile/profileLogic';
+import { useMatchActions } from '../Match/useMatchActions';
+import { DEFAULT_DURATION, DURATIONS, formatDuration, opponentOf } from '../Match/matchText';
 import './Friends.css';
+import './Matches.css';
 
 // The backend answers with a stable `code`; the texts live here.
 const ERROR_MESSAGES = {
@@ -41,8 +44,12 @@ function Avatar({ name }) {
   return <span className="friend-avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>;
 }
 
-export default function FriendsPanel({ loggedIn, friends }) {
+export default function FriendsPanel({ loggedIn, friends, matches }) {
   const { data, error, loading, reload } = friends;
+  const { current: currentMatch, invitations } = matches;
+  const actions = useMatchActions({ reload: matches.reload });
+  const [challengeUserId, setChallengeUserId] = useState(null); // friend whose challenge picker is open
+  const [duration, setDuration] = useState(DEFAULT_DURATION);
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(null); // key of the action in flight, or null
   const [message, setMessage] = useState(null); // { kind: 'ok' | 'error', text }
@@ -108,7 +115,7 @@ export default function FriendsPanel({ loggedIn, friends }) {
   const incoming = data ? data.incoming : [];
   const outgoing = data ? data.outgoing : [];
   const isEmpty = data && !friendList.length && !incoming.length && !outgoing.length;
-  const disabled = Boolean(busy);
+  const disabled = Boolean(busy) || Boolean(actions.busy);
 
   return (
     <div className="friends-panel">
@@ -130,7 +137,9 @@ export default function FriendsPanel({ loggedIn, friends }) {
       </form>
 
       <div className="friends-msg-slot" aria-live="polite">
-        {message && <p className={`friends-msg ${message.kind}`}>{message.text}</p>}
+        {message
+          ? <p className={`friends-msg ${message.kind}`}>{message.text}</p>
+          : actions.error && <p className="friends-msg error">{actions.error}</p>}
       </div>
 
       {!data && loading && <p className="friends-note">Loading…</p>}
@@ -140,6 +149,82 @@ export default function FriendsPanel({ loggedIn, friends }) {
           <p>Couldn&apos;t load your friends.</p>
           <button type="button" className="friend-btn" onClick={reload}>Try again</button>
         </div>
+      )}
+
+      {currentMatch && (
+        <section className="friends-section">
+          <h3>Your match</h3>
+          <ul>
+            <li className="friend-row">
+              <UserAvatar
+                className="friend-avatar"
+                userId={opponentOf(currentMatch).user_id}
+                name={opponentOf(currentMatch).username}
+                version={opponentOf(currentMatch).avatar_updated_at}
+              />
+              <span className="friend-who">
+                <span className="friend-name">vs {opponentOf(currentMatch).username}</span>
+                <span className="friend-meta">
+                  {currentMatch.status === 'invited'
+                    ? 'waiting for a reply'
+                    : currentMatch.status === 'ready' ? 'ready to play' : 'in progress'}
+                  {' · '}{formatDuration(currentMatch.duration_seconds)}
+                </span>
+              </span>
+              <span className="friend-actions">
+                <Link className="friend-btn primary" to={`/partida/${currentMatch.id}`}>Open</Link>
+                {(currentMatch.status === 'invited' || currentMatch.status === 'ready') && (
+                  <button
+                    type="button"
+                    className="friend-btn"
+                    disabled={disabled}
+                    onClick={() => actions.cancel(currentMatch.id)}
+                  >
+                    {currentMatch.status === 'invited' ? 'Cancel' : 'Leave'}
+                  </button>
+                )}
+              </span>
+            </li>
+          </ul>
+        </section>
+      )}
+
+      {invitations.length > 0 && (
+        <section className="friends-section">
+          <h3>Challenges <span className="friends-count">{invitations.length}</span></h3>
+          <ul>
+            {invitations.map((m) => (
+              <li className="friend-row" key={m.id}>
+                <UserAvatar className="friend-avatar" userId={m.host.user_id} name={m.host.username} version={m.host.avatar_updated_at} />
+                <span className="friend-who">
+                  <span className="friend-name">{m.host.username}</span>
+                  <span className="friend-meta">
+                    challenged you · {formatDuration(m.duration_seconds)} · random country
+                  </span>
+                </span>
+                <span className="friend-actions">
+                  <button
+                    type="button"
+                    className="friend-btn primary"
+                    disabled={disabled || Boolean(currentMatch)}
+                    title={currentMatch ? 'Leave your current match first' : undefined}
+                    onClick={() => actions.accept(m.id)}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    className="friend-btn"
+                    disabled={disabled}
+                    onClick={() => actions.decline(m.id)}
+                  >
+                    Decline
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {incoming.length > 0 && (
@@ -230,12 +315,27 @@ export default function FriendsPanel({ loggedIn, friends }) {
                   <span className="friend-meta dim">{activityText(f)}</span>
                 </span>
                 <span className="friend-actions spread">
-                  <Link
-                    className="friend-btn primary"
-                    to={`/comparar?con=${encodeURIComponent(f.username)}`}
-                  >
-                    Compare
-                  </Link>
+                  <span className="friend-actions">
+                    <button
+                      type="button"
+                      className="friend-btn primary"
+                      disabled={disabled || Boolean(currentMatch)}
+                      title={currentMatch ? 'Finish or cancel your current match first' : `Challenge ${f.username} to a 1 vs 1`}
+                      aria-expanded={challengeUserId === f.user_id}
+                      onClick={() => {
+                        setConfirmId(null);
+                        setChallengeUserId((cur) => (cur === f.user_id ? null : f.user_id));
+                      }}
+                    >
+                      Challenge
+                    </button>
+                    <Link
+                      className="friend-btn"
+                      to={`/comparar?con=${encodeURIComponent(f.username)}`}
+                    >
+                      Compare
+                    </Link>
+                  </span>
                   {confirmId === f.friendship_id ? (
                     <span className="friend-actions">
                       <button
@@ -259,12 +359,48 @@ export default function FriendsPanel({ loggedIn, friends }) {
                       type="button"
                       className="friend-btn"
                       disabled={disabled}
-                      onClick={() => setConfirmId(f.friendship_id)}
+                      onClick={() => { setChallengeUserId(null); setConfirmId(f.friendship_id); }}
                     >
                       Remove
                     </button>
                   )}
                 </span>
+                {challengeUserId === f.user_id && (
+                  <div className="challenge-picker">
+                    <span className="challenge-picker-label" id={`dur-${f.user_id}`}>Match length</span>
+                    <div className="challenge-durations" role="radiogroup" aria-labelledby={`dur-${f.user_id}`}>
+                      {DURATIONS.map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          role="radio"
+                          aria-checked={duration === d}
+                          className="challenge-chip"
+                          disabled={disabled}
+                          onClick={() => setDuration(d)}
+                        >
+                          {formatDuration(d)}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="challenge-note">
+                      A random country is drawn when {f.username} accepts. Whoever finds more regions in time wins.
+                    </p>
+                    <span className="friend-actions">
+                      <button
+                        type="button"
+                        className="friend-btn primary"
+                        disabled={disabled}
+                        onClick={() => actions.challenge(f.username, duration)}
+                      >
+                        {actions.busy === 'challenge' ? 'Sending…' : 'Send challenge'}
+                      </button>
+                      <button type="button" className="friend-btn" onClick={() => setChallengeUserId(null)}>
+                        Close
+                      </button>
+                    </span>
+                  </div>
+                )}
               </li>
             ))}
           </ul>

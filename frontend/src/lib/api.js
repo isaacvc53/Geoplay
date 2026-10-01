@@ -271,4 +271,34 @@ export const api = {
   getCountryComparison(countryId, username) {
     return this._get(`/compare/countries/${countryId}?with=${encodeURIComponent(username)}`);
   },
+
+  // --- Multiplayer matches (1 vs 1) ---
+
+  // Challenge an accepted friend. Resolves with the new match (status 'invited').
+  createMatch(username, durationSeconds) {
+    return this._post(`/matches`, { username, duration_seconds: durationSeconds });
+  },
+
+  // -> { current: match | null, invitations: [match] }. Cheap: poll it from the menu.
+  getMyMatches() {
+    return this._get(`/matches/mine`);
+  },
+
+  getMatch(matchId) {
+    return this._get(`/matches/${encodeURIComponent(matchId)}`);
+  },
+
+  // The invited player accepts: this is when the random country is drawn.
+  acceptMatch(matchId) {
+    return this._post(`/matches/${encodeURIComponent(matchId)}/accept`, {});
+  },
+
+  declineMatch(matchId) {
+    return this._post(`/matches/${encodeURIComponent(matchId)}/decline`, {});
+  },
+
+  // Cancels an invitation or leaves a match that hasn't started (204).
+  cancelMatch(matchId) {
+    return this._delete(`/matches/${encodeURIComponent(matchId)}`);
+  },
 };

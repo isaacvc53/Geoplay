@@ -1,0 +1,117 @@
+/* Multiplayer match room. Flat and scoped to .match-page, same palette as the
+   compare page. Background and square corners come from styles/theme.css. */
+
+.match-page{
+  --parchment:#f6f1e4;
+  --parchment-dim:#93a4b3;
+  --brass:#c9a24b;
+  --brass-dim:#8a774a;
+  --brass-bright:#d9b661;
+  --seal:#c9723f;
+  --line:#1f4666;
+  --line-soft:rgba(31,70,102,.55);
+  --ease:.2s ease;
+
+  min-height:100vh;
+  display:flex; align-items:flex-start; justify-content:center;
+  padding:48px 24px;
+  box-sizing:border-box;
+}
+.match-page *{ box-sizing:border-box; }
+.match-page h2{ margin:0; }
+.match-page :focus-visible{ outline:1.5px solid var(--brass-bright); outline-offset:3px; }
+
+.match-page .mp-card{
+  width:100%; max-width:560px;
+  border:1px solid var(--line);
+  background:#123049;
+  box-shadow:0 20px 48px rgba(3,9,15,.6);
+  padding:30px 30px 34px;
+  display:flex; flex-direction:column; gap:22px;
+}
+
+/* ---- header ---- */
+.match-page .mp-brand{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.match-page .mp-brand-id{ display:flex; align-items:center; gap:10px; text-decoration:none; }
+.match-page .mp-brand .mark{
+  width:26px; height:26px; border-radius:50%;
+  border:1px solid var(--brass);
+  display:grid; place-items:center;
+  font-family:'Fraunces',Georgia,serif; font-style:italic; color:var(--brass); font-size:12px;
+}
+.match-page .mp-brand .word{ font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:16px; color:var(--parchment); }
+.match-page .mp-brand .word i{ font-style:italic; color:var(--brass-bright); }
+.match-page .mp-brand-tag{
+  font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  padding:3px 8px; border-radius:999px; background:var(--line-soft); color:var(--brass);
+}
+
+/* ---- the two players ---- */
+.match-page .mp-versus{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:14px;
+  padding-bottom:22px; border-bottom:1px solid var(--line);
+}
+.match-page .mp-player{ display:flex; flex-direction:column; align-items:center; gap:4px; min-width:0; text-align:center; }
+.match-page .mp-avatar{
+  width:60px; height:60px; border-radius:50%; margin-bottom:6px;
+  border:1px solid var(--brass); background:rgba(201,162,75,.06);
+  display:grid; place-items:center; overflow:hidden;
+  font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; color:var(--brass-bright);
+}
+.match-page .mp-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.match-page .mp-player-name{
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:19px; color:var(--parchment);
+}
+.match-page .mp-player-tag{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--brass-dim); }
+.match-page .mp-vs{
+  font-family:'Fraunces',Georgia,serif; font-style:italic; font-size:26px; color:var(--brass-bright);
+}
+
+/* ---- state panel ---- */
+.match-page .mp-state{ display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; }
+.match-page .mp-state h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:26px; color:var(--parchment); }
+.match-page .mp-note{ font-size:14px; line-height:1.6; color:var(--parchment-dim); max-width:380px; }
+.match-page .mp-warn{ font-size:13px; color:var(--brass-bright); text-align:center; }
+.match-page .mp-error{ font-size:14px; color:var(--seal); text-align:center; }
+.match-page .mp-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+
+/* ---- the drawn country ---- */
+.match-page .mp-country{
+  width:100%; display:flex; flex-direction:column; align-items:center; gap:4px;
+  padding:20px 16px; border:1px solid rgba(201,162,75,.45); background:rgba(201,162,75,.08);
+  animation:mpReveal .5s ease both;
+}
+.match-page .mp-kicker{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--brass-dim); }
+.match-page .mp-country-name{
+  font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:clamp(28px,6vw,38px);
+  line-height:1.15; color:var(--brass-bright);
+}
+.match-page .mp-country-meta{ font-size:13px; color:var(--parchment-dim); }
+@keyframes mpReveal{
+  from{ opacity:0; transform:scale(.97) translateY(6px); }
+  to{ opacity:1; transform:none; }
+}
+
+/* ---- buttons ---- */
+.match-page .mp-btn{
+  display:inline-block; text-decoration:none; font-family:inherit;
+  font-size:12.5px; letter-spacing:.08em; text-transform:uppercase;
+  padding:10px 18px; border:1px solid var(--line); background:none; color:var(--parchment-dim);
+  cursor:pointer;
+  transition:border-color var(--ease), color var(--ease), background var(--ease);
+}
+.match-page .mp-btn:hover:not(:disabled){ border-color:var(--brass-bright); color:var(--brass-bright); }
+.match-page .mp-btn:disabled{ opacity:.5; cursor:not-allowed; }
+.match-page .mp-btn.primary{ background:var(--brass); border-color:var(--brass); color:#0e2233; font-weight:700; }
+.match-page .mp-btn.primary:hover:not(:disabled){ background:#eec877; border-color:#eec877; color:#0e2233; }
+
+@media (max-width:520px){
+  .match-page{ padding:20px 12px; }
+  .match-page .mp-card{ padding:22px 18px 26px; }
+  .match-page .mp-avatar{ width:52px; height:52px; font-size:20px; }
+  .match-page .mp-player-name{ font-size:16px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .match-page .mp-country{ animation:none; }
+}

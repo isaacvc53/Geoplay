@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import FriendsPanel from './FriendsPanel';
 import { useFriends } from './useFriends';
+import { useMyMatches } from './useMyMatches';
+import MatchBanner from './MatchBanner';
 import './Menu.css';
 
 // ---------- small presentational pieces ----------
@@ -121,8 +123,10 @@ export default function MenuPage() {
   const [stats, setStats] = useState(null);
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
+  const matches = useMyMatches(loggedIn);
   const availableCount = useAvailableCount();
-  const pendingRequests = friends.data ? friends.data.incoming.length : 0;
+  // Badge on the friends icon: friend requests + challenges waiting for an answer.
+  const pendingRequests = (friends.data ? friends.data.incoming.length : 0) + matches.invitations.length;
 
   // The decorative map is ~1.2 MB of path data: load it in its own chunk.
   useEffect(() => {
@@ -154,9 +158,10 @@ export default function MenuPage() {
 
   // Refresh friends and requests every time the drawer is opened.
   const reloadFriends = friends.reload;
+  const reloadMatches = matches.reload;
   useEffect(() => {
-    if (openDrawer === 'friends' && loggedIn) reloadFriends();
-  }, [openDrawer, loggedIn, reloadFriends]);
+    if (openDrawer === 'friends' && loggedIn) { reloadFriends(); reloadMatches(); }
+  }, [openDrawer, loggedIn, reloadFriends, reloadMatches]);
 
   const toggle = (name) => setOpenDrawer((cur) => (cur === name ? null : name));
   const close = () => setOpenDrawer(null);
@@ -173,13 +178,13 @@ export default function MenuPage() {
           </a>
           <nav className="mainnav">
             <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Roadmap</a>
-            <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Multiplayer</a>
+            <a href="#" onClick={(e) => { e.preventDefault(); setOpenDrawer('friends'); }}>Multiplayer</a>
             <Link to="/mapa-mundial">World map</Link>
             <Link to="/modo">Regions</Link>
             <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
-            <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
+            <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests or challenges` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
               <IconFriends />
               {pendingRequests > 0 && <span className="icon-badge" aria-hidden="true">{pendingRequests}</span>}
             </button>
@@ -201,9 +206,11 @@ export default function MenuPage() {
           </nav>
         </div>
 
+        <MatchBanner matches={matches} onOpenFriends={() => setOpenDrawer('friends')} />
+
         {/* Friends */}
         <Drawer id="friendsDrawer" label="Friends" title="Friends" open={openDrawer === 'friends'} onClose={close}>
-          <FriendsPanel loggedIn={loggedIn} friends={friends} />
+          <FriendsPanel loggedIn={loggedIn} friends={friends} matches={matches} />
         </Drawer>
 
         {/* Achievements */}
