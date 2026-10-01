@@ -72,6 +72,10 @@ export default function WorldMapPage() {
           <button aria-label="Zoom out" onClick={() => canvasRef.current?.zoomOut()}>–</button>
           <button aria-label="Reset zoom" onClick={() => canvasRef.current?.reset()}>⟲</button>
         </div>
+        <div className="legend" aria-hidden="true">
+          <span className="legend-item"><i className="legend-sw legend-sw-open" />Playable</span>
+          <span className="legend-item"><i className="legend-sw legend-sw-off" />Coming soon</span>
+        </div>
         <div className="scale"><span>0</span><span className="bar" /><span>2000 km</span></div>
       </div>
 

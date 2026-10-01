@@ -35,6 +35,22 @@ const GESTURE_IDLE_MS = 140;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// Paleta de tierra (tonos apagados que contrastan con el océano). Cada país recibe uno
+// distinto al de sus vecinos (coloreado voraz por cajas envolventes, ver assignTones).
+const TONES = ['#e9ddbd', '#dcc593', '#bccaa4', '#dbb89d', '#adc6c9', '#cdbcd2'];
+
+// Etiquetas de países: tamaño en píxeles de pantalla (constante al hacer zoom) y ancho
+// aproximado por letra; una etiqueta solo se muestra si cabe dentro del país.
+const LABEL_PX = 9.5;
+const LABEL_CHAR_PX = 6.5;
+
+function hashId(id) {
+  let h = 0;
+  const str = String(id);
+  for (let i = 0; i < str.length; i += 1) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
   const svgRef = useRef(null);
@@ -43,6 +59,8 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const zoomApiRef = useRef(null);
   const countryPathsRef = useRef(null);
   const onSelectRef = useRef(onSelect);
+  const selectedRef = useRef(selected);
+  const setActiveRingRef = useRef(null);
   const [status, setStatus] = useState('loading'); // loading | ready | error
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
@@ -53,9 +71,11 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     reset: () => zoomApiRef.current?.reset(),
   }), []);
 
-  // Resalta el país abierto en el panel.
+  // Resalta el país abierto en el panel (relleno + anillo dorado).
   useEffect(() => {
+    selectedRef.current = selected;
     countryPathsRef.current?.classed('active', (d) => d === selected);
+    setActiveRingRef.current?.(selected);
   }, [selected]);
 
   useEffect(() => {
@@ -90,9 +110,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     const defs = svg.append('defs');
 
     const grad = defs.append('radialGradient')
-      .attr('id', 'oceanGlow').attr('cx', '30%').attr('cy', '25%').attr('r', '85%');
-    grad.append('stop').attr('offset', '0%').attr('stop-color', '#16405f');
-    grad.append('stop').attr('offset', '100%').attr('stop-color', '#0e2233');
+      .attr('id', 'oceanGlow').attr('cx', '34%').attr('cy', '28%').attr('r', '90%');
+    grad.append('stop').attr('offset', '0%').attr('stop-color', '#1d6386');
+    grad.append('stop').attr('offset', '45%').attr('stop-color', '#12405e');
+    grad.append('stop').attr('offset', '100%').attr('stop-color', '#08192a');
 
     // Rayado diagonal para países deshabilitados. Los colores salen de las
     // variables CSS --land-disabled / --land-disabled-line de la página.
@@ -120,7 +141,32 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     // dentro de `g`: hacen zoom y paneo junto con los países.
     const ocean = g.append('path').attr('class', 'sphere');
     const graticuleG = g.append('path').attr('class', 'graticule');
+    const graticuleMajorG = g.append('path').attr('class', 'graticule graticule-major');
     const countriesG = g.append('g').attr('class', 'countries-group');
+    const labelsG = g.append('g').attr('class', 'labels-group');
+
+    // Anillos de resalte (hover y país abierto): un trazo ancho y translúcido (brillo) y
+    // otro fino encima. Son paths sueltos con pointer-events:none, así no hace falta
+    // reordenar los países ni usar filtros SVG (que escalarían con el zoom).
+    function makeRing(cls) {
+      const grp = g.append('g').attr('class', 'ring ' + cls);
+      const glow = grp.append('path').attr('class', 'ring-glow');
+      const line = grp.append('path').attr('class', 'ring-line');
+      return {
+        grp,
+        set(d) { glow.attr('d', d || null); line.attr('d', d || null); },
+      };
+    }
+    const ringActive = makeRing('active-ring');
+    const ringHover = makeRing('hover-ring');
+    // Borde doble de la esfera, por encima de los países.
+    const rimGlow = g.append('path').attr('class', 'sphere-rim sphere-rim-glow');
+    const rimLine = g.append('path').attr('class', 'sphere-rim');
+
+    setActiveRingRef.current = (f) => {
+      ringActive.set(f ? f.d : null);
+      ringActive.grp.classed('show', Boolean(f));
+    };
 
     // El evento 'zoom' llega más rápido de lo que la pantalla repinta:
     // se aplica una sola vez por frame, con la transformación más reciente.
@@ -129,8 +175,69 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     function flushTransform() {
       // Como atributo SVG (no CSS style): mismo origen que usa d3-zoom.
       if (pendingTransform) g.attr('transform', pendingTransform);
+      scaleLabels();
       rafScheduled = false;
     }
+
+    // Las etiquetas miden lo mismo en pantalla sea cual sea el zoom: se compensa la
+    // escala en la unidad del SVG (2 estilos por frame, sobre el grupo, no por país).
+    function scaleLabels() {
+      const u = 1 / (viewScale * currentK);
+      labelsG.style('font-size', (LABEL_PX * u) + 'px').style('stroke-width', (2.6 * u) + 'px');
+    }
+
+    // Muestra solo las etiquetas que caben dentro de su país con el zoom actual y que no
+    // se pisan con otra ya mostrada (de mayor a menor país: gana el más grande).
+    let labelSel = null;
+    let labelOrder = [];
+    function updateLabels() {
+      if (!labelSel) return;
+      const px = viewScale * currentK;
+      const shown = new Set();
+      const placed = [];
+      labelOrder.forEach((d) => {
+        const w = d.properties.name.length * LABEL_CHAR_PX * 1.1;
+        const h = LABEL_PX * 1.7;
+        if (d.bb.w * px < w || d.bb.h * px < h) return;
+        const cx = (d.bb.x + d.bb.w / 2) * px;
+        const cy = (d.bb.y + d.bb.h / 2) * px;
+        const gap = 4; // separación mínima entre etiquetas, en píxeles
+        const clash = placed.some((r) =>
+          Math.abs(cx - r.cx) < (w + r.w) / 2 + gap && Math.abs(cy - r.cy) < (h + r.h) / 2 + gap);
+        if (clash) return;
+        placed.push({ cx, cy, w, h });
+        shown.add(d);
+      });
+      labelSel.style('display', (d) => (shown.has(d) ? null : 'none'));
+    }
+
+    // Coloreado voraz: de mayor a menor, cada país toma el primer tono que no usen
+    // los vecinos ya coloreados (vecino = cajas envolventes que se tocan).
+    function assignTones(features) {
+      const order = features.slice().sort((a, b) => b.bb.w * b.bb.h - a.bb.w * a.bb.h);
+      const pad = mapW * 0.004;
+      const done = [];
+      order.forEach((f) => {
+        const used = new Map();
+        done.forEach((o) => {
+          if (o.bb.x - pad > f.bb.x + f.bb.w || o.bb.x + o.bb.w + pad < f.bb.x) return;
+          if (o.bb.y - pad > f.bb.y + f.bb.h || o.bb.y + o.bb.h + pad < f.bb.y) return;
+          used.set(o.tone, (used.get(o.tone) || 0) + 1);
+        });
+        const start = hashId(f.id) % TONES.length;
+        let best = null;
+        for (let i = 0; i < TONES.length; i += 1) {
+          const t = TONES[(start + i) % TONES.length];
+          const n = used.get(t) || 0;
+          if (best === null || n < best.n) best = { t, n };
+          if (n === 0) break;
+        }
+        f.tone = best.t;
+        done.push(f);
+      });
+    }
+
+
 
     const zoom = d3.zoom()
       .scaleExtent([1, MAX_ZOOM])
@@ -153,6 +260,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           g.style('will-change', null);
           // El rayado mide ~6 px en pantalla sea cual sea el zoom.
           setHatchScale(1 / (viewScale * currentK));
+          updateLabels();
         }, GESTURE_IDLE_MS);
       });
     svg.call(zoom);
@@ -232,6 +340,8 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         svg.call(zoom.transform, home);
       } else {
         setHatchScale(1 / (s * currentK));
+        scaleLabels();
+        updateLabels();
       }
     }
     // ResizeObserver (no window.resize): también reacciona a la barra del navegador
@@ -258,8 +368,13 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
             .scale(proj.scale)
             .translate(proj.translate);
           const geoPath = d3.geoPath(projection).digits(1);
-          ocean.attr('d', geoPath({ type: 'Sphere' }));
+          const sphereD = geoPath({ type: 'Sphere' });
+          ocean.attr('d', sphereD);
+          rimGlow.attr('d', sphereD);
+          rimLine.attr('d', sphereD);
           graticuleG.attr('d', geoPath(d3.geoGraticule10()));
+          // Cada 30°: líneas algo más marcadas (aspecto de atlas).
+          graticuleMajorG.attr('d', geoPath(d3.geoGraticule().step([30, 30]).extent([[-180, -90], [180, 90]])()));
         } else {
           console.warn('world-map.json sin `projection` válida: se dibuja el mapa sin esfera ni cuadrícula.');
         }
@@ -269,6 +384,17 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           d: c.d,
           main: c.main,
         }));
+
+        // Caja envolvente del polígono principal de cada país (para etiquetas y colores).
+        // Se mide con un path temporal fuera de pantalla.
+        const probe = g.append('path').style('visibility', 'hidden').node();
+        features.forEach((f) => {
+          probe.setAttribute('d', f.main || f.d);
+          const b = probe.getBBox();
+          f.bb = { x: b.x, y: b.y, w: b.width, h: b.height };
+        });
+        probe.remove();
+        assignTones(features);
 
 
         // availableSlugs === null significa "aún sin comprobar": mientras tanto
@@ -287,28 +413,49 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           .attr('class', 'country')
           .classed('disabled', isUnavailable)
           .attr('d', (d) => d.d)
+          .style('--tone', (d) => d.tone)
           .on('mouseenter', (event, d) => {
             const name = d.properties.name || 'Country';
             const isDisabled = isUnavailable(d);
             tooltip.replaceChildren();
+            // Bandera pequeña (flagcdn, la misma que usa el panel); si falla se quita.
+            if (/^[A-Z]{2}$/.test(d.id || '')) {
+              const flag = document.createElement('img');
+              flag.className = 'tooltip-flag';
+              flag.alt = '';
+              flag.src = `https://flagcdn.com/w40/${d.id.toLowerCase()}.png`;
+              flag.addEventListener('error', () => flag.remove());
+              tooltip.appendChild(flag);
+            }
+            const textEl = document.createElement('span');
+            textEl.className = 'tooltip-text';
             const nameEl = document.createElement('span');
             nameEl.className = 'tooltip-name';
             nameEl.textContent = name;
-            tooltip.appendChild(nameEl);
+            textEl.appendChild(nameEl);
             if (isDisabled) {
               const noteEl = document.createElement('span');
               noteEl.className = 'tooltip-note';
               noteEl.textContent = 'Not available';
-              tooltip.appendChild(noteEl);
+              textEl.appendChild(noteEl);
             }
+            tooltip.appendChild(textEl);
             tooltip.classList.toggle('is-disabled', isDisabled);
             tooltip.classList.add('show');
+            // En táctil el "hover" se queda pegado tras tocar: no se dibuja anillo.
+            if (!touchOnly.matches) {
+              ringHover.set(d.d);
+              ringHover.grp.classed('off', isDisabled).classed('show', true);
+            }
           })
           .on('mousemove', (event) => {
             tooltip.style.left = event.clientX + 'px';
             tooltip.style.top = event.clientY + 'px';
           })
-          .on('mouseleave', () => tooltip.classList.remove('show'))
+          .on('mouseleave', () => {
+            tooltip.classList.remove('show');
+            ringHover.grp.classed('show', false);
+          })
           .on('click', (event, d) => {
             if (isUnavailable(d)) {
               if (touchOnly.matches) showToast(d.properties.name || 'Country');
@@ -317,9 +464,25 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
             onSelectRef.current?.(d);
           });
         countryPathsRef.current = countryPaths;
+        countryPaths.classed('active', (d) => d === selectedRef.current);
+        setActiveRingRef.current?.(selectedRef.current);
 
+        labelSel = labelsG.selectAll('text')
+          .data(features)
+          .join('text')
+          .attr('class', 'map-label')
+          .attr('x', (d) => d.bb.x + d.bb.w / 2)
+          .attr('y', (d) => d.bb.y + d.bb.h / 2)
+          .style('display', 'none')
+          .text((d) => d.properties.name);
+
+        labelOrder = features.slice().sort((a, b) => b.bb.w * b.bb.h - a.bb.w * a.bb.h);
+
+        svg.classed('ready', true);
         setStatus('ready');
         resize();
+        scaleLabels();
+        updateLabels();
 
         // Comprobación de disponibilidad en segundo plano; luego se repintan
         // (rayado) los países sin archivos.
@@ -329,6 +492,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
             if (cancelled) return;
             availableSlugs = slugs;
             countryPaths.classed('disabled', isUnavailable);
+            labelSel?.classed('dim', isUnavailable);
           })
           .catch((err) => {
             console.warn('Could not check country availability; leaving all countries enabled.', err);
@@ -350,6 +514,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       svg.interrupt();
       svg.selectAll('*').remove();
       countryPathsRef.current = null;
+      setActiveRingRef.current = null;
       zoomApiRef.current = null;
     };
   }, []);
