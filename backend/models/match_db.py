@@ -7,6 +7,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    UniqueConstraint,
     text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -19,8 +20,10 @@ from models.utc import now_utc_naive
 # Ciclo de vida de una partida 1 contra 1:
 #   invited  -> el anfitrión invitó a un amigo y espera respuesta
 #   ready    -> el invitado aceptó; el país ya está elegido al azar
-#   playing  -> la partida está en marcha (con cuenta atrás)       [parte 3]
-#   finished -> terminó el tiempo y hay resultado                  [parte 4]
+#   playing  -> el anfitrión o el invitado pulsó "Start": cuenta atrás de 3 s y
+#               luego el tiempo corre. started_at es el instante en que EMPIEZA
+#               a contar el tiempo (ya incluye la cuenta atrás); ends_at es el final.
+#   finished -> se acabó el tiempo, alguien completó el mapa o alguien abandonó
 #   declined -> el invitado rechazó
 #   cancelled-> alguien canceló antes de empezar
 #   expired  -> la invitación caducó sin respuesta
@@ -120,4 +123,27 @@ class Match(Base):
             postgresql_where=text(_in_game_sql),
             sqlite_where=text(_in_game_sql),
         ),
+    )
+
+
+class MatchAnswer(Base):
+    """Un acierto de un jugador en una partida. Es la ÚNICA fuente de verdad de la
+    puntuación: el servidor valida cada nombre y solo entonces inserta la fila
+    (host_score / guest_score en `matches` se actualizan a la vez).
+
+    La restricción única impide contar dos veces la misma región al mismo jugador
+    aunque lleguen dos peticiones a la vez. Es una tabla nueva: create_all la
+    crea sola, sin migraciones.
+    """
+
+    __tablename__ = "match_answers"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    match_id: Mapped[int] = mapped_column(ForeignKey("matches.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    region_id: Mapped[int] = mapped_column(ForeignKey("regiones.id"))
+    answered_at: Mapped[datetime] = mapped_column(DateTime, default=now_utc_naive)
+
+    __table_args__ = (
+        UniqueConstraint("match_id", "user_id", "region_id", name="uq_match_answer_once"),
     )

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from models.match import MatchCreate, MatchOut, MyMatches
+from models.match import GuessIn, GuessOut, MatchAnswers, MatchCreate, MatchOut, MyMatches
 from models.user_db import User
 from routes.auth import get_current_user, get_db
 from services import friends_service, match_service
@@ -84,13 +84,49 @@ def rechazar_invitacion(
         return match_service.serialize(db, m, usuario_actual)
 
 
+@matches_router.post("/{match_id}/start", response_model=MatchOut)
+def empezar_partida(
+    match_id: int,
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cualquiera de los dos jugadores empieza: cuenta atrás de 3 s y a jugar.
+    Es idempotente: si ya está en marcha devuelve la partida tal cual."""
+    with errores_de_partida():
+        m = match_service.start_match(db, usuario_actual, match_id)
+        return match_service.serialize(db, m, usuario_actual)
+
+
+@matches_router.post("/{match_id}/guess", response_model=GuessOut)
+def intentar_region(
+    match_id: int,
+    datos: GuessIn,
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Comprueba un nombre. El servidor decide si es acierto y cuenta el punto."""
+    with errores_de_partida():
+        return match_service.submit_guess(db, usuario_actual, match_id, datos.text)
+
+
+@matches_router.get("/{match_id}/answers", response_model=MatchAnswers)
+def mis_aciertos(
+    match_id: int,
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    with errores_de_partida():
+        return match_service.get_answers(db, usuario_actual, match_id)
+
+
 @matches_router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
 def cancelar_partida(
     match_id: int,
     usuario_actual: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Cancela la invitación o abandona la partida antes de que empiece."""
+    """Cancela la invitación, abandona la sala o abandona la partida en marcha
+    (en ese caso gana el rival)."""
     with errores_de_partida():
         match_service.cancel_match(db, usuario_actual, match_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

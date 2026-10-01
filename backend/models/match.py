@@ -48,9 +48,20 @@ class MatchOut(BaseModel):
     country: MatchCountry | None = None  # None hasta que el invitado acepta
     created_at: UtcDatetime
     invite_expires_at: UtcDatetime | None = None  # solo mientras status == "invited"
+    # Cuando status == "playing": started_at es el instante en que empieza a correr
+    # el tiempo (la cuenta atrás de 3 s va ANTES) y ends_at el final. Los dos
+    # navegadores los usan junto con server_time, nunca su propio reloj a pelo.
     started_at: UtcDatetime | None = None
     ends_at: UtcDatetime | None = None
-    winner_id: int | None = None
+    finished_at: UtcDatetime | None = None
+    winner_id: int | None = None  # None con status "finished" = empate
+    # Por qué terminó (solo con status == "finished"):
+    #   "time" se acabó el tiempo, "completed" alguien halló todas las regiones,
+    #   "forfeit" alguien abandonó con la partida en marcha (el otro gana).
+    end_reason: Literal["time", "completed", "forfeit"] | None = None
+    # Hora del servidor al responder: sirve para calcular cuánto se adelanta o
+    # atrasa el reloj del navegador y que la cuenta atrás sea la misma para los dos.
+    server_time: UtcDatetime
 
 
 class MyMatches(BaseModel):
@@ -58,3 +69,25 @@ class MyMatches(BaseModel):
     current: MatchOut | None = None
     # Invitaciones que me han hecho y aún no he respondido.
     invitations: list[MatchOut]
+
+
+class GuessIn(BaseModel):
+    text: str = Field(min_length=1, max_length=100)
+
+
+class GuessOut(BaseModel):
+    # correct  -> región nueva: suma un punto
+    # already  -> es una región válida, pero tú ya la tenías
+    # wrong    -> no coincide con ninguna región (o es ambiguo)
+    result: Literal["correct", "already", "wrong"]
+    region_id: int | None = None
+    name: str | None = None  # el nombre con el que está guardada la región
+    score: int  # tu puntuación tras este intento
+    status: str  # estado de la partida tras el intento ("finished" si acabó con él)
+
+
+class MatchAnswers(BaseModel):
+    # Las regiones que he acertado (sirve para recuperar el estado al recargar).
+    mine: list[int]
+    # Las del rival: solo se revelan cuando la partida ha terminado.
+    opponent: list[int] | None = None

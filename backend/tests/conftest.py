@@ -36,3 +36,13 @@ def client(db_session):
     # Sin "with": no se ejecuta el lifespan (que usa el engine real).
     yield TestClient(main.app)
     main.app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def sin_manifiesto_de_paises(monkeypatch):
+    """Los tests no deben depender del available-countries.json real del repo:
+    por defecto se sortea entre todos los países con regiones. Los tests que
+    prueban el filtro lo reemplazan con su propio monkeypatch."""
+    from services import match_service
+
+    monkeypatch.setattr(match_service, "_available_slugs", lambda: None)

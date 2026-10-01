@@ -103,26 +103,38 @@ def _tokens_match(guess: str, candidate: str) -> bool:
     return True
 
 
-def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
-    """Busca una región por nombre exacto o por palabras parciales no ambiguas."""
+def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=frozenset()):
+    """Decide a qué región corresponde lo escrito. Es la regla de /regions/check,
+    separada de la consulta a la BD para poder reutilizarla (p. ej. en las partidas
+    multijugador, que ya tienen su propia sesión de BD).
+
+    pares: iterable de (region_id, nombre) con TODOS los nombres válidos del país.
+    ya_acertadas: ids que el jugador ya tiene; solo se usan para desempatar cuando
+    varias regiones comparten exactamente el mismo nombre (p. ej. dos "Zagreb"):
+    se elige la que aún le falta.
+
+    Devuelve {"region_id", "name"} o None.
+    """
     objetivo = normalizar(nombre_intentado)
     if not objetivo:
         return None
 
-    with SessionLocal() as db:
-        resultados = (
-            db.query(RegionName, Region)
-            .join(Region, RegionName.region_id == Region.id)
-            .join(Country, Region.country_id == Country.id)
-            .filter(Country.slug == nombre_pais)
-            .all()
-        )
+    pares = list(pares)
 
     # 1) Exacto: siempre tiene prioridad.
     exact_regions = {}
-    for region_name, region in resultados:
-        if normalizar(region_name.name) == objetivo:
-            exact_regions[region.id] = region_name.name
+    for region_id, nombre in pares:
+        if normalizar(nombre) == objetivo:
+            exact_regions[region_id] = nombre
+
+    if len(exact_regions) > 1 and ya_acertadas:
+        pendientes = {r: n for r, n in exact_regions.items() if r not in ya_acertadas}
+        if len(pendientes) == 1:
+            exact_regions = pendientes
+        elif not pendientes:
+            # Las tiene todas: que cuente como "ya la tenías", no como error.
+            primera = min(exact_regions)
+            exact_regions = {primera: exact_regions[primera]}
 
     if len(exact_regions) == 1:
         region_id, matched_name = next(iter(exact_regions.items()))
@@ -130,9 +142,9 @@ def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
 
     # 2) Parcial: todas las palabras escritas deben encajar.
     partial_regions = {}
-    for region_name, region in resultados:
-        if _tokens_match(objetivo, region_name.name):
-            partial_regions[region.id] = region_name.name
+    for region_id, nombre in pares:
+        if _tokens_match(objetivo, nombre):
+            partial_regions[region_id] = nombre
 
     # Solo aceptamos el parcial cuando identifica una única región.
     if len(partial_regions) == 1:
@@ -140,6 +152,23 @@ def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
         return {"region_id": region_id, "name": matched_name}
 
     return None
+
+
+def service_comprobar_nombre(nombre_pais: str, nombre_intentado: str):
+    """Busca una región por nombre exacto o por palabras parciales no ambiguas."""
+    if not normalizar(nombre_intentado):
+        return None
+
+    with SessionLocal() as db:
+        resultados = (
+            db.query(Region.id, RegionName.name)
+            .join(RegionName, RegionName.region_id == Region.id)
+            .join(Country, Region.country_id == Country.id)
+            .filter(Country.slug == nombre_pais)
+            .all()
+        )
+
+    return resolver_nombre(resultados, nombre_intentado)
 
 
 def service_listar_regiones_con_nombres(nombre_pais: str):

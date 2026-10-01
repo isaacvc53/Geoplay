@@ -32,6 +32,12 @@ services:
       SECRET_KEY: ${SECRET_KEY:?Falta SECRET_KEY en .env (mínimo 32 caracteres)}
       # Emails (separados por comas) que pueden crear/editar/borrar países y regiones.
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+    volumes:
+      # El build del frontend, solo lectura. El backend lee de ahí
+      # data/available-countries.json para sortear, en las partidas 1 contra 1,
+      # solo países que el frontend sabe dibujar. Si no lo encuentra, sortea entre
+      # todos los países con regiones y deja un aviso en el log.
+      - ./frontend/dist:/frontend-dist:ro
     depends_on:
       db:
         condition: service_healthy
