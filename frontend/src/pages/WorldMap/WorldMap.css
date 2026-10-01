@@ -120,58 +120,18 @@
   .btn-back:hover .arrow{ transform:translateX(-3px); }
 
   /* ---------- Mapa ---------- */
+  /* El mapa es un <canvas> que se redibuja en vectores a resolución real en cada
+     fotograma de zoom/paneo: no hay bitmap escalado, así que nunca se ve borroso. */
   #map-wrap{ width:100%; height:100%; contain:layout paint; }
-  svg#worldmap{
+  canvas#worldmap{
     width:100%; height:100%; display:block; cursor:grab;
     touch-action:none;
     user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+    /* Fundido suave al terminar de cargar. */
+    opacity:0; transition:opacity 0.8s ease;
   }
-  svg#worldmap.grabbing{ cursor:grabbing; }
-
-  .sphere{ fill:url(#oceanGlow); stroke:none; }
-  .graticule{ fill:none; stroke:rgba(140,200,235,0.10); stroke-width:0.5; shape-rendering:geometricPrecision; vector-effect:non-scaling-stroke; }
-  .graticule-major{ stroke:rgba(212,172,85,0.20); stroke-width:0.6; }
-
-  /* Borde doble de la esfera (por encima de los países, sin capturar el ratón). */
-  .sphere-rim{ fill:none; stroke:rgba(212,172,85,0.65); stroke-width:1.2; vector-effect:non-scaling-stroke; pointer-events:none; }
-  .sphere-rim-glow{ stroke:rgba(212,172,85,0.10); stroke-width:9; }
-
-  /* Los países aparecen con un fundido suave al terminar de cargar. */
-  .countries-group{ opacity:0; transition:opacity 0.8s ease; }
-  svg#worldmap.ready .countries-group{ opacity:1; }
-
-  .country{
-    fill:var(--land);
-    fill-opacity:0.95;
-    stroke:rgba(6,18,28,0.9);
-    stroke-width:0.55;
-    stroke-linejoin:round;
-    shape-rendering:geometricPrecision;
-    vector-effect:non-scaling-stroke;
-    transition:fill 0.15s ease, fill-opacity 0.15s ease;
-    cursor:pointer;
-  }
-  /* Solo con ratón: en táctil el :hover se queda "pegado" tras tocar un país. */
-  @media (hover:hover){
-    .country:hover{ fill:var(--land-hover); fill-opacity:1; }
-  }
-  .country.active{ fill:var(--land-active); fill-opacity:1; }
-
-  /* Países aún no disponibles: mismo color que el resto, solo cambia el cursor. */
-  .country.disabled{ cursor:not-allowed; }
-
-  /* Anillos de resalte: brillo ancho + línea fina, ambos de grosor constante en pantalla. */
-  .ring{ pointer-events:none; opacity:0; transition:opacity 0.14s ease; }
-  .ring.show{ opacity:1; }
-  .ring path{ fill:none; stroke-linejoin:round; vector-effect:non-scaling-stroke; pointer-events:none; }
-  .ring-glow{ stroke-width:7; }
-  .ring-line{ stroke-width:1.7; }
-  .hover-ring .ring-glow{ stroke:rgba(255,214,130,0.38); }
-  .hover-ring .ring-line{ stroke:#fff6dc; stroke-width:2; }
-  .hover-ring.off .ring-glow{ stroke:rgba(212,172,85,0.10); }
-  .hover-ring.off .ring-line{ stroke:rgba(212,172,85,0.5); }
-  .active-ring .ring-glow{ stroke:rgba(240,138,69,0.34); }
-  .active-ring .ring-line{ stroke:#ffb878; stroke-width:2; }
+  canvas#worldmap.ready{ opacity:1; }
+  canvas#worldmap.grabbing{ cursor:grabbing !important; }
 
   .loading{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
@@ -392,8 +352,7 @@
   }
 
   @media (prefers-reduced-motion: reduce){
-    .panel, .panel-close, .overlay, .action-primary, .country,
-    .countries-group, .ring{ transition:none !important; }
+    .panel, .panel-close, .overlay, .action-primary, canvas#worldmap{ transition:none !important; }
     .loading, .loading::before{ animation:none !important; }
   }
 
