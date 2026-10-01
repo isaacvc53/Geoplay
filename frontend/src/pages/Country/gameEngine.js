@@ -15,7 +15,7 @@
 
 import * as d3 from 'd3';
 import { api } from '../../lib/api';
-import { normalizeText, findLocalGuess, findExactLocalMatch } from '../../lib/textMatch';
+import { normalizeText, findLocalGuess, findExactLocalMatch, hasLongerCandidate } from '../../lib/textMatch';
 
 export function createGame({ country, texts, els, geoUrl }) {
   // Nodos capturados UNA vez: en StrictMode React suelta los refs antes de ejecutar
@@ -571,7 +571,18 @@ export function createGame({ country, texts, els, geoUrl }) {
         const local = regions.find((r) =>
           (r.names || []).some((n) => backendKeys.includes(normalizeSafe(n)))
         );
-        if (local) local.region_id = backendRegion.region_id;
+        if (local) {
+          local.region_id = backendRegion.region_id;
+          // Añade los nombres que solo conoce el backend (español, alias...): así el
+          // autoacierto al teclear también los reconoce, no solo el botón Check.
+          const known = new Set((local.names || []).map(normalizeSafe));
+          (backendRegion.names || []).forEach((n) => {
+            if (n && !known.has(normalizeSafe(n))) {
+              (local.names = local.names || []).push(n);
+              known.add(normalizeSafe(n));
+            }
+          });
+        }
       });
 
       localMode = false;
@@ -656,14 +667,32 @@ export function createGame({ country, texts, els, geoUrl }) {
 
   // Comprobación instantánea al escribir: solo con el nombre COMPLETO exacto
   // (findLocalGuess aceptaría prefijos de 3+ letras y marcaría "Kabul" al teclear "kab").
+  // Si ese nombre es el comienzo de otro aún sin acertar ("Mato Grosso" / "Mato Grosso do Sul",
+  // "Sudán" / "Sudán del Sur"), se espera un instante por si el jugador sigue escribiendo;
+  // con Enter / Check se acepta al momento.
+  const LIVE_WAIT_MS = 900;
+  let liveTimer = null;
+  cleanups.push(() => clearTimeout(liveTimer));
+
   on(guessEl, 'input', () => {
+    clearTimeout(liveTimer);
     if (phase !== 'playing') return;
 
     const raw = guessEl.value.trim();
     if (!raw) return;
 
-    const region = findExactLocalMatch(regions, raw);
-    if (region && !solved.has(region.id)) addSolved(region);
+    const region = findExactLocalMatch(regions, raw, solved);
+    if (!region || solved.has(region.id)) return;
+
+    if (hasLongerCandidate(regions, region, raw, solved)) {
+      liveTimer = setTimeout(() => {
+        if (disposed || phase !== 'playing') return;
+        if (guessEl.value.trim() !== raw || solved.has(region.id)) return;
+        addSolved(region);
+      }, LIVE_WAIT_MS);
+      return;
+    }
+    addSolved(region);
   });
 
   // ---------------- LOAD GEOMETRY ----------------

@@ -38,9 +38,31 @@ export function findLocalGuess(regions, raw) {
 // identify a single region), this variant ONLY accepts the full name.
 // Used for the "as you type" live check, so typing "kab" doesn't already
 // mark "Kabul" solved before the player finishes typing it.
-export function findExactLocalMatch(regionsList, raw) {
+// `solved` (Set de ids, opcional): si el nombre lo comparten varias regiones,
+// se ignoran las ya acertadas (p. ej. "Zagreb" cuando una de las dos ya está).
+export function findExactLocalMatch(regionsList, raw, solved) {
   const q = normalizeText(raw);
   if (!q) return null;
-  const exact = regionsList.filter((r) => (r.names || []).some((n) => normalizeText(n) === q));
+  let exact = regionsList.filter((r) => (r.names || []).some((n) => normalizeText(n) === q));
+  if (exact.length > 1 && solved) {
+    const pending = exact.filter((r) => !solved.has(r.id));
+    if (pending.length === 1) exact = pending;
+  }
   return exact.length === 1 ? exact[0] : null;
+}
+
+// ¿Hay OTRA región sin acertar cuyo nombre empieza por lo escrito pero es más largo?
+// Ej.: "Mato Grosso" -> "Mato Grosso do Sul", "Sudán" -> "Sudán del Sur".
+// Si es así, el autoacierto debe esperar un poco por si el jugador sigue escribiendo.
+export function hasLongerCandidate(regionsList, region, raw, solved) {
+  const q = normalizeText(raw);
+  if (!q) return false;
+  return regionsList.some((r) =>
+    r !== region &&
+    !(solved && solved.has(r.id)) &&
+    (r.names || []).some((n) => {
+      const nn = normalizeText(n);
+      return nn.length > q.length && nn.startsWith(q);
+    })
+  );
 }
