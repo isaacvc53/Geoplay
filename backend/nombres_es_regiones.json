@@ -2133,10 +2133,6 @@
   ]
  },
  "bolivia": {
-  "El Beni": [
-   "Departamento del Beni",
-   "Departamento de Beni"
-  ],
   "Cochabamba": [
    "Departamento de Cochabamba"
   ],
@@ -2160,6 +2156,11 @@
   ],
   "Tarija": [
    "Departamento de Tarija"
+  ],
+  "Beni": [
+   "El Beni",
+   "Departamento del Beni",
+   "Departamento de Beni"
   ]
  },
  "bosnia": {
@@ -2798,23 +2799,30 @@
   ]
  },
  "chile": {
-  "Aysen Region": [
-   "Región de Aysén"
-  ],
   "Arica y Parinacota": [
    "Arica"
-  ],
-  "Bío-Bío Region": [
-   "Región del Biobío"
-  ],
-  "Libertador General Bernardo O'Higgins Region": [
-   "Región de O'Higgins"
   ],
   "Magallanes": [
    "Región de Magallanes"
   ],
   "Ñuble": [
    "Región de Ñuble"
+  ],
+  "Libertador General Bernardo O'Higgins": [
+   "Región de O'Higgins",
+   "Región del Libertador General Bernardo O'Higgins"
+  ],
+  "Biobío": [
+   "Bío-Bío",
+   "Región del Biobío",
+   "Región del Bío-Bío"
+  ],
+  "Aysén": [
+   "Aisén",
+   "Región de Aysén",
+   "Región de Aisén",
+   "Aisén del General Carlos Ibáñez del Campo",
+   "Región de Aisén del General Carlos Ibáñez del Campo"
   ]
  },
  "colombia": {
@@ -3931,9 +3939,6 @@
   "Totonicapán": [
    "Departamento de Totonicapán"
   ],
-  "Quezaltenango": [
-   "Departamento de Quezaltenango"
-  ],
   "Suchitepéquez": [
    "Departamento de Suchitepéquez"
   ],
@@ -3972,6 +3977,11 @@
   ],
   "Jutiapa": [
    "Departamento de Jutiapa"
+  ],
+  "Quetzaltenango": [
+   "Quezaltenango",
+   "Departamento de Quetzaltenango",
+   "Departamento de Quezaltenango"
   ]
  },
  "guinea-bissau": {
@@ -5882,9 +5892,6 @@
   ]
  },
  "nicaragua": {
-  "San Juan": [
-   "Departamento de Río San Juan"
-  ],
   "North Caribbean Coast": [
    "Costa Caribe Norte",
    "Región Autónoma de la Costa Caribe Norte"
@@ -5908,9 +5915,6 @@
    "Costa Caribe Sur",
    "Región Autónoma de la Costa Caribe Sur"
   ],
-  "León Department": [
-   "Departamento de León"
-  ],
   "Managua": [
    "Departamento de Managua"
   ],
@@ -5926,14 +5930,21 @@
   "Chontales": [
    "Departamento de Chontales"
   ],
-  "Estelí Department": [
-   "Departamento de Estelí"
-  ],
   "Granada": [
    "Departamento de Granada"
   ],
   "Masaya": [
    "Departamento de Masaya"
+  ],
+  "Estelí": [
+   "Departamento de Estelí"
+  ],
+  "León": [
+   "Departamento de León"
+  ],
+  "Río San Juan": [
+   "San Juan",
+   "Departamento de Río San Juan"
   ]
  },
  "niger": {
@@ -6369,10 +6380,6 @@
   ],
   "Lambayeque": [
    "Departamento de Lambayeque"
-  ],
-  "Lima Province": [
-   "Provincia de Lima",
-   "Lima Metropolitana"
   ],
   "Lima": [
    "Departamento de Lima",
@@ -8757,9 +8764,6 @@
   ],
   "Delaware": [
    "Estado de Delaware"
-  ],
-  "District of Columbia": [
-   "Distrito de Columbia"
   ],
   "Maryland": [
    "Estado de Maryland"
