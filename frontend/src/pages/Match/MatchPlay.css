@@ -90,19 +90,22 @@
 .country-page .mpg-split .sw.rival{ background:var(--rival); }
 .country-page .mpg-split .sw.none{ background:var(--missing); }
 
-/* ---- two maps: mine (interactive) + the rival's (read-only, live) ---- */
-.country-page .mpg .maps{ flex:1 1 auto; min-height:0; display:flex; flex-direction:row; }
-.country-page .mpg .maps .map-area{ flex:3 1 0; min-width:0; }
+/* ---- two maps: mine (interactive) + the rival's (read-only, live), HALF AND HALF ----
+   Both panels share the free height with `flex:1 1 0` and `min-height:0`: the single-player
+   .map-area has a min-height of 40dvh that would push two maps past the screen and cut them. */
+.country-page .mpg .maps{ flex:1 1 0; min-height:0; display:flex; flex-direction:row; }
+.country-page .mpg .maps .map-area,
+.country-page .mpg .rival-area{ flex:1 1 0; min-width:0; min-height:0; height:auto; }
 .country-page .mpg .rival-area{
-  position:relative; flex:2 1 0; min-width:0; min-height:0;
-  display:flex; flex-direction:column;
+  position:relative;
   background:radial-gradient(ellipse at 50% 42%, #17415f 0%, #0d2738 58%, #081a28 100%);
   border-top:1px solid var(--line); border-left:1px solid var(--line);
   overflow:hidden;
 }
-/* Nothing to click or drag on their map: it only shows what they found. */
+/* Pinned to its panel, so its size is always exactly half the area. Nothing to click or drag:
+   it only shows what the rival found. */
 .country-page .mpg .rival-map{
-  flex:1 1 0; min-height:0; width:100%; display:block;
+  position:absolute; inset:0; width:100%; height:100%; display:block;
   pointer-events:none; user-select:none;
 }
 .country-page .mpg .rival-map .country:hover{ fill:var(--map-land); }
@@ -119,19 +122,15 @@
 .country-page .mpg .map-tag.rival{ color:var(--rival); border-color:var(--rival); }
 
 @media (max-width:720px){
-  /* Phone: my map on top, the rival's as a strip below it. */
+  /* Phone: my map on top, the rival's right below, each one half of the height. */
   .country-page .mpg .maps{ flex-direction:column; }
-  .country-page .mpg .maps .map-area{ flex:1 1 auto; min-height:max(150px, 24dvh); }
-  .country-page .mpg .rival-area{
-    flex:0 0 auto; height:max(100px, 16dvh);
-    border-left:0;
-  }
+  .country-page .mpg .rival-area{ border-left:0; }
   .country-page .mpg .map-tag{ top:8px; right:8px; font-size:10px; padding:2px 7px; }
 }
 @media (max-height:520px) and (orientation:landscape){
+  /* Phone on its side: back to side by side. */
   .country-page .mpg .maps{ flex-direction:row; }
-  .country-page .mpg .maps .map-area{ min-height:110px; }
-  .country-page .mpg .rival-area{ flex:2 1 0; height:auto; border-left:1px solid var(--line); }
+  .country-page .mpg .rival-area{ border-left:1px solid var(--line); }
 }
 
 @media (max-width:720px){

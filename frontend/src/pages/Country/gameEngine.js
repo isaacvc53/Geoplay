@@ -203,6 +203,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
   // clonando las formas del mapa principal (sin id ni título: no se cuela ningún nombre).
 
   let rivalMapBuilt = false;
+  let rivalBounds = null; // caja de las regiones, calculada una vez (getBBox es caro)
   let rivalLiveSet = null; // Set de region_id que el rival lleva acertadas, o null si aún no se sabe
   const rivalShapeByRegion = new Map(); // id local de la región -> forma de la copia
 
@@ -224,7 +225,15 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       if (regionId) rivalShapeByRegion.set(regionId, copy);
     });
     rivalSvgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    rivalBounds = getRegionsBounds();
     rivalMapBuilt = true;
+
+    // Su panel puede cambiar de tamaño (giro del móvil, teclado, ventana): se vuelve a encajar.
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => setupRivalView());
+      ro.observe(rivalSvgEl);
+      cleanups.push(() => ro.disconnect());
+    }
   }
 
   // Misma silueta que el mapa principal, pero encajada en el tamaño de SU contenedor.
@@ -233,7 +242,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     const width = rivalSvgEl.clientWidth;
     const height = rivalSvgEl.clientHeight;
     if (!width || !height) return;
-    const fitted = calculateFittedViewBox(getRegionsBounds(), width, height);
+    const fitted = calculateFittedViewBox(rivalBounds, width, height);
     if (!fitted) return;
     rivalSvgEl.setAttribute('viewBox', [fitted.x, fitted.y, fitted.width, fitted.height].join(' '));
   }
