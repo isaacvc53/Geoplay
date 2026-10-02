@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import FriendsPanel from './FriendsPanel';
@@ -73,6 +74,25 @@ function Drawer({ id, label, open, onClose, title, soon, children }) {
   );
 }
 
+// Same aggregation the original loadHomeStats() did, as a pure function.
+function computeHomeStats(countries) {
+  const played = countries.filter((c) => c.games_played > 0);
+  if (played.length === 0) return null;
+
+  const favorite = played.reduce((a, b) => (b.games_played > a.games_played ? b : a));
+  const best = played.reduce((a, b) => (b.percentage > a.percentage ? b : a));
+  const mastered = played.filter((c) => c.percentage >= 100);
+
+  return {
+    gamesPlayed: played.reduce((sum, c) => sum + c.games_played, 0),
+    countriesPlayed: played.length,
+    favorite: favorite.country_name,
+    best: `${best.percentage}% (${best.country_name})`,
+    masteredCount: mastered.length,
+    masteredPct: Math.round((mastered.length / played.length) * 100),
+  };
+}
+
 // Number of playable countries, from the manifest the deploy already generates
 // (/data/available-countries.json). With the SPA fallback a missing file answers 200 with
 // the app's HTML, so that response type is discarded. If anything fails, null = hidden.
@@ -102,6 +122,7 @@ export default function MenuPage() {
   const [openDrawer, setOpenDrawer] = useState(() => (
     new URLSearchParams(window.location.search).get('panel') === 'friends' ? 'friends' : null
   )); // 'friends' | 'achievements' | 'account' | null
+  const [stats, setStats] = useState(null);
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
   const matches = useMyMatches(loggedIn);
@@ -131,6 +152,15 @@ export default function MenuPage() {
     return () => { document.body.style.overflow = ''; };
   }, [openDrawer]);
 
+  useEffect(() => {
+    if (!loggedIn) { setStats(null); return; }
+    let cancelled = false;
+    api.getCountriesProgress()
+      .then((countries) => { if (!cancelled) setStats(computeHomeStats(countries)); })
+      .catch(() => {}); // keep placeholders if loading fails
+    return () => { cancelled = true; };
+  }, [loggedIn]);
+
   // Refresh friends and requests every time the drawer is opened.
   const reloadFriends = friends.reload;
   useEffect(() => {
@@ -150,6 +180,16 @@ export default function MenuPage() {
             <span className="mark">G<img src="/img/logo.png" alt="Geotaria" onError={(e) => { e.currentTarget.style.display = 'none'; }} /></span>
             <span className="word">Geo<i>taria</i></span>
           </a>
+          <nav className="mainnav">
+            <Link to="/mapas">Maps</Link>
+            <Link to="/multijugador" className="nav-multiplayer">
+              Multiplayer
+              {pendingChallenges > 0 && (
+                <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges === 1 ? '' : 's'}`}>{pendingChallenges}</span>
+              )}
+            </Link>
+            <Link to="/perfil">Statistics</Link>
+          </nav>
           <nav className="social-icons" aria-label="More">
             <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
               <IconFriends />
@@ -226,7 +266,36 @@ export default function MenuPage() {
         </Drawer>
 
         <main className="layout">
-          {/* 1: main atlas */}
+          {/* 1: the single option for everything else (/mapas) */}
+          <Link className="panel maps-card" to="/mapas">
+            <div className="maps-head">
+              <h2>More ways to play</h2>
+              {pendingChallenges > 0 && <span className="pill live">{pendingChallenges} challenge{pendingChallenges === 1 ? '' : 's'}</span>}
+            </div>
+            <p className="desc">Every other mode, all in one place.</p>
+            <div className="maps-list">
+              {['Countries of the world', 'Provinces & regions', 'One country', 'Multiplayer', 'Statistics'].map((label) => (
+                <div className="maps-row" key={label}>
+                  <span className="bullet" /><span className="label">{label}</span>
+                </div>
+              ))}
+            </div>
+            <span className="maps-cta">Choose a mode <span aria-hidden="true">→</span></span>
+          </Link>
+
+          {/* 2: free slot, to be filled later */}
+          <a href="#" onClick={noop} className="panel side-card regions-card soon-card">
+            <div>
+              <div className="head"><span className="pill soon">Coming soon</span></div>
+              <div className="body">
+                <div className="widget-title">New mode</div>
+                <p className="widget-desc">Something new is on the way. This space will be filled in soon.</p>
+              </div>
+            </div>
+            <div className="foot"><span>Soon</span></div>
+          </a>
+
+          {/* 3: select a country (hero) */}
           <Link className="hero" to="/mapa-mundial">
             <span className="tick tick-tl" aria-hidden="true" />
             <span className="tick tick-tr" aria-hidden="true" />
@@ -254,22 +323,78 @@ export default function MenuPage() {
               <span className="cta">Open atlas <span className="arrow" aria-hidden="true">→</span></span>
             </div>
           </Link>
-          {/* 2: everything else lives behind this single option (/mapas) */}
-          <Link className="panel maps-card" to="/mapas">
-            <div className="maps-head">
-              <h2>More ways to play</h2>
-              {pendingChallenges > 0 && <span className="pill live">{pendingChallenges} challenge{pendingChallenges === 1 ? '' : 's'}</span>}
+
+          {/* 4: free slot, to be filled later */}
+          <a href="#" onClick={noop} className="panel side-card regions-card soon-card">
+            <div>
+              <div className="head"><span className="pill soon">Coming soon</span></div>
+              <div className="body">
+                <div className="widget-title">New mode</div>
+                <p className="widget-desc">Something new is on the way. This space will be filled in soon.</p>
+              </div>
             </div>
-            <p className="desc">Every other mode, all in one place.</p>
-            <div className="maps-list">
-              {['Countries of the world', 'Provinces & regions', 'One country', 'Multiplayer', 'Statistics'].map((label) => (
-                <div className="maps-row" key={label}>
-                  <span className="bullet" /><span className="label">{label}</span>
-                </div>
-              ))}
+            <div className="foot"><span>Soon</span></div>
+          </a>
+
+          {/* 5: statistics */}
+          <div className="panel stats">
+            <div className="head">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M6 18v-4M12 18V9M18 18v-7" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+              <span className="widget-title">Statistics</span>
             </div>
-            <span className="maps-cta">Choose a mode <span aria-hidden="true">→</span></span>
-          </Link>
+            <p className="widget-desc">
+              {stats
+                ? `Across ${stats.countriesPlayed} map${stats.countriesPlayed === 1 ? '' : 's'} you've played.`
+                : 'Your accuracy and best runs across every map.'}
+            </p>
+
+            <div className="stat-grid">
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 15l3-4 3 2.5L18 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Games played
+                </span>
+                <span className="stat-tile-value">{stats ? stats.gamesPlayed : 0}</span>
+              </div>
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="7.5" stroke="currentColor" strokeWidth="1.5" /><path d="M12 4.5c-4 4-4 11 0 15M12 4.5c4 4 4 11 0 15M5 9.5h14M5 14.5h14" stroke="currentColor" strokeWidth="1.2" /></svg>
+                  Countries played
+                </span>
+                <span className={'stat-tile-value' + (stats ? '' : ' dim')}>{stats ? stats.countriesPlayed : '—'}</span>
+              </div>
+              <div className="stat-tile">
+                <span className="stat-tile-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 4h10v3.2c0 3-2.2 5.3-5 5.3s-5-2.3-5-5.3V4z" stroke="currentColor" strokeWidth="1.4" /><path d="M12 12.5V17m-3 3h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" /></svg>
+                  Best score
+                </span>
+                <span className={'stat-tile-value' + (stats ? '' : ' dim')}>{stats ? stats.best : '—'}</span>
+              </div>
+            </div>
+
+            <div className="stat-row">
+              <span className="stat-label">Favorite map</span>
+              <span className={'stat-value' + (stats ? '' : ' dim')}>{stats ? stats.favorite : '—'}</span>
+            </div>
+
+            <div className="mastery">
+              <div className="mastery-head">
+                <span className="stat-label">Maps mastered (100%)</span>
+                <span className={'stat-value' + (stats ? '' : ' dim')}>{stats ? `${stats.masteredCount} / ${stats.countriesPlayed}` : '—'}</span>
+              </div>
+              <div className="stat-bar"><span style={{ width: `${stats ? stats.masteredPct : 0}%` }} /></div>
+            </div>
+
+            <div className="stats-foot">
+              {stats
+                ? <>See the full breakdown on your <Link to="/perfil">profile</Link>, or <Link to="/comparar">compare with a friend</Link>.</>
+                : loggedIn
+                  ? 'Play a round to start building your stats.'
+                  : <><Link to="/login">Sign in</Link> to save your stats and pick up where you left off.</>}
+            </div>
+          </div>
         </main>
 
         <footer>

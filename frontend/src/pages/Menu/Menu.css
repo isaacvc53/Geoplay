@@ -236,7 +236,7 @@
   
   .layout{
     display:grid;
-    grid-template-columns:2.2fr 1fr;
+    grid-template-columns:1fr 1fr 2fr 1fr 1fr;
     gap:16px;
     padding:16px 48px 24px;
     align-items:stretch;
@@ -244,10 +244,19 @@
     margin-top:auto;
     margin-bottom:auto;
   }
-  /* Tablet / móvil: una sola columna, el atlas primero. */
-  @media (max-width:900px){
-    .layout{ grid-template-columns:1fr; min-height:auto; }
+  /* Tablet / móvil grande: el hero ocupa toda la fila y debajo van las demás en 2 columnas. */
+  @media (max-width:1180px){
+    .layout{ grid-template-columns:repeat(2, 1fr); min-height:auto; }
+    .layout > *:nth-child(3){ order:1; grid-column:1 / -1; }
+    .layout > *:nth-child(4){ order:2; }
+    .layout > *:nth-child(5){ order:3; }
+    .layout > *:nth-child(1){ order:4; }
+    .layout > *:nth-child(2){ order:5; }
     .hero .map-wrap{ flex:none; min-height:0; aspect-ratio:1010 / 520; }
+  }
+  @media (max-width:560px){
+    .layout{ grid-template-columns:1fr; }
+    .layout > *:nth-child(3){ grid-column:auto; }
   }
 
   
@@ -279,6 +288,9 @@
   }
   .layout > *:nth-child(1){ animation-delay:.02s; }
   .layout > *:nth-child(2){ animation-delay:.06s; }
+  .layout > *:nth-child(3){ animation-delay:.1s; }
+  .layout > *:nth-child(4){ animation-delay:.14s; }
+  .layout > *:nth-child(5){ animation-delay:.18s; }
 
   .pill{
     display:inline-flex; align-items:center;
