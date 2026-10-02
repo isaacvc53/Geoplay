@@ -236,7 +236,7 @@
   
   .layout{
     display:grid;
-    grid-template-columns:1fr 1fr 2fr 1fr 1fr;
+    grid-template-columns:1fr 2fr 1fr 1fr;
     gap:16px;
     padding:16px 48px 24px;
     align-items:stretch;
@@ -247,16 +247,15 @@
   /* Tablet / móvil grande: el hero ocupa toda la fila y debajo van las demás en 2 columnas. */
   @media (max-width:1180px){
     .layout{ grid-template-columns:repeat(2, 1fr); min-height:auto; }
-    .layout > *:nth-child(3){ order:1; grid-column:1 / -1; }
-    .layout > *:nth-child(4){ order:2; }
-    .layout > *:nth-child(5){ order:3; }
-    .layout > *:nth-child(1){ order:4; }
-    .layout > *:nth-child(2){ order:5; }
+    .layout > *:nth-child(2){ order:1; grid-column:1 / -1; }
+    .layout > *:nth-child(1){ order:2; }
+    .layout > *:nth-child(3){ order:3; }
+    .layout > *:nth-child(4){ order:4; }
     .hero .map-wrap{ flex:none; min-height:0; aspect-ratio:1010 / 520; }
   }
   @media (max-width:560px){
     .layout{ grid-template-columns:1fr; }
-    .layout > *:nth-child(3){ grid-column:auto; }
+    .layout > *:nth-child(2){ grid-column:auto; }
   }
 
   
@@ -290,7 +289,13 @@
   .layout > *:nth-child(2){ animation-delay:.06s; }
   .layout > *:nth-child(3){ animation-delay:.1s; }
   .layout > *:nth-child(4){ animation-delay:.14s; }
-  .layout > *:nth-child(5){ animation-delay:.18s; }
+
+  /* Hueco libre del inicio: se rellenará más adelante. */
+  .placeholder-card{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    padding:18px; text-align:center; border-style:dashed; background:transparent;
+  }
+  .placeholder-card .widget-desc{ font-size:13px; color:var(--parchment-dim); line-height:1.55; }
 
   .pill{
     display:inline-flex; align-items:center;

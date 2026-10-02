@@ -43,33 +43,6 @@ function IconTrophy({ className = 'icon' }) {
   );
 }
 
-// Inside the Multiplayer card (a link to the match or a button that opens the friends drawer).
-function MultiplayerBody({ desc, pill, action }) {
-  return (
-    <>
-      <div>
-        <div className="head">
-          <div className="icon-circle">
-            <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="12" cy="13.5" r="7.5" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M12 13.5V9.3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              <path d="M9.3 3.5h5.4M12 3.5v1.8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-            </svg>
-          </div>
-        </div>
-        <div className="body">
-          <div className="widget-title">Multiplayer</div>
-          <p className="widget-desc">{desc}</p>
-        </div>
-      </div>
-      <div className="foot">
-        {pill && <span className="pill live">{pill}</span>}
-        <span>{action}</span>
-      </div>
-    </>
-  );
-}
-
 function CloseIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -208,14 +181,13 @@ export default function MenuPage() {
             <span className="word">Geo<i>taria</i></span>
           </a>
           <nav className="mainnav">
-            <Link to="/mapas">Maps</Link>
-            <Link to="/multijugador" className="nav-multiplayer">
-              Multiplayer
+            <Link to="/mapa-mundial">Atlas</Link>
+            <Link to="/mapas" className="nav-multiplayer">
+              More ways to play
               {pendingChallenges > 0 && (
                 <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges === 1 ? '' : 's'}`}>{pendingChallenges}</span>
               )}
             </Link>
-            <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
             <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
@@ -293,40 +265,22 @@ export default function MenuPage() {
         </Drawer>
 
         <main className="layout">
-          {/* 1: different maps */}
+          {/* 1: everything else lives behind this single option (/mapas) */}
           <Link className="panel maps-card" to="/mapas">
             <div className="maps-head">
-              <h2>Different maps</h2>
+              <h2>More ways to play</h2>
+              {pendingChallenges > 0 && <span className="pill live">{pendingChallenges} challenge{pendingChallenges === 1 ? '' : 's'}</span>}
             </div>
-            <p className="desc">Choose what you want to name.</p>
+            <p className="desc">Every other mode, all in one place.</p>
             <div className="maps-list">
-              {['Countries of the world', 'Provinces & regions', 'One country'].map((label) => (
+              {['Countries of the world', 'Provinces & regions', 'One country', 'Multiplayer', 'Statistics'].map((label) => (
                 <div className="maps-row" key={label}>
                   <span className="bullet" /><span className="label">{label}</span>
                 </div>
               ))}
             </div>
-            <span className="maps-cta">See all maps <span aria-hidden="true">→</span></span>
+            <span className="maps-cta">Choose a mode <span aria-hidden="true">→</span></span>
           </Link>
-
-          {/* 2: multiplayer. Has its own page; with a match open the card takes you straight back to it. */}
-          {matches.current && matches.current.status !== 'invited' ? (
-            <Link className="panel side-card regions-card" to={`/partida/${matches.current.id}`}>
-              <MultiplayerBody
-                desc="You have a match open against a friend."
-                pill={matches.current.status === 'playing' ? 'In progress' : 'Ready'}
-                action={matches.current.status === 'playing' ? 'Rejoin the match →' : 'Open the match →'}
-              />
-            </Link>
-          ) : (
-            <Link className="panel side-card regions-card" to="/multijugador">
-              <MultiplayerBody
-                desc="Challenge a friend to a 1 vs 1 on the same country: against the clock or with no time limit."
-                pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : null}
-                action={loggedIn ? 'Open multiplayer →' : 'Sign in to play →'}
-              />
-            </Link>
-          )}
 
           {/* 3: select a country (hero) */}
           <Link className="hero" to="/mapa-mundial">
@@ -355,25 +309,6 @@ export default function MenuPage() {
               </span>
               <span className="cta">Open atlas <span className="arrow" aria-hidden="true">→</span></span>
             </div>
-          </Link>
-
-          {/* 4: quick start: the 197 countries on the map */}
-          <Link className="panel side-card regions-card" to="/mapa-de-paises">
-            <div>
-              <div className="head">
-                <div className="icon-circle">
-                  <svg className="icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
-                    <path d="M13 7l4 4" stroke="currentColor" strokeWidth="1.4" />
-                  </svg>
-                </div>
-              </div>
-              <div className="body">
-                <div className="widget-title">The 197 countries</div>
-                <p className="widget-desc">Name every country in the world from memory and watch the map fill in.</p>
-              </div>
-            </div>
-            <div className="foot"><span>Start playing →</span></div>
           </Link>
 
           {/* 5: statistics */}
@@ -434,6 +369,12 @@ export default function MenuPage() {
                   ? 'Play a round to start building your stats.'
                   : <><Link to="/login">Sign in</Link> to save your stats and pick up where you left off.</>}
             </div>
+          </div>
+
+          {/* 4: free slot, to be filled later */}
+          <div className="panel placeholder-card" aria-label="Coming soon">
+            <span className="pill soon">Coming soon</span>
+            <p className="widget-desc">Something new is on the way.</p>
           </div>
         </main>
 

@@ -3,10 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import '../Menu/Menu.css';
 import './Maps.css';
 
-// Every way to play, organised by WHAT you want to name:
+// Hub with EVERYTHING that is not the main atlas, all selectable from here:
 //   1. the countries of the world   (map or list)
 //   2. provinces / states / regions (whole world or one continent)
 //   3. the divisions of one country (pick it on the globe or by continent)
+//   4. multiplayer  5. statistics
 
 const ZONES = [
   { key: 'mundo', label: 'World' },
@@ -68,9 +69,9 @@ export default function MapsPage() {
           <header className="mx-hero">
             <Rings />
             <div className="mx-hero-text">
-              <span className="mx-eyebrow">Play</span>
-              <h1>Choose your <i>map</i></h1>
-              <p>Pick what you want to name. Every game is played from memory: type, and the map fills in.</p>
+              <span className="mx-eyebrow">More</span>
+              <h1>More ways to <i>play</i></h1>
+              <p>Every mode in one place: pick what you want to name, challenge a friend or check your progress.</p>
             </div>
           </header>
 
@@ -122,6 +123,31 @@ export default function MapsPage() {
               <button type="button" className="mx-btn primary" onClick={() => navigate('/mapa-mundial')}>
                 Pick on the globe <span aria-hidden="true">→</span>
               </button>
+            </section>
+          </div>
+
+          <div className="mx-grid two">
+            {/* 4 · multiplayer */}
+            <section className="mx-card" aria-labelledby="mx-t4">
+              <span className="mx-num">04</span>
+              <h2 id="mx-t4">Multiplayer</h2>
+              <p className="mx-desc">Challenge a friend to a 1 vs 1 on the same country.</p>
+              <div className="mx-controls"><p className="mx-hint">Against the clock or with no time limit.</p></div>
+              <button type="button" className="mx-btn primary" onClick={() => navigate('/multijugador')}>
+                Open multiplayer <span aria-hidden="true">→</span>
+              </button>
+            </section>
+
+            {/* 5 · statistics */}
+            <section className="mx-card" aria-labelledby="mx-t5">
+              <span className="mx-num">05</span>
+              <h2 id="mx-t5">Statistics</h2>
+              <p className="mx-desc">Your accuracy and best runs across every map.</p>
+              <div className="mx-controls"><p className="mx-hint">See your profile or compare with a friend.</p></div>
+              <div className="mx-two-btns">
+                <button type="button" className="mx-btn primary" onClick={() => navigate('/perfil')}>Profile</button>
+                <button type="button" className="mx-btn" onClick={() => navigate('/comparar')}>Compare</button>
+              </div>
             </section>
           </div>
         </div>

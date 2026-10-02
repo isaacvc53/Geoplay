@@ -80,6 +80,12 @@
 .maps-page .mx-label{ font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--brass-dim); }
 .maps-page .mx-hint{ margin-top:auto; font-size:12.5px; line-height:1.55; color:var(--parchment-dim); }
 
+.maps-page .mx-grid.two{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+.maps-page .mx-grid.two .mx-controls{ margin:14px 0 18px; padding-top:14px; flex:none; }
+.maps-page .mx-grid.two .mx-hint{ margin-top:0; }
+.maps-page .mx-two-btns{ display:flex; gap:10px; }
+.maps-page .mx-btn:not(.primary){ background:transparent; color:var(--brass-bright); }
+
 /* ---------- chips (radio or link) ---------- */
 .maps-page .mx-choice{ display:flex; flex-wrap:wrap; gap:8px; }
 .maps-page .mx-chip{ position:relative; display:block; cursor:pointer; }
@@ -112,7 +118,7 @@
 
 /* ---------- responsive ---------- */
 @media (max-width:980px){
-  .maps-page .mx-grid{ grid-template-columns:1fr; }
+  .maps-page .mx-grid, .maps-page .mx-grid.two{ grid-template-columns:1fr; }
   .maps-page .mx-controls{ flex:none; }
   .maps-page .mx-hint{ margin-top:0; }
 }
