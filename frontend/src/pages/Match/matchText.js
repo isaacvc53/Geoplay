@@ -3,6 +3,9 @@
 
 export const DURATIONS = [60, 120, 180, 300, 0]; // 0 = no time limit
 export const DEFAULT_DURATION = 180;
+// Lengths the quick-match queue draws from (never untimed). Keep in sync with
+// QUEUE_DURATIONS in backend/models/match.py.
+export const QUEUE_DURATIONS = [60, 120, 180, 240, 300];
 export const UNTIMED = 0;
 
 export const isUntimed = (seconds) => seconds === UNTIMED;

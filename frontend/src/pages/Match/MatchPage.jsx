@@ -9,27 +9,32 @@ import { useCountryPreload } from './useCountryPreload';
 import { createServerClock } from './serverClock';
 import PlayScreen from './PlayScreen';
 import CountryRoulette, { markRevealed, wasRevealed } from './CountryRoulette';
+import { rememberAuto, wasAuto } from './autoStart';
 import { TERMINAL_STATUSES, countryLabel, describeMatch, formatDuration, isUntimed } from './matchText';
 import './Match.css';
 
 // Match room (/partida/:id). It covers everything before the first guess:
 //   invited  -> the host waits, the guest accepts or declines
 //   ready    -> the country is shown and its map preloaded; if it was drawn at random it
-//               is revealed with a roulette animation (once per match and tab), if the
-//               host picked it, it just appears; either player can press Start
+//               is revealed on the world map (countries light up and go out until one is
+//               left; once per match and tab), if the host picked it, it just appears;
+//               either player can press Start (not in a quick match: see below)
 //   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
 //               players (server clock), then the match clock runs and they race
 //   finished -> the result: PlayScreen again, with a final card and the map showing what
 //               each player found (also when the link is opened later)
 //   declined / cancelled / expired -> a closing message
-// A match found through the quick-match queue arrives with `location.state.auto`: once the
-// country is revealed and the map is loaded it starts by itself after AUTO_START_SECONDS
-// (Leave is still there). Both players do it; starting twice is harmless.
+// A match found through the quick-match queue arrives with `location.state.auto` (kept for
+// the tab, so a reload doesn't lose it): the country AND the length were drawn, there is no
+// Start button, and once the country is revealed and the map is loaded the match starts by
+// itself after AUTO_START_SECONDS (Leave is still there). Both players do it; starting twice
+// is harmless.
 // The room asks the server for the match every second, so both players see changes
 // (accepted, started, cancelled...) almost instantly without any extra setup.
 
-// Quick-match rooms: seconds between "everything is ready" and the automatic start.
-const AUTO_START_SECONDS = 4;
+// Quick-match rooms: seconds between "everything is ready" and the automatic start (the 3-2-1
+// of the match itself comes after).
+const AUTO_START_SECONDS = 3;
 
 function Player({ player, isMe, role }) {
   return (
@@ -142,7 +147,13 @@ function MatchRoom({ id }) {
   // Quick match: start by itself a few seconds after the country is revealed and the map is
   // loaded. `startRef` always points at the latest `actions.start` (see below).
   const location = useLocation();
-  const autoStart = Boolean(location.state && location.state.auto);
+  const [autoStart] = useState(() => {
+    if (location.state && location.state.auto) {
+      rememberAuto(id);
+      return true;
+    }
+    return wasAuto(id);
+  });
   const autoReady = autoStart && revealing && preload.status === 'ready' && revealDone;
   const [autoLeft, setAutoLeft] = useState(AUTO_START_SECONDS);
   const startRef = useRef(() => {});
@@ -237,20 +248,25 @@ function MatchRoom({ id }) {
       const canStart = preload.status === 'ready' && revealDone && !disabled;
       body = (
         <div className="mp-state">
-          <h2>Match ready</h2>
+          <h2>{autoStart ? 'Opponent found' : 'Match ready'}</h2>
           {m.country && (
             <CountryRoulette
               key={m.country.id}
               name={m.country.nombre}
-              meta={`${m.country.total_regions} regions · ${length}`}
+              slug={m.country.slug}
+              regions={m.country.total_regions}
+              durationSeconds={m.duration_seconds}
+              drawTime={autoStart}
               animate={animateReveal}
               onDone={() => setRevealDone(true)}
             />
           )}
           <MapStatus preload={preload} />
-          {autoReady ? (
+          {autoStart ? (
             <p className="mp-note" role="status">
-              Starting in {Math.max(autoLeft, 1)}… You can still leave before it starts.
+              {autoReady
+                ? <>Starting in {Math.max(autoLeft, 1)}… You can still leave before it starts.</>
+                : 'The match starts by itself as soon as the country is drawn and the map is ready.'}
             </p>
           ) : (
             <p className="mp-note">
@@ -260,15 +276,17 @@ function MatchRoom({ id }) {
             </p>
           )}
           <div className="mp-actions">
-            <button
-              type="button"
-              className="mp-btn primary"
-              disabled={!canStart}
-              title={!revealDone ? 'Drawing the country…' : preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
-              onClick={() => actions.start(m.id)}
-            >
-              {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}
-            </button>
+            {!autoStart && (
+              <button
+                type="button"
+                className="mp-btn primary"
+                disabled={!canStart}
+                title={!revealDone ? 'Drawing the country…' : preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
+                onClick={() => actions.start(m.id)}
+              >
+                {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}
+              </button>
+            )}
             <button type="button" className="mp-btn" disabled={disabled} onClick={() => actions.cancel(m.id)}>
               Leave match
             </button>

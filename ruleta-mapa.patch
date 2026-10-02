@@ -1,0 +1,599 @@
+diff -ruN a/frontend/src/lib/worldMapData.js b/frontend/src/lib/worldMapData.js
+--- a/frontend/src/lib/worldMapData.js	1970-01-01 00:00:00.000000000 +0000
++++ b/frontend/src/lib/worldMapData.js	2026-10-02 20:19:29.198957843 +0000
+@@ -0,0 +1,25 @@
++// Países del mapa mundial (public/data/world-map.json) para dibujarlos como siluetas,
++// p. ej. en la ruleta del sorteo de país. Se descarga UNA vez por pestaña y se comparte:
++// la cola de "buscar rival" la pide por adelantado para que, al formarse la pareja, ya esté
++// en la caché del navegador.
++//
++// -> Promise<[{ id, name, slug, d, main? }]>  (sin la Antártida, que solo ocupa sitio)
++// Si falla, el siguiente intento vuelve a pedirlo.
++
++let cached = null;
++
++export function loadWorldMap() {
++  if (!cached) {
++    cached = fetch('/data/world-map.json')
++      .then((res) => {
++        if (!res.ok) throw new Error(`world-map.json: ${res.status}`);
++        return res.json(); // si el servidor devolviera el HTML de la app, esto lanza
++      })
++      .then((data) => (data.countries || []).filter((c) => c.slug && c.d && c.slug !== 'antarctica'))
++      .catch((err) => {
++        cached = null;
++        throw err;
++      });
++  }
++  return cached;
++}
+diff -ruN a/frontend/src/pages/Match/CountryRoulette.jsx b/frontend/src/pages/Match/CountryRoulette.jsx
+--- a/frontend/src/pages/Match/CountryRoulette.jsx	2026-10-02 20:19:29.211575901 +0000
++++ b/frontend/src/pages/Match/CountryRoulette.jsx	2026-10-02 20:19:29.212655685 +0000
+@@ -1,17 +1,23 @@
+-import { useEffect, useRef, useState } from 'react';
+-import { COUNTRY_NAMES } from '../../lib/countryNames';
+-
+-// Slot-machine reveal of the randomly drawn country. The server has already decided the
+-// country: this is only the show. Names scroll through a three-row window, slow down and
+-// stop on the real one, which is then framed and the window closes around it.
++import { memo, useEffect, useRef, useState } from 'react';
++import { api } from '../../lib/api';
++import { loadWorldMap } from '../../lib/worldMapData';
++import { QUEUE_DURATIONS, formatDuration } from './matchText';
++
++// Reveal of the randomly drawn country, on the world map. The server has already decided
++// the country: this is only the show. A few dozen countries light up at once, then they go
++// out one by one, slower and slower, until only the real one is left, which glows (with a
++// ring when it is too small to spot, like Malta). In a quick match the length of the match
++// is drawn at the same time: the time chip shuffles and stops on the real one.
+ //
+-// Phases: idle (first frame) -> spin (reel moving) -> landed (winner lit, neighbours fade)
+-//         -> settled (window shrinks to a single row).
++// Phases: loading (map being fetched) -> spin (countries going out) -> landed (winner lit)
++//         -> settled (name and details shown).
+ // With `animate` false, or if the user prefers reduced motion, it starts as `settled`.
+ 
+-const SPIN_ITEMS = 30; // names that scroll past before the real one
+-const SPIN_MS = 4200; // keep in sync with --spin-ms in Match.css
+-const HOLD_MS = 700; // winner highlighted before the window closes
++const VIEWBOX = '30 5 1620 745'; // the world without Antarctica
++const LIT_COUNT = 26; // countries lit at the start (the real one included)
++const SPIN_MS = 4200; // from "all lit" to "only one left"
++const HOLD_MS = 700; // winner highlighted before the details appear
++const RING_MAX = 90; // map units: bigger countries don't need a ring
+ const STORAGE_PREFIX = 'geotaria:country-revealed:';
+ 
+ // The roulette plays once per match and browser tab: a reload (or opening an old match)
+@@ -41,24 +47,51 @@
+   return copy;
+ }
+ 
+-// [...SPIN_ITEMS random names, the real one, one more name below it]
+-function buildReel(name) {
+-  const fillers = shuffled(COUNTRY_NAMES.filter((n) => n !== name));
+-  const before = fillers.slice(0, SPIN_ITEMS);
+-  return { items: [...before, name, fillers[SPIN_ITEMS] || ''], winIndex: before.length };
+-}
+-
+ function prefersReducedMotion() {
+   return typeof window !== 'undefined'
+     && typeof window.matchMedia === 'function'
+     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ }
+ 
+-// name: the drawn country · meta: small line under it · onDone: called when the reel stops.
+-export default function CountryRoulette({ name, meta, animate, onDone }) {
++// Gaps (ms) between one country going out and the next: short at first, longer and longer,
++// adding up to `total`. This is what makes it feel like a wheel slowing down.
++function gaps(count, total) {
++  const weights = Array.from({ length: count }, (_, i) => 1 + 5 * (i / Math.max(1, count - 1)) ** 2);
++  const sum = weights.reduce((a, b) => a + b, 0);
++  return weights.map((w) => (total * w) / sum);
++}
++
++// Bounding box of a path made only of M / L / Z with absolute x,y pairs (what world-map.json has).
++function boxOf(d) {
++  const n = d.match(/-?\d*\.?\d+/g) || [];
++  let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
++  for (let i = 0; i + 1 < n.length; i += 2) {
++    const x = Number(n[i]); const y = Number(n[i + 1]);
++    if (x < x0) x0 = x;
++    if (x > x1) x1 = x;
++    if (y < y0) y0 = y;
++    if (y > y1) y1 = y;
++  }
++  return { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, size: Math.max(x1 - x0, y1 - y0) };
++}
++
++// One country. Memoised: when a country goes out only its own <path> is touched.
++const Land = memo(function Land({ d, tone }) {
++  return <path d={d} className={`mp-land${tone ? ` ${tone}` : ''}`} />;
++});
++
++// name: the drawn country · slug: its map slug · regions: how many regions it has ·
++// durationSeconds: match length · drawTime: the length is drawn too (quick match) ·
++// onDone: called when the reveal ends.
++export default function CountryRoulette({ name, slug, regions, durationSeconds, drawTime, animate, onDone }) {
+   const [animated] = useState(() => Boolean(animate) && !prefersReducedMotion());
+-  const [reel] = useState(() => (animated ? buildReel(name) : { items: [name], winIndex: 0 }));
+-  const [phase, setPhase] = useState(animated ? 'idle' : 'settled');
++  const [countries, setCountries] = useState(null); // null: not loaded yet (or it failed)
++  const [lit, setLit] = useState(() => new Set());
++  const [phase, setPhase] = useState(animated ? 'loading' : 'settled');
++  const [shownTime, setShownTime] = useState(
++    () => (animated && drawTime ? QUEUE_DURATIONS[0] : durationSeconds)
++  );
++  const [ring, setRing] = useState(null); // { cx, cy, r } around a small winner
+   const onDoneRef = useRef(onDone);
+ 
+   useEffect(() => {
+@@ -66,46 +99,113 @@
+   });
+ 
+   useEffect(() => {
++    let cancelled = false;
++    const timers = [];
++    const later = (fn, ms) => timers.push(setTimeout(() => { if (!cancelled) fn(); }, ms));
++    const done = () => { if (onDoneRef.current) onDoneRef.current(); };
++
++    // Shows the winner alone (no show): also the fallback when something fails.
++    const showWinner = (list) => {
++      setLit(new Set([slug]));
++      const winner = list && list.find((c) => c.slug === slug);
++      if (winner) {
++        const box = boxOf(winner.main || winner.d);
++        setRing(box.size < RING_MAX ? { cx: box.cx, cy: box.cy, r: Math.max(46, box.size / 2 + 28) } : null);
++      }
++    };
++
+     if (!animated) {
+-      if (onDoneRef.current) onDoneRef.current();
+-      return undefined;
++      done(); // nothing to wait for
++      loadWorldMap()
++        .then((list) => { if (!cancelled) { setCountries(list); showWinner(list); } })
++        .catch(() => {}); // no map: the name is shown anyway
++      return () => { cancelled = true; };
+     }
+-    let frame = requestAnimationFrame(() => {
+-      frame = requestAnimationFrame(() => setPhase('spin'));
+-    });
+-    const timers = [];
+-    // Timer-based end (not transitionend), so a hidden tab can never leave it hanging.
+-    timers.push(setTimeout(() => {
+-      setPhase('landed');
+-      if (onDoneRef.current) onDoneRef.current();
+-      timers.push(setTimeout(() => setPhase('settled'), HOLD_MS));
+-    }, SPIN_MS + 150));
++
++    // Only the countries that can really be drawn are lit (if the list can't be had, any).
++    Promise.all([loadWorldMap(), api.getMatchCountries().catch(() => null)])
++      .then(([list, playable]) => {
++        if (cancelled) return;
++        const playableSlugs = playable ? new Set(playable.map((c) => c.slug)) : null;
++        const pool = list.map((c) => c.slug).filter((s) => s !== slug && (!playableSlugs || playableSlugs.has(s)));
++        const others = shuffled(pool).slice(0, LIT_COUNT - 1);
++
++        setCountries(list);
++        setLit(new Set([slug, ...others]));
++        setPhase('spin');
++
++        // Out they go, one every step; the winner is never among them.
++        const remaining = new Set([slug, ...others]);
++        let at = 0;
++        let lastTime = null;
++        gaps(others.length, SPIN_MS).forEach((gap, i) => {
++          at += gap;
++          later(() => {
++            remaining.delete(others[i]);
++            setLit(new Set(remaining));
++            if (drawTime) {
++              const options = QUEUE_DURATIONS.filter((s) => s !== lastTime);
++              lastTime = options[Math.floor(Math.random() * options.length)];
++              setShownTime(lastTime);
++            }
++          }, at);
++        });
++
++        // Timer-based end (not transitionend), so a hidden tab can never leave it hanging.
++        later(() => {
++          showWinner(list);
++          setShownTime(durationSeconds);
++          setPhase('landed');
++          done();
++          later(() => setPhase('settled'), HOLD_MS);
++        }, SPIN_MS + 150);
++      })
++      .catch(() => {
++        // Couldn't get the map: skip the show, the country is still announced by name.
++        if (cancelled) return;
++        setPhase('settled');
++        done();
++      });
++
+     return () => {
+-      cancelAnimationFrame(frame);
++      cancelled = true;
+       timers.forEach(clearTimeout);
+     };
+-  }, [animated]);
++  }, [animated, slug, drawTime, durationSeconds]);
+ 
+-  // How many rows the strip is shifted up. `spin`/`landed` centre the winner in the
+-  // three-row window; `settled` puts it first, in the one-row window.
+-  const offset = phase === 'idle' ? 0 : phase === 'settled' ? reel.winIndex : reel.winIndex - 1;
+   const done = phase === 'landed' || phase === 'settled';
++  const winner = countries && done ? countries.find((c) => c.slug === slug) : null;
++  const kicker = done ? 'Your country' : phase === 'loading' ? 'Loading the world…' : 'Drawing a random country…';
+ 
+   return (
+-    <div className={`mp-country mp-roulette ${phase}`}>
+-      <span className="mp-kicker">{done ? 'Your country' : 'Drawing a random country…'}</span>
+-      <div className="mp-reel" aria-hidden="true">
+-        <div className="mp-reel-strip" style={{ '--off': offset }}>
+-          {reel.items.map((item, i) => (
+-            <div key={`${i}-${item}`} className={`mp-reel-item${i === reel.winIndex ? ' win' : ''}`}>
+-              {item}
+-            </div>
++    <div className={`mp-country mp-roulette ${phase}${animated && drawTime ? ' drawtime' : ''}`}>
++      <span className="mp-kicker">{kicker}</span>
++
++      {(countries || animated) && (
++        <svg className="mp-worldmap" viewBox={VIEWBOX} aria-hidden="true" focusable="false">
++          {countries && countries.map((c) => (
++            <Land key={c.slug} d={c.d} tone={lit.has(c.slug) && !done ? 'lit' : ''} />
+           ))}
+-        </div>
+-        <div className="mp-reel-sel" />
+-      </div>
++          {/* the winner again, on top, so its neighbours' borders don't cover it */}
++          {winner && <path d={winner.d} className="mp-land win" />}
++          {winner && ring && (
++            <>
++              <circle className="mp-ring-still" cx={ring.cx} cy={ring.cy} r={ring.r * 0.62} />
++              <circle className="mp-ring" cx={ring.cx} cy={ring.cy} r={ring.r} />
++            </>
++          )}
++        </svg>
++      )}
++
+       <span className="mp-sr" role="status">{done ? `Your country: ${name}` : ''}</span>
+-      <span className="mp-country-meta">{meta}</span>
++      <span className="mp-country-name">{done ? name : '\u00A0'}</span>
++      <span className="mp-country-meta">
++        {regions != null && `${regions} regions`}
++        {regions != null && durationSeconds != null && ' · '}
++        {durationSeconds != null && (
++          <span className={`mp-time${drawTime && !done ? ' drawing' : ''}`}>{formatDuration(shownTime)}</span>
++        )}
++      </span>
+     </div>
+   );
+ }
+diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.css
+--- a/frontend/src/pages/Match/Match.css	2026-10-02 20:19:29.226072943 +0000
++++ b/frontend/src/pages/Match/Match.css	2026-10-02 20:19:29.227293873 +0000
+@@ -93,60 +93,56 @@
+   to{ opacity:1; transform:none; }
+ }
+ 
+-/* ---- country roulette (the random country being drawn) ---- */
+-.match-page .mp-roulette{
+-  --reel-h:72px; --spin-ms:4200ms; gap:10px;
+-  transition:box-shadow .9s ease-out;
+-}
+-.match-page .mp-roulette.landed{
+-  box-shadow:0 0 0 1px rgba(217,182,97,.5), 0 0 28px rgba(217,182,97,.25);
+-  transition-duration:.35s;
+-}
+-.match-page .mp-reel{
+-  position:relative; width:100%; height:calc(var(--reel-h) * 3); overflow:hidden;
+-  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+-          mask-image:linear-gradient(to bottom, transparent 0, #000 32%, #000 68%, transparent 100%);
+-  transition:height .5s ease;
+-}
+-.match-page .mp-roulette.settled .mp-reel{
+-  height:var(--reel-h);
+-  -webkit-mask-image:none; mask-image:none;
+-}
+-.match-page .mp-reel-strip{
+-  transform:translateY(calc(var(--reel-h) * var(--off) * -1));
+-  will-change:transform;
+-}
+-.match-page .mp-roulette.spin .mp-reel-strip,
+-.match-page .mp-roulette.landed .mp-reel-strip{
+-  transition:transform var(--spin-ms) cubic-bezier(.1,.62,.12,1);
+-}
+-.match-page .mp-roulette.spin .mp-reel-strip{ animation:mpReelBlur var(--spin-ms) ease-out both; }
+-.match-page .mp-roulette.settled .mp-reel-strip{ transition:transform .5s ease; }
+-@keyframes mpReelBlur{
+-  0%{ filter:blur(3px); }
+-  45%{ filter:blur(2px); }
+-  100%{ filter:blur(0); }
+-}
+-.match-page .mp-reel-item{
+-  height:var(--reel-h); padding:0 8px; display:flex; align-items:center; justify-content:center;
+-  text-align:center; font-family:'Fraunces',Georgia,serif; font-weight:600;
+-  font-size:clamp(22px,5.4vw,32px); line-height:1.05; color:var(--parchment);
+-  transition:color .35s ease, opacity .35s ease;
+-}
+-.match-page .mp-roulette.landed .mp-reel-item.win,
+-.match-page .mp-roulette.settled .mp-reel-item.win{ color:var(--brass-bright); }
+-.match-page .mp-roulette.landed .mp-reel-item:not(.win),
+-.match-page .mp-roulette.settled .mp-reel-item:not(.win){ opacity:0; }
+-/* the frame around the middle row while the reel spins */
+-.match-page .mp-reel-sel{
+-  position:absolute; left:0; right:0; top:var(--reel-h); height:var(--reel-h);
+-  border-top:1px solid rgba(201,162,75,.55); border-bottom:1px solid rgba(201,162,75,.55);
+-  pointer-events:none; transition:opacity .4s ease;
+-}
+-.match-page .mp-roulette.settled .mp-reel-sel{ opacity:0; }
++/* ---- country roulette (the random country being drawn on the world map) ---- */
++.match-page .mp-roulette{ gap:10px; transition:box-shadow .9s ease-out; }
++.match-page .mp-roulette.landed,
++.match-page .mp-roulette.settled{
++  box-shadow:0 0 0 1px rgba(217,182,97,.5), 0 0 28px rgba(217,182,97,.22);
++}
++.match-page .mp-roulette.landed{ transition-duration:.35s; }
++.match-page .mp-worldmap{
++  width:100%; height:auto; display:block; aspect-ratio:1620 / 745;
++  animation:mpReveal .5s ease both;
++}
++.match-page .mp-land{
++  fill:#27475f; stroke:#123049; stroke-width:.6px; vector-effect:non-scaling-stroke;
++  transition:fill .22s ease, opacity .22s ease;
++}
++.match-page .mp-land.lit{ fill:var(--brass); }
++.match-page .mp-land.win{
++  fill:#f0cf80; stroke:#fff3cf; stroke-width:1px;
++  filter:drop-shadow(0 0 5px rgba(240,207,128,.9));
++  animation:mpWin .9s ease-out both;
++}
++.match-page .mp-ring-still{
++  fill:rgba(240,207,128,.18); stroke:var(--brass-bright); stroke-width:2px; vector-effect:non-scaling-stroke;
++}
++.match-page .mp-ring{
++  fill:none; stroke:var(--brass-bright); stroke-width:2px; vector-effect:non-scaling-stroke;
++  transform-box:fill-box; transform-origin:center;
++  animation:mpRingPulse 1.4s ease-out infinite;
++}
++@keyframes mpWin{
++  from{ fill:#fff6dc; filter:drop-shadow(0 0 14px rgba(255,236,170,1)); }
++  to{ fill:#f0cf80; filter:drop-shadow(0 0 5px rgba(240,207,128,.9)); }
++}
++@keyframes mpRingPulse{
++  0%{ opacity:.95; transform:scale(.7); }
++  100%{ opacity:0; transform:scale(1.6); }
++}
++.match-page .mp-roulette .mp-country-name{ transition:opacity .4s ease; min-height:1.15em; }
++.match-page .mp-roulette:not(.landed):not(.settled) .mp-country-name{ opacity:0; }
++/* details appear with the winner; in a quick match the time chip is visible (and shuffling) from the start */
+ .match-page .mp-roulette .mp-country-meta{ opacity:0; transition:opacity .5s ease; }
+ .match-page .mp-roulette.landed .mp-country-meta,
+-.match-page .mp-roulette.settled .mp-country-meta{ opacity:1; }
++.match-page .mp-roulette.settled .mp-country-meta,
++.match-page .mp-roulette.drawtime .mp-country-meta{ opacity:1; }
++.match-page .mp-time{
++  display:inline-block; min-width:4.2em; text-align:center; padding:1px 8px;
++  border:1px solid var(--line); border-radius:999px; color:var(--parchment);
++  font-variant-numeric:tabular-nums; transition:color .3s ease, border-color .3s ease;
++}
++.match-page .mp-time.drawing{ border-color:rgba(201,162,75,.55); color:var(--brass-bright); }
+ .match-page .mp-sr{
+   position:absolute; width:1px; height:1px; overflow:hidden;
+   clip:rect(0 0 0 0); white-space:nowrap;
+@@ -231,14 +227,15 @@
+   .match-page .mp-card{ padding:22px 18px 26px; }
+   .match-page .mp-avatar{ width:52px; height:52px; font-size:20px; }
+   .match-page .mp-player-name{ font-size:16px; }
+-  .match-page .mp-roulette{ --reel-h:64px; }
+-  .match-page .mp-reel-item{ font-size:clamp(20px,6vw,26px); }
+   .match-page .mp-count{ width:148px; height:148px; }
+   .match-page .mp-count-num{ font-size:78px; }
+   .match-page .mp-clock{ font-size:46px; }
+ }
+ @media (prefers-reduced-motion:reduce){
+   .match-page .mp-country,
++  .match-page .mp-worldmap,
++  .match-page .mp-land.win,
++  .match-page .mp-ring,
+   .match-page .mp-count-arc,
+   .match-page .mp-count-num,
+   .match-page .mp-count.go .mp-count-num{ animation:none; }
+diff -ruN a/frontend/src/pages/Match/MatchPage.jsx b/frontend/src/pages/Match/MatchPage.jsx
+--- a/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 20:19:29.218783316 +0000
++++ b/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 20:19:29.220280249 +0000
+@@ -9,27 +9,32 @@
+ import { createServerClock } from './serverClock';
+ import PlayScreen from './PlayScreen';
+ import CountryRoulette, { markRevealed, wasRevealed } from './CountryRoulette';
++import { rememberAuto, wasAuto } from './autoStart';
+ import { TERMINAL_STATUSES, countryLabel, describeMatch, formatDuration, isUntimed } from './matchText';
+ import './Match.css';
+ 
+ // Match room (/partida/:id). It covers everything before the first guess:
+ //   invited  -> the host waits, the guest accepts or declines
+ //   ready    -> the country is shown and its map preloaded; if it was drawn at random it
+-//               is revealed with a roulette animation (once per match and tab), if the
+-//               host picked it, it just appears; either player can press Start
++//               is revealed on the world map (countries light up and go out until one is
++//               left; once per match and tab), if the host picked it, it just appears;
++//               either player can press Start (not in a quick match: see below)
+ //   playing  -> the playable screen (PlayScreen): 3-2-1 countdown, the same for both
+ //               players (server clock), then the match clock runs and they race
+ //   finished -> the result: PlayScreen again, with a final card and the map showing what
+ //               each player found (also when the link is opened later)
+ //   declined / cancelled / expired -> a closing message
+-// A match found through the quick-match queue arrives with `location.state.auto`: once the
+-// country is revealed and the map is loaded it starts by itself after AUTO_START_SECONDS
+-// (Leave is still there). Both players do it; starting twice is harmless.
++// A match found through the quick-match queue arrives with `location.state.auto` (kept for
++// the tab, so a reload doesn't lose it): the country AND the length were drawn, there is no
++// Start button, and once the country is revealed and the map is loaded the match starts by
++// itself after AUTO_START_SECONDS (Leave is still there). Both players do it; starting twice
++// is harmless.
+ // The room asks the server for the match every second, so both players see changes
+ // (accepted, started, cancelled...) almost instantly without any extra setup.
+ 
+-// Quick-match rooms: seconds between "everything is ready" and the automatic start.
+-const AUTO_START_SECONDS = 4;
++// Quick-match rooms: seconds between "everything is ready" and the automatic start (the 3-2-1
++// of the match itself comes after).
++const AUTO_START_SECONDS = 3;
+ 
+ function Player({ player, isMe, role }) {
+   return (
+@@ -142,7 +147,13 @@
+   // Quick match: start by itself a few seconds after the country is revealed and the map is
+   // loaded. `startRef` always points at the latest `actions.start` (see below).
+   const location = useLocation();
+-  const autoStart = Boolean(location.state && location.state.auto);
++  const [autoStart] = useState(() => {
++    if (location.state && location.state.auto) {
++      rememberAuto(id);
++      return true;
++    }
++    return wasAuto(id);
++  });
+   const autoReady = autoStart && revealing && preload.status === 'ready' && revealDone;
+   const [autoLeft, setAutoLeft] = useState(AUTO_START_SECONDS);
+   const startRef = useRef(() => {});
+@@ -237,20 +248,25 @@
+       const canStart = preload.status === 'ready' && revealDone && !disabled;
+       body = (
+         <div className="mp-state">
+-          <h2>Match ready</h2>
++          <h2>{autoStart ? 'Opponent found' : 'Match ready'}</h2>
+           {m.country && (
+             <CountryRoulette
+               key={m.country.id}
+               name={m.country.nombre}
+-              meta={`${m.country.total_regions} regions · ${length}`}
++              slug={m.country.slug}
++              regions={m.country.total_regions}
++              durationSeconds={m.duration_seconds}
++              drawTime={autoStart}
+               animate={animateReveal}
+               onDone={() => setRevealDone(true)}
+             />
+           )}
+           <MapStatus preload={preload} />
+-          {autoReady ? (
++          {autoStart ? (
+             <p className="mp-note" role="status">
+-              Starting in {Math.max(autoLeft, 1)}… You can still leave before it starts.
++              {autoReady
++                ? <>Starting in {Math.max(autoLeft, 1)}… You can still leave before it starts.</>
++                : 'The match starts by itself as soon as the country is drawn and the map is ready.'}
+             </p>
+           ) : (
+             <p className="mp-note">
+@@ -260,15 +276,17 @@
+             </p>
+           )}
+           <div className="mp-actions">
+-            <button
+-              type="button"
+-              className="mp-btn primary"
+-              disabled={!canStart}
+-              title={!revealDone ? 'Drawing the country…' : preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
+-              onClick={() => actions.start(m.id)}
+-            >
+-              {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}
+-            </button>
++            {!autoStart && (
++              <button
++                type="button"
++                className="mp-btn primary"
++                disabled={!canStart}
++                title={!revealDone ? 'Drawing the country…' : preload.status === 'ready' ? undefined : 'Waiting for the map to load'}
++                onClick={() => actions.start(m.id)}
++              >
++                {actions.busy === `start:${m.id}` ? 'Starting…' : 'Start match'}
++              </button>
++            )}
+             <button type="button" className="mp-btn" disabled={disabled} onClick={() => actions.cancel(m.id)}>
+               Leave match
+             </button>
+diff -ruN a/frontend/src/pages/Match/autoStart.js b/frontend/src/pages/Match/autoStart.js
+--- a/frontend/src/pages/Match/autoStart.js	1970-01-01 00:00:00.000000000 +0000
++++ b/frontend/src/pages/Match/autoStart.js	2026-10-02 20:19:29.205596820 +0000
+@@ -0,0 +1,13 @@
++// Quick-match rooms start by themselves (no Start button). The room learns it from the
++// navigation state; this remembers it for the tab, so a reload of the room doesn't bring
++// the Start button back. Best-effort: with storage blocked, a reload just shows the button.
++
++const PREFIX = 'geotaria:auto-start:';
++
++export function rememberAuto(matchId) {
++  try { sessionStorage.setItem(PREFIX + matchId, '1'); } catch { /* ignore */ }
++}
++
++export function wasAuto(matchId) {
++  try { return sessionStorage.getItem(PREFIX + matchId) === '1'; } catch { return false; }
++}
+diff -ruN a/frontend/src/pages/Match/matchText.js b/frontend/src/pages/Match/matchText.js
+--- a/frontend/src/pages/Match/matchText.js	2026-10-02 20:19:29.233712024 +0000
++++ b/frontend/src/pages/Match/matchText.js	2026-10-02 20:19:29.234909595 +0000
+@@ -3,6 +3,9 @@
+ 
+ export const DURATIONS = [60, 120, 180, 300, 0]; // 0 = no time limit
+ export const DEFAULT_DURATION = 180;
++// Lengths the quick-match queue draws from (never untimed). Keep in sync with
++// QUEUE_DURATIONS in backend/models/match.py.
++export const QUEUE_DURATIONS = [60, 120, 180, 240, 300];
+ export const UNTIMED = 0;
+ 
+ export const isUntimed = (seconds) => seconds === UNTIMED;
+diff -ruN a/frontend/src/pages/Multiplayer/QuickMatch.jsx b/frontend/src/pages/Multiplayer/QuickMatch.jsx
+--- a/frontend/src/pages/Multiplayer/QuickMatch.jsx	2026-10-02 20:19:29.248847944 +0000
++++ b/frontend/src/pages/Multiplayer/QuickMatch.jsx	2026-10-02 20:19:29.250065654 +0000
+@@ -1,9 +1,10 @@
+ import { useState } from 'react';
+ import { formatElapsed } from '../Match/matchText';
+ 
+-// "Quick match" card: look for a random opponent. The country and the length (1 to 5
+-// minutes) are drawn when the pair is formed. After WAIT_NOTICE_S seconds without a rival it
+-// offers to keep waiting or to play solo meanwhile.
++// "Quick match" card: look for a random opponent. The country (shown lighting up on the world
++// map) and the length (1 to 5 minutes, never untimed) are both drawn when the pair is formed,
++// and the match starts by itself a few seconds later: there is no Start button. After
++// WAIT_NOTICE_S seconds without a rival it offers to keep waiting or to play solo meanwhile.
+ 
+ const WAIT_NOTICE_S = 30;
+ 
+@@ -74,7 +75,8 @@
+         <div className="mq-body">
+           <p className="mq-text">
+             Get matched with another player who is looking for a game. The <strong>country</strong> and
+-            the <strong>length</strong> (1 to 5 minutes) are drawn for you, and the match starts on its own.
++            the <strong>length</strong> (1 to 5 minutes) are drawn at random for both of you, and the match
++            starts on its own a few seconds later.
+           </p>
+           <button type="button" className="mp-btn primary mq-cta" disabled={queue.busy} onClick={queue.find}>
+             {queue.busy ? 'Searching…' : 'Find an opponent'}
+diff -ruN a/frontend/src/pages/Multiplayer/useMatchQueue.js b/frontend/src/pages/Multiplayer/useMatchQueue.js
+--- a/frontend/src/pages/Multiplayer/useMatchQueue.js	2026-10-02 20:19:29.240992897 +0000
++++ b/frontend/src/pages/Multiplayer/useMatchQueue.js	2026-10-02 20:19:29.242071985 +0000
+@@ -2,6 +2,7 @@
+ import { useNavigate } from 'react-router-dom';
+ import { api } from '../../lib/api';
+ import { usePolled } from '../../lib/usePolled';
++import { loadWorldMap } from '../../lib/worldMapData';
+ import { matchErrorText } from '../Match/matchText';
+ 
+ // Quick match: look for a random opponent in the general queue.
+@@ -68,6 +69,12 @@
+     if (matched) goToMatch(matched);
+   }, [matched, goToMatch]);
+ 
++  // While searching, download the world map for the draw animation, so it is already in the
++  // browser when the pair is formed (best effort: the room asks for it again if this fails).
++  useEffect(() => {
++    if (searching) loadWorldMap().catch(() => {});
++  }, [searching]);
++
+   // Smooth seconds counter between two answers of the server.
+   useEffect(() => {
+     if (!searching) return undefined;

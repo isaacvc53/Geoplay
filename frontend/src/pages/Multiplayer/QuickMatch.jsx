@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { formatElapsed } from '../Match/matchText';
 
-// "Quick match" card: look for a random opponent. The country and the length (1 to 5
-// minutes) are drawn when the pair is formed. After WAIT_NOTICE_S seconds without a rival it
-// offers to keep waiting or to play solo meanwhile.
+// "Quick match" card: look for a random opponent. The country (shown lighting up on the world
+// map) and the length (1 to 5 minutes, never untimed) are both drawn when the pair is formed,
+// and the match starts by itself a few seconds later: there is no Start button. After
+// WAIT_NOTICE_S seconds without a rival it offers to keep waiting or to play solo meanwhile.
 
 const WAIT_NOTICE_S = 30;
 
@@ -74,7 +75,8 @@ export default function QuickMatch({ queue }) {
         <div className="mq-body">
           <p className="mq-text">
             Get matched with another player who is looking for a game. The <strong>country</strong> and
-            the <strong>length</strong> (1 to 5 minutes) are drawn for you, and the match starts on its own.
+            the <strong>length</strong> (1 to 5 minutes) are drawn at random for both of you, and the match
+            starts on its own a few seconds later.
           </p>
           <button type="button" className="mp-btn primary mq-cta" disabled={queue.busy} onClick={queue.find}>
             {queue.busy ? 'Searching…' : 'Find an opponent'}

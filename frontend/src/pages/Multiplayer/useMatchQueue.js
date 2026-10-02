@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { usePolled } from '../../lib/usePolled';
+import { loadWorldMap } from '../../lib/worldMapData';
 import { matchErrorText } from '../Match/matchText';
 
 // Quick match: look for a random opponent in the general queue.
@@ -67,6 +68,12 @@ export function useMatchQueue(enabled) {
   useEffect(() => {
     if (matched) goToMatch(matched);
   }, [matched, goToMatch]);
+
+  // While searching, download the world map for the draw animation, so it is already in the
+  // browser when the pair is formed (best effort: the room asks for it again if this fails).
+  useEffect(() => {
+    if (searching) loadWorldMap().catch(() => {});
+  }, [searching]);
 
   // Smooth seconds counter between two answers of the server.
   useEffect(() => {
