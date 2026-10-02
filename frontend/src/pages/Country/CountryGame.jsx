@@ -105,7 +105,9 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalI
   return (
     <section className="game">
       <div className="toolbar">
-        <div className="progress" aria-live="polite">
+        {/* Online: el marcador de arriba (PlayScreen) ya enseña tus aciertos /total con su barra,
+            así que este contador se oculta. El motor sigue escribiendo en él, por eso no se quita. */}
+        <div className="progress" aria-live="polite" style={isOnline ? { display: 'none' } : undefined}>
           <div className="progress-num">
             <span ref={setEl('count')}>0</span>
             <span className="sep">/</span>
