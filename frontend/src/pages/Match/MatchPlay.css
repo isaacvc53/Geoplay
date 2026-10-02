@@ -21,7 +21,7 @@
 }
 .country-page .mpg-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
 .country-page .mpg-side.me .mpg-avatar{ border-color:var(--accent); }
-.country-page .mpg-who{ display:flex; flex-direction:column; min-width:0; }
+.country-page .mpg-who{ display:flex; flex-direction:column; flex:1 1 auto; min-width:0; }
 .country-page .mpg-name{
   font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
@@ -31,6 +31,20 @@
   transition:color var(--ease);
 }
 .country-page .mpg-side.lead .mpg-score{ color:var(--accent); }
+/* "/16": the total, quieter than the number that moves. */
+.country-page .mpg-total{ font-size:.55em; font-weight:600; color:var(--muted); margin-left:1px; }
+/* Progress bar under the score: gold for me, the rival's colour for them (and it grows from
+   the right on their side, mirroring the layout). */
+.country-page .mpg-bar-track{
+  display:flex; width:100%; height:5px; margin-top:5px; overflow:hidden;
+  border-radius:3px; background:rgba(147,164,179,.18);
+}
+.country-page .mpg-bar-fill{
+  display:block; height:100%; border-radius:3px; background:var(--found);
+  transition:width .35s ease;
+}
+.country-page .mpg-side.rival .mpg-bar-track{ justify-content:flex-end; }
+.country-page .mpg-side.rival .mpg-bar-fill{ background:var(--rival); }
 
 .country-page .mpg-mid{ display:flex; flex-direction:column; align-items:center; gap:2px; min-width:96px; }
 .country-page .mpg-clock{
@@ -139,6 +153,7 @@
   }
   .country-page .mpg-avatar{ width:32px; height:32px; font-size:13px; }
   .country-page .mpg-score{ font-size:22px; }
+  .country-page .mpg-bar-track{ height:4px; margin-top:4px; }
   .country-page .mpg-name{ font-size:10.5px; }
   .country-page .mpg-mid{ min-width:70px; }
   .country-page .mpg-clock{ font-size:23px; }
@@ -151,4 +166,5 @@
 @media (prefers-reduced-motion:reduce){
   .country-page .mpg-end-card{ animation:none; }
   .country-page .mpg-cover.match-page{ transition:none; }
+  .country-page .mpg-bar-fill{ transition:none; }
 }

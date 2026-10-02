@@ -39,13 +39,20 @@ function formatClock(ms) {
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
 
-function Side({ player, score, isMe, leading }) {
+function Side({ player, score, total, isMe, leading }) {
+  const who = isMe ? 'Your' : `${player.username}'s`;
+  const pct = total > 0 ? Math.min(100, (score / total) * 100) : 0;
   return (
-    <div className={'mpg-side' + (isMe ? ' me' : '') + (leading ? ' lead' : '')}>
+    <div className={'mpg-side' + (isMe ? ' me' : ' rival') + (leading ? ' lead' : '')}>
       <UserAvatar className="mpg-avatar" userId={player.user_id} name={player.username} version={player.avatar_updated_at} />
       <div className="mpg-who">
         <span className="mpg-name">{isMe ? 'You' : player.username}</span>
-        <span className="mpg-score" aria-label={`${isMe ? 'Your' : `${player.username}'s`} score`}>{score}</span>
+        <span className="mpg-score" aria-label={`${who} score: ${score} of ${total}`}>
+          {score}<span className="mpg-total">/{total}</span>
+        </span>
+        <span className="mpg-bar-track" role="progressbar" aria-label={`${who} progress`} aria-valuemin={0} aria-valuemax={total} aria-valuenow={score}>
+          <span className="mpg-bar-fill" style={{ width: `${pct}%` }} />
+        </span>
       </div>
     </div>
   );
@@ -120,6 +127,7 @@ export default function PlayScreen({ match, clock, preload, reload }) {
 
   const myScore = Math.max(myLocal, mine.score);
   const rivalScore = rival.score;
+  const totalRegions = match.country.total_regions;
 
   // Latest `reload` without rebuilding the callbacks the engine holds on to.
   const reloadRef = useRef(reload);
@@ -260,14 +268,14 @@ export default function PlayScreen({ match, clock, preload, reload }) {
             <span className="arrow" aria-hidden="true">←</span>
             <span className="label">Menu</span>
           </Link>
-          <Side player={mine} score={myScore} isMe leading={myScore > rivalScore} />
+          <Side player={mine} score={myScore} total={totalRegions} isMe leading={myScore > rivalScore} />
           <div className="mpg-mid">
             <span className={'mpg-clock' + (low ? ' low' : '')} aria-label={untimed ? 'Time elapsed' : 'Time left'}>
               {untimed ? formatElapsed(clockMs) : formatClock(clockMs)}
             </span>
             <span className="mpg-country">{match.country.nombre}</span>
           </div>
-          <Side player={rival} score={rivalScore} isMe={false} leading={rivalScore > myScore} />
+          <Side player={rival} score={rivalScore} total={totalRegions} isMe={false} leading={rivalScore > myScore} />
         </header>
 
         {data && texts ? (
