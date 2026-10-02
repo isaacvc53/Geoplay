@@ -11,6 +11,10 @@ ALLOWED_DURATIONS = (60, 120, 180, 300, 0)
 UNTIMED = 0
 DEFAULT_DURATION = 180
 
+# Duraciones que se sortean en la cola general (segundos): de 1 a 5 minutos. No usa
+# ALLOWED_DURATIONS: esa lista es la de los retos entre amigos (que no tienen 4 min).
+QUEUE_DURATIONS = (60, 120, 180, 240, 300)
+
 
 class MatchCreate(BaseModel):
     username: str = Field(min_length=1, max_length=50)
@@ -144,3 +148,14 @@ class RivalProgress(BaseModel):
     # Las regiones que el rival lleva acertadas, para dibujar SU mapa en directo.
     # Solo ids (nunca nombres) y solo con la partida en marcha o terminada.
     region_ids: list[int]
+
+
+class QueueStatus(BaseModel):
+    """Estado de mi búsqueda de rival en la cola general."""
+
+    # True mientras sigo en la cola esperando rival.
+    searching: bool
+    # Segundos que llevo esperando (lo cuenta el servidor, así sobrevive a recargar la página).
+    waited_seconds: int = 0
+    # Si ya se formó la pareja, la partida (en estado "ready"): el frontend entra a su sala.
+    match: MatchOut | None = None

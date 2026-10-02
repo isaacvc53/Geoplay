@@ -293,6 +293,36 @@
   padding:18px 26px; border-top:1px solid var(--line-soft); font-size:14px; color:var(--parchment-dim);
 }
 
+/* ---------- quick match (general queue) ---------- */
+.multiplayer-page .mq-card{ display:flex; flex-direction:column; gap:16px; }
+.multiplayer-page .mq-card .mp-card-head{ margin-bottom:0; }
+.multiplayer-page .mq-body{ display:flex; align-items:center; gap:18px 28px; flex-wrap:wrap; }
+.multiplayer-page .mq-text{ flex:1 1 300px; font-size:14px; line-height:1.6; color:var(--parchment-dim); }
+.multiplayer-page .mq-text strong{ color:var(--brass-bright); font-weight:600; }
+.multiplayer-page .mq-cta{ flex:0 0 auto; min-width:220px; min-height:46px; font-size:13px; }
+
+.multiplayer-page .mq-search{ display:flex; align-items:center; gap:16px; }
+.multiplayer-page .mq-spinner{
+  flex:none; width:30px; height:30px; border-radius:50%;
+  border:2px solid var(--line); border-top-color:var(--brass-bright);
+  animation:mqSpin .9s linear infinite;
+}
+.multiplayer-page .mq-search-text{ display:flex; flex-direction:column; gap:3px; min-width:0; flex:1; }
+.multiplayer-page .mq-search-text strong{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:19px; color:var(--parchment); }
+.multiplayer-page .mq-hint{ font-size:12.5px; line-height:1.5; color:var(--parchment-dim); }
+.multiplayer-page .mq-timer{
+  flex:none; font:600 28px/1 'Fraunces',Georgia,serif; font-variant-numeric:tabular-nums; color:var(--brass-bright);
+}
+.multiplayer-page .mq-notice{
+  padding:14px 16px; border:1px dashed var(--brass-dim); background:rgba(201,162,75,.07);
+  display:flex; flex-direction:column; gap:12px;
+}
+.multiplayer-page .mq-notice p{ font-size:14px; line-height:1.55; color:var(--parchment-dim); }
+.multiplayer-page .mq-notice strong{ color:var(--parchment); }
+.multiplayer-page .mq-notice-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.multiplayer-page .mq-cancel{ align-self:flex-start; }
+@keyframes mqSpin{ to{ transform:rotate(360deg); } }
+
 /* ---------- responsive ---------- */
 @media (max-width:960px){
   .multiplayer-page .mp-grid{ grid-template-columns:1fr; }
@@ -313,7 +343,11 @@
   .multiplayer-page .mp-how{ border-left:0; border-top:1px solid var(--line-soft); padding:18px 20px; }
   .multiplayer-page .mp-how:first-child{ border-top:0; }
   .multiplayer-page .mp-gate-cta{ padding:16px 20px; }
+  .multiplayer-page .mq-cta{ width:100%; min-width:0; }
+  .multiplayer-page .mq-notice-actions .mp-btn{ flex:1; }
+  .multiplayer-page .mq-timer{ font-size:24px; }
 }
 @media (prefers-reduced-motion:reduce){
   .multiplayer-page .mp-status i, .multiplayer-page .mp-skel span{ animation:none !important; }
+  .multiplayer-page .mq-spinner{ animation-duration:2.4s; }
 }

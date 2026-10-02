@@ -12,11 +12,12 @@ from models.match import (
     MatchOut,
     MyMatches,
     PlayableCountry,
+    QueueStatus,
     RivalProgress,
 )
 from models.user_db import User
 from routes.auth import get_current_user, get_db
-from services import friends_service, match_service
+from services import friends_service, match_service, matchmaking_service
 
 matches_router = APIRouter(prefix="/matches", tags=["matches"])
 
@@ -63,6 +64,39 @@ def mis_partidas(
     """Mi partida abierta + invitaciones recibidas. Pensada para consultarse
     cada pocos segundos desde el menú."""
     return match_service.get_mine(db, usuario_actual)
+
+
+# ---- Cola general (buscar rival entre desconocidos). Van ANTES que /{match_id}.
+@matches_router.post("/queue", response_model=QueueStatus)
+def entrar_en_la_cola(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Busco rival: duración (1 a 5 min) y país se sortean al formarse la pareja. Si ya
+    hay alguien esperando, la partida se crea en el acto (`match` en la respuesta)."""
+    with errores_de_partida():
+        return matchmaking_service.join_queue(db, usuario_actual)
+
+
+@matches_router.get("/queue", response_model=QueueStatus)
+def estado_de_la_cola(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Mi estado en la cola. Pensada para consultarse cada ~2 s mientras se busca: renueva
+    mi latido e intenta emparejarme."""
+    with errores_de_partida():
+        return matchmaking_service.queue_status(db, usuario_actual)
+
+
+@matches_router.post("/queue/leave", response_model=QueueStatus)
+def salir_de_la_cola(
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Dejo de buscar (idempotente)."""
+    with errores_de_partida():
+        return matchmaking_service.leave_queue(db, usuario_actual)
 
 
 @matches_router.get("/countries", response_model=list[PlayableCountry])

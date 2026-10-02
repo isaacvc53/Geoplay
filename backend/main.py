@@ -14,6 +14,7 @@ from models.user_db import User  # noqa: F401
 from models.progress_db import GameSession, GameSessionAnswer  # noqa: F401
 from models.friendship_db import Friendship  # noqa: F401
 from models.match_db import Match  # noqa: F401
+from models.matchmaking_db import MatchQueueEntry  # noqa: F401
 
 from database.connection import engine
 from routes.countries import country_router

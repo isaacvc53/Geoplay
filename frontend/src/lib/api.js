@@ -302,6 +302,26 @@ export const api = {
     return this._get(`/matches/mine`);
   },
 
+  // --- Quick match: the general queue (random opponent, random length 1-5 min, random country) ---
+  // All three answer { searching, waited_seconds, match }. `match` is set as soon as a pair
+  // is formed (status 'ready'): go to its room.
+
+  // Start looking for a rival. If someone was already waiting, `match` comes back right away.
+  joinQueue() {
+    return this._post(`/matches/queue`, {});
+  },
+
+  // While searching: ask every ~2 s. It is also the heartbeat that keeps me in the queue
+  // (the server drops whoever stops asking for ~10 s).
+  getQueueStatus() {
+    return this._get(`/matches/queue`);
+  },
+
+  // Stop looking (idempotent). If I was paired a moment before, `match` says so.
+  leaveQueue() {
+    return this._post(`/matches/queue/leave`, {});
+  },
+
   getMatch(matchId) {
     return this._get(`/matches/${encodeURIComponent(matchId)}`);
   },

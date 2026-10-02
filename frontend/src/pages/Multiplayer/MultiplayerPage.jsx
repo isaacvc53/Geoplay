@@ -8,6 +8,8 @@ import CountryPicker from '../Profile/CountryPicker';
 import { useFriends } from '../Menu/useFriends';
 import { useMyMatches } from '../Menu/useMyMatches';
 import { useMatchHistory } from '../Menu/useMatchHistory';
+import QuickMatch from './QuickMatch';
+import { useMatchQueue } from './useMatchQueue';
 import { useMatchActions } from '../Match/useMatchActions';
 import {
   DEFAULT_DURATION, DURATIONS, countryLabel, formatDuration, isUntimed, opponentOf,
@@ -79,6 +81,7 @@ export default function MultiplayerPage() {
   const history = useMatchHistory(loggedIn);
   const { current: currentMatch, invitations } = matches;
   const actions = useMatchActions({ reload: matches.reload });
+  const queue = useMatchQueue(loggedIn);
 
   const [opponentId, setOpponentId] = useState(null);
   const [filter, setFilter] = useState('');
@@ -249,6 +252,9 @@ export default function MultiplayerPage() {
                   ))}
                 </section>
               )}
+
+              {/* ---- quick match: random opponent from the general queue ---- */}
+              {(!hasCurrent || queue.state !== 'idle') && <QuickMatch queue={queue} />}
 
               <div className="mp-grid">
                 {/* ---- new challenge ---- */}

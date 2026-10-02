@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { usePolled } from '../../lib/usePolled';
 import { useAuth } from '../../context/AuthContext';
@@ -22,8 +22,14 @@ import './Match.css';
 //   finished -> the result: PlayScreen again, with a final card and the map showing what
 //               each player found (also when the link is opened later)
 //   declined / cancelled / expired -> a closing message
+// A match found through the quick-match queue arrives with `location.state.auto`: once the
+// country is revealed and the map is loaded it starts by itself after AUTO_START_SECONDS
+// (Leave is still there). Both players do it; starting twice is harmless.
 // The room asks the server for the match every second, so both players see changes
 // (accepted, started, cancelled...) almost instantly without any extra setup.
+
+// Quick-match rooms: seconds between "everything is ready" and the automatic start.
+const AUTO_START_SECONDS = 4;
 
 function Player({ player, isMe, role }) {
   return (
@@ -133,6 +139,30 @@ function MatchRoom({ id }) {
     if (revealing) markRevealed(id);
   }, [revealing, id]);
 
+  // Quick match: start by itself a few seconds after the country is revealed and the map is
+  // loaded. `startRef` always points at the latest `actions.start` (see below).
+  const location = useLocation();
+  const autoStart = Boolean(location.state && location.state.auto);
+  const autoReady = autoStart && revealing && preload.status === 'ready' && revealDone;
+  const [autoLeft, setAutoLeft] = useState(AUTO_START_SECONDS);
+  const startRef = useRef(() => {});
+  useEffect(() => {
+    if (!autoReady) return undefined;
+    let left = AUTO_START_SECONDS;
+    const timer = setInterval(() => {
+      left -= 1;
+      setAutoLeft(left);
+      if (left <= 0) {
+        clearInterval(timer);
+        startRef.current();
+      }
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+      setAutoLeft(AUTO_START_SECONDS);
+    };
+  }, [autoReady]);
+
   const goHome = () => navigate('/');
   const actions = useMatchActions({
     reload: poll.reload,
@@ -141,6 +171,9 @@ function MatchRoom({ id }) {
     onCancelled: goHome,
   });
   const disabled = Boolean(actions.busy);
+  useEffect(() => {
+    startRef.current = () => actions.start(id);
+  });
 
   let body;
   if (!poll.loaded) {
@@ -215,11 +248,17 @@ function MatchRoom({ id }) {
             />
           )}
           <MapStatus preload={preload} />
-          <p className="mp-note">
-            {untimed
-              ? 'Either of you can start. You both get a 3-second countdown, then the race begins: the first to find every region wins.'
-              : 'Either of you can start. You both get a 3-second countdown, then the clock runs.'}
-          </p>
+          {autoReady ? (
+            <p className="mp-note" role="status">
+              Starting in {Math.max(autoLeft, 1)}… You can still leave before it starts.
+            </p>
+          ) : (
+            <p className="mp-note">
+              {untimed
+                ? 'Either of you can start. You both get a 3-second countdown, then the race begins: the first to find every region wins.'
+                : 'Either of you can start. You both get a 3-second countdown, then the clock runs.'}
+            </p>
+          )}
           <div className="mp-actions">
             <button
               type="button"
