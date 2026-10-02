@@ -23,6 +23,23 @@
 .maps-page .mx-section h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:21px; line-height:1.2; }
 .maps-page .mx-section-head p{ margin-top:3px; font-size:13px; color:var(--parchment-dim); }
 
+/* ---------- main options ---------- */
+.maps-page .mx-main{ display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:16px; }
+.maps-page .mx-main-card{
+  display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left;
+  padding:22px 20px 18px; min-height:210px; font-family:inherit; color:var(--parchment); text-decoration:none; cursor:pointer;
+  border:1px solid var(--line); background:var(--panel-bg); border-radius:var(--radius);
+  animation:riseIn var(--ease-slow) both;
+  transition:border-color var(--ease), background var(--ease), transform var(--ease), box-shadow var(--ease);
+}
+.maps-page .mx-main-card:hover, .maps-page .mx-main-card:focus-visible{ border-color:var(--brass); background:var(--panel-bg-hover); transform:translateY(-3px); box-shadow:0 22px 44px -24px var(--shadow); }
+.maps-page .mx-main-card:focus-visible{ outline:1.5px solid var(--brass-bright); outline-offset:3px; }
+.maps-page .mx-main-icon{ display:grid; place-items:center; width:46px; height:46px; margin-bottom:6px; font-size:24px; border:1px solid var(--brass-dim); border-radius:50%; }
+.maps-page .mx-main-card h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:21px; line-height:1.2; }
+.maps-page .mx-main-card p{ font-size:13.5px; line-height:1.55; color:var(--parchment-dim); }
+.maps-page .mx-main-cta{ margin-top:auto; padding-top:10px; font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--brass); }
+.maps-page .mx-main-card:hover .mx-main-cta{ color:var(--brass-bright); }
+
 /* ---------- small tiles ---------- */
 .maps-page .mx-tiles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(168px, 1fr)); gap:10px; }
 .maps-page .mx-tile{
@@ -47,6 +64,7 @@
   .maps-page .mx-tiles{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
 }
 @media (prefers-reduced-motion:reduce){
+  .maps-page .mx-main-card{ animation:none !important; transition:none !important; }
   .maps-page .mx-section, .maps-page .mx-hero{ animation:none !important; }
   .maps-page .mx-tile{ transition:none !important; }
 }
