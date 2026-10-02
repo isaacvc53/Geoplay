@@ -1,21 +1,21 @@
 // src/lib/worldRegions.js
-// Datos y lógica pura del modo «Subdivisiones del mundo» (sin backend).
+// Datos y lógica pura del modo «World subdivisions» (sin backend).
 // Fuente: public/data/world-admin1.topojson (Natural Earth admin-1, ver tools/build_world_admin1.py).
-// Propiedades de cada región: k id · n nombre (es) · c ISO-3 del país · ce país (es) · z zona · t tipo · a alias "a|b".
+// Propiedades de cada región: k id · n nombre (inglés) · c ISO-3 del país · ce país (inglés) · z zona · t tipo · a alias "a|b" (incluye los nombres en español y locales, que también se aceptan).
 import { feature } from 'topojson-client';
 import { normalizeText } from './textMatch';
 
 export const ZONES = [
-  { key: 'mundo', label: 'Mundo' },
-  { key: 'europa', label: 'Europa' },
+  { key: 'mundo', label: 'World' },
+  { key: 'europa', label: 'Europe' },
   { key: 'asia', label: 'Asia' },
-  { key: 'africa', label: 'África' },
-  { key: 'america', label: 'América' },
-  { key: 'oceania', label: 'Oceanía' },
+  { key: 'africa', label: 'Africa' },
+  { key: 'america', label: 'Americas' },
+  { key: 'oceania', label: 'Oceania' },
 ];
 
 const TYPE_WORDS = new Set([
-  'province', 'provincia', 'state', 'estado', 'region', 'departamento', 'department', 'oblast', 'county',
+  'province', 'provincia', 'state', 'estado', 'region', 'departamento', 'department', 'oblast', 'county', 'city', 'governorate',
   'district', 'distrito', 'governorate', 'gobernacion', 'prefecture', 'prefectura', 'municipality', 'municipio', 'canton',
 ]);
 const GLUE = new Set(['de', 'del', 'of', 'la', 'el']);
@@ -71,7 +71,7 @@ const pending = (rs, solved) => rs.filter((r) => !solved.has(r.id));
 export function exactMatch(scope, raw, solved) {
   const q = normalizeText(raw);
   if (q.length < 2) return { status: 'none' };
-  // También vale «Provincia de Buenos Aires» aunque la región se llame «Buenos Aires».
+  // También vale "Province of Buenos Aires" aunque la región se llame "Buenos Aires".
   const all = scope.byName.get(q) || scope.byName.get(stripTypeWords(q));
   if (!all) return { status: 'none' };
   const hit = pending(all, solved);

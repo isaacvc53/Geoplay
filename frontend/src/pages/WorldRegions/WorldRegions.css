@@ -32,7 +32,7 @@
   .wr-btn:disabled{opacity:.4;cursor:default;}
   .wr-btn.primary{background:var(--g-accent);border-color:var(--g-accent);color:var(--g-accent-ink);font-weight:600;}
   .wr-btn.primary:hover:not(:disabled){background:var(--g-accent-hover);}
-  .wr-feedback{min-height:26px;padding:6px 2px;font-size:14px;} .wr-feedback.ok{color:#8fd19e;} .wr-feedback.warn{color:var(--g-accent-hover);} .wr-feedback.bad{color:var(--g-danger);}
+  .wr-feedback{min-height:26px;padding:6px 2px;font-size:14px;} .wr-feedback.ok{color:var(--g-accent-hover);} .wr-feedback.warn{color:var(--g-accent-hover);} .wr-feedback.bad{color:var(--g-danger);}
 
   .wr-body{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:14px;}
   .wr-map{position:relative;background:var(--g-water);border:1px solid var(--g-line);height:min(68vh,640px);min-height:380px;overflow:hidden;}
@@ -41,11 +41,11 @@
   .base path{stroke:#16384f;stroke-width:.4;vector-effect:non-scaling-stroke;}
   .base path.in{fill:#17415f;} .base path.out{fill:#10293b;}
   .inner{fill:none;stroke:#2f6489;stroke-width:.45;vector-effect:non-scaling-stroke;pointer-events:none;}
-  .border{fill:none;stroke:#4a7a9c;stroke-width:.55;stroke-opacity:.6;vector-effect:non-scaling-stroke;pointer-events:none;}
-  .solved path{fill:#4fae8a;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
+  .border{fill:none;stroke:#9fc0d9;stroke-width:1;vector-effect:non-scaling-stroke;pointer-events:none;}
+  .solved path{fill:#c9a24b;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
   .solved path:hover{filter:brightness(1.25);}
-  .missed path{fill:#b4674a;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
-  .missed path:hover{fill:#d98a69;}
+  .missed path{fill:#a8504a;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
+  .missed path:hover{fill:#c46a62;}
   .solved path.flash{animation:wrFlash .8s ease-out;}
   @media (prefers-reduced-motion:reduce){.solved path.flash{animation:none;}}
 
@@ -75,7 +75,7 @@
   .wr-countries{list-style:none;margin:0;padding:0;overflow:auto;flex:1;}
   .wr-countries button{display:flex;justify-content:space-between;gap:8px;width:100%;padding:8px 12px;background:none;border:0;border-bottom:1px solid rgba(31,70,102,.5);color:var(--g-ink);cursor:pointer;text-align:left;font-size:13px;}
   .wr-countries button:hover{background:var(--g-panel-hover);}
-  .wr-countries em{font-style:normal;color:var(--g-muted);font-variant-numeric:tabular-nums;} .wr-countries .full{color:#8fd19e;} .wr-countries .full em{color:#8fd19e;}
+  .wr-countries em{font-style:normal;color:var(--g-muted);font-variant-numeric:tabular-nums;} .wr-countries .full,.wr-countries .full em{color:var(--g-accent-hover);}
 
   @media (max-width:900px){
     &{padding:18px 14px 30px;}

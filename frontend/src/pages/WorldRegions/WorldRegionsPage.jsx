@@ -7,7 +7,7 @@ import {
 import { createMapEngine } from './mapEngine';
 import './WorldRegions.css';
 
-const nf = new Intl.NumberFormat('es');
+const nf = new Intl.NumberFormat('en');
 
 export default function WorldRegionsPage() {
   const [data, setData] = useState(null);
@@ -69,7 +69,7 @@ export default function WorldRegionsPage() {
     const first = regions[0];
     setFeedback({
       kind: 'ok',
-      text: regions.length === 1 ? `✓ ${first.name} · ${first.country}` : `✓ ${first.name} · ${regions.length} regiones (${[...new Set(regions.map((r) => r.country))].slice(0, 3).join(', ')}${new Set(regions.map((r) => r.country)).size > 3 ? '…' : ''})`,
+      text: regions.length === 1 ? `✓ ${first.name} · ${first.country}` : `✓ ${first.name} · ${regions.length} regions (${[...new Set(regions.map((r) => r.country))].slice(0, 3).join(', ')}${new Set(regions.map((r) => r.country)).size > 3 ? '…' : ''})`,
     });
     setText('');
   }, []);
@@ -94,18 +94,18 @@ export default function WorldRegionsPage() {
     if (!scope || !running || !text.trim()) return;
     const m = submitMatch(scope, text, solvedRef.current);
     if (m.status === 'hit') accept(m.regions);
-    else if (m.status === 'dup') { setFeedback({ kind: 'warn', text: 'Esa ya la tienes.' }); setText(''); }
-    else if (m.status === 'ambiguous') setFeedback({ kind: 'warn', text: `Hay ${m.count} regiones que encajan: escribe el nombre completo.` });
-    else setFeedback({ kind: 'bad', text: `No encuentro «${text.trim()}» en esta zona.` });
+    else if (m.status === 'dup') { setFeedback({ kind: 'warn', text: 'You already have that one.' }); setText(''); }
+    else if (m.status === 'ambiguous') setFeedback({ kind: 'warn', text: `${m.count} regions match: type the full name.` });
+    else setFeedback({ kind: 'bad', text: `Can't find "${text.trim()}" in this zone.` });
   }
 
   function giveUp() {
-    if (!scope || !window.confirm('¿Rendirte? Se mostrarán las regiones que te faltan.')) return;
+    if (!scope || !window.confirm('Give up? The regions you missed will be shown.')) return;
     engine.current?.reveal(scope.list.filter((r) => !solvedRef.current.has(r.id)));
     setGaveUp(true);
   }
   function resetZone() {
-    if (!scope || !window.confirm(`¿Borrar tu progreso en «${ZONES.find((z) => z.key === zone).label}»?`)) return;
+    if (!scope || !window.confirm(`Reset your progress in "${ZONES.find((z) => z.key === zone).label}"?`)) return;
     const next = new Set(solvedRef.current);
     scope.list.forEach((r) => next.delete(r.id));
     solvedRef.current = next; setSolved(next); setGaveUp(false); setFeedback({ text: '', kind: '' });
@@ -120,7 +120,7 @@ export default function WorldRegionsPage() {
       if (!m.has(r.a3)) m.set(r.a3, { a3: r.a3, name: r.country, total: 0, got: 0, list: [] });
       const c = m.get(r.a3); c.total += 1; c.list.push(r); if (solved.has(r.id)) c.got += 1;
     }
-    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'es'));
+    return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'en'));
   }, [scope, solved]);
 
   const zoneStats = useMemo(() => {
@@ -138,10 +138,10 @@ export default function WorldRegionsPage() {
   return (
     <div className="worldregions-page">
       <header className="wr-top">
-        <Link className="btn-back" to="/modo"><span>←</span> Modos</Link>
+        <Link className="btn-back" to="/modo"><span>←</span> Modes</Link>
         <div className="wr-title">
-          <h1>Subdivisiones del mundo</h1>
-          <p className="subtitle">Escribe provincias, estados y regiones: el mapa se irá rellenando.</p>
+          <h1>World subdivisions</h1>
+          <p className="subtitle">Type provinces, states and regions: the map fills in as you go.</p>
         </div>
       </header>
 
@@ -156,37 +156,37 @@ export default function WorldRegionsPage() {
           <form className="wr-input" onSubmit={submit}>
             <input
               ref={inputRef} value={text} onChange={onChange} disabled={!running}
-              placeholder={running ? 'Escribe una provincia, estado o región…' : 'Elige una zona para empezar'}
-              autoComplete="off" autoCapitalize="off" spellCheck={false} aria-label="Nombre de la región"
+              placeholder={running ? 'Type a province, state or region…' : 'Pick a zone to start'}
+              autoComplete="off" autoCapitalize="off" spellCheck={false} aria-label="Region name"
             />
-            <button className="wr-btn primary" type="submit" disabled={!running}>Comprobar</button>
+            <button className="wr-btn primary" type="submit" disabled={!running}>Check</button>
           </form>
           <div className="wr-actions">
-            <span className="wr-time" title="Tiempo jugado">⏱ {formatTime(ms)}</span>
-            <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={() => setPaused((p) => !p)}>{paused ? 'Reanudar' : 'Pausa'}</button>
-            <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={giveUp}>Rendirme</button>
-            <button className="wr-btn" type="button" disabled={!scope} onClick={resetZone}>Reiniciar zona</button>
+            <span className="wr-time" title="Time played">⏱ {formatTime(ms)}</span>
+            <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={() => setPaused((p) => !p)}>{paused ? 'Resume' : 'Pause'}</button>
+            <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={giveUp}>Give up</button>
+            <button className="wr-btn" type="button" disabled={!scope} onClick={resetZone}>Reset zone</button>
           </div>
         </div>
         <div className={`wr-feedback ${feedback.kind}`} role="status">{feedback.text || '\u00a0'}</div>
 
         <div className="wr-body">
           <div className="wr-map">
-            <svg ref={svgRef} aria-label="Mapa mundial de subdivisiones" />
+            <svg ref={svgRef} aria-label="World map of subdivisions" />
             <div className="wr-tip" ref={tipRef} />
             <div className="wr-tools">
-              <button type="button" aria-label="Acercar" onClick={() => engine.current?.zoomBy(1.6)}>+</button>
-              <button type="button" aria-label="Alejar" onClick={() => engine.current?.zoomBy(1 / 1.6)}>−</button>
-              <button type="button" aria-label="Restablecer vista" onClick={() => engine.current?.resetView()}>⤢</button>
+              <button type="button" aria-label="Zoom in" onClick={() => engine.current?.zoomBy(1.6)}>+</button>
+              <button type="button" aria-label="Zoom out" onClick={() => engine.current?.zoomBy(1 / 1.6)}>−</button>
+              <button type="button" aria-label="Reset view" onClick={() => engine.current?.resetView()}>⤢</button>
             </div>
-            <div className="wr-hint">Arrastra para mover · rueda o pellizco para zoom</div>
+            <div className="wr-hint">Drag to pan · scroll or pinch to zoom</div>
 
-            {!data && !error && <div className="wr-overlay"><div className="wr-spinner" /><p>Cargando mapa…</p></div>}
+            {!data && !error && <div className="wr-overlay"><div className="wr-spinner" /><p>Loading map…</p></div>}
 
             {data && !zone && (
               <div className="wr-overlay start">
                 <div className="wr-card">
-                  <p className="wr-kicker">Elige una zona</p>
+                  <p className="wr-kicker">Choose a zone</p>
                   <div className="wr-zones">
                     {ZONES.map((z) => {
                       const s = zoneStats[z.key] || { total: 0, got: 0 };
@@ -198,39 +198,39 @@ export default function WorldRegionsPage() {
                       );
                     })}
                   </div>
-                  <p className="wr-note">Tu progreso se guarda en este navegador. Si un nombre lo comparten varias regiones (p. ej. «Central»), se rellenan todas a la vez.</p>
+                  <p className="wr-note">Your progress is saved in this browser. If several regions share a name (e.g. "Central"), they all fill in at once.</p>
                 </div>
               </div>
             )}
 
             {paused && !done && !gaveUp && (
-              <div className="wr-overlay"><div className="wr-card"><p className="wr-kicker">En pausa</p>
-                <button className="wr-btn primary" type="button" onClick={() => setPaused(false)}>Reanudar</button></div></div>
+              <div className="wr-overlay"><div className="wr-card"><p className="wr-kicker">Paused</p>
+                <button className="wr-btn primary" type="button" onClick={() => setPaused(false)}>Resume</button></div></div>
             )}
 
             {(done || gaveUp) && (
               <div className="wr-result">
-                <b>{done ? '¡Zona completada!' : 'Te has rendido'}</b>
-                <span>{nf.format(count)} de {nf.format(total)} · {formatTime(ms)} jugados</span>
-                <button className="wr-btn" type="button" onClick={() => { engine.current?.clearMissed(); setGaveUp(false); setZone(null); }}>Cambiar de zona</button>
+                <b>{done ? 'Zone complete!' : 'You gave up'}</b>
+                <span>{nf.format(count)} of {nf.format(total)} · {formatTime(ms)} played</span>
+                <button className="wr-btn" type="button" onClick={() => { engine.current?.clearMissed(); setGaveUp(false); setZone(null); }}>Change zone</button>
               </div>
             )}
           </div>
 
           <aside className="wr-side">
             <div className="wr-side-head">
-              <label>Zona
+              <label>Zone
                 <select value={zone || ''} onChange={(e) => e.target.value && setZone(e.target.value)} disabled={!data}>
                   {!zone && <option value="">—</option>}
                   {ZONES.map((z) => <option key={z.key} value={z.key}>{z.label}</option>)}
                 </select>
               </label>
-              <label className="wr-check"><input type="checkbox" checked={onlyPending} onChange={(e) => setOnlyPending(e.target.checked)} /> Solo pendientes</label>
+              <label className="wr-check"><input type="checkbox" checked={onlyPending} onChange={(e) => setOnlyPending(e.target.checked)} /> Only pending</label>
             </div>
             <ul className="wr-countries">
               {countries.filter((c) => !onlyPending || c.got < c.total).map((c) => (
                 <li key={c.a3}>
-                  <button type="button" className={c.got === c.total ? 'full' : ''} onClick={() => engine.current?.focus(c.list)} title="Ir al país">
+                  <button type="button" className={c.got === c.total ? 'full' : ''} onClick={() => engine.current?.focus(c.list)} title="Go to country">
                     <span>{c.name}</span><em>{c.got}/{c.total}</em>
                   </button>
                 </li>
