@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+    
+<!--********* Copyright (c) 2024 Pareto Softare, LLC DBA Simplemaps.com ***************************************
+************* Free for Commercial Use, full terms at  https://simplemaps.com/resources/svg-license ************
+************* Attribution is appreciated! https://simplemaps.com *******************************************-->
+
+<svg baseprofile="tiny" fill="#6f9c76" height="1000" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width=".5" version="1.2" viewbox="0 0 1000 1000" width="1000" xmlns="http://www.w3.org/2000/svg">
+ <g id="features">
+  <path d="M361.6 954.5l-246.1-206.6 30.8-330.6 153.8-371.8 553.6 41.2 30.8 867.8-522.9 0z" id="VA" name="Vatican">
+  </path>
+ </g>
+ <g id="points">
+  <circle class="41.902810133284135|12.452780154927698" cx="154" cy="909.1" id="0">
+  </circle>
+  <circle class="41.90327523620215|12.453440834298119" cx="538.4" cy="545.5" id="1">
+  </circle>
+  <circle class="41.903856614849666|12.453969377794456" cx="846" cy="90.9" id="2">
+  </circle>
+ </g>
+ <g id="label_points">
+  <circle class="Vatican" cx="525" cy="508.4" id="VA">
+  </circle>
+ </g>
+</svg>
