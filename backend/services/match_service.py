@@ -111,9 +111,15 @@ def _finish_due(db: Session, now: datetime) -> bool:
     """Cierra las partidas cuyo tiempo (más el margen) ya pasó. No hace falta que
     nadie esté mirando: se ejecuta al principio de cada operación, así que la
     primera petición posterior las cierra y libera a los jugadores."""
+    # FOR UPDATE SKIP LOCKED + populate_existing: si alguien está guardando un acierto en
+    # esa partida en este mismo instante (tiene la fila bloqueada), no se toca: se cierra
+    # en la siguiente petición. Sin esto el ganador se calculaba con puntuaciones viejas
+    # y podía quedar "empate" con 6-5. (SQLite, usado en los tests, ignora el bloqueo.)
     due = (
         db.query(Match)
         .filter(Match.status == STATUS_PLAYING, Match.ends_at < now - GRACE)
+        .with_for_update(skip_locked=True)
+        .populate_existing()
         .all()
     )
     for m in due:
@@ -146,7 +152,9 @@ def _get_mine(db: Session, me: User, match_id: int, *, lock: bool = False) -> Ma
     usuario responde igual que si no existiera (no se filtra información)."""
     q = db.query(Match).filter(Match.id == match_id)
     if lock:
-        q = q.with_for_update()
+        # populate_existing: tras esperar el bloqueo hay que leer lo que dejó la otra
+        # petición, no la copia que la sesión ya tuviera cargada.
+        q = q.with_for_update().populate_existing()
     m = q.first()
     if m is None or me.id not in (m.host_id, m.guest_id):
         raise MatchError("match_not_found", "Partida no encontrada", 404)
@@ -409,6 +417,11 @@ def cancel_match(db: Session, me: User, match_id: int) -> Match:
         now = now_utc_naive()
         if m.started_at and now < m.started_at:
             m.status = STATUS_CANCELLED
+        elif m.ends_at and now >= m.ends_at:
+            # El tiempo ya se acabó (solo falta que _finish_due cierre la partida tras el
+            # margen): salir ahora NO es un abandono. Antes el rival ganaba aunque tú
+            # fueras por delante; ahora se cierra normal y gana quien tenga más aciertos.
+            _finish(m, m.ends_at)
         else:
             rival_id = m.guest_id if m.host_id == me.id else m.host_id
             _finish(m, now, winner_id=rival_id)
@@ -464,6 +477,13 @@ def submit_guess(db: Session, me: User, match_id: int, text: str) -> dict:
         raise MatchError("match_not_playing", "La partida no está en juego", 409)
     if now < m.started_at:
         raise MatchError("match_not_started", "El tiempo aún no ha empezado", 409)
+    if m.ends_at and now >= m.ends_at + GRACE:
+        # _expire_stale ya cierra estas partidas, pero entre eso y obtener el bloqueo
+        # puede pasar tiempo (otra petición lo tenía): se comprueba otra vez aquí, con la
+        # fila bloqueada, para que ningún acierto cuente fuera de plazo.
+        _finish(m, m.ends_at)
+        db.commit()
+        raise MatchError("match_not_playing", "La partida no está en juego", 409)
 
     answered = {
         r

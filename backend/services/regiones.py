@@ -103,7 +103,7 @@ def _tokens_match(guess: str, candidate: str) -> bool:
     return True
 
 
-def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=frozenset()):
+def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=None):
     """Decide a qué región corresponde lo escrito. Es la regla de /regions/check,
     separada de la consulta a la BD para poder reutilizarla (p. ej. en las partidas
     multijugador, que ya tienen su propia sesión de BD).
@@ -111,7 +111,12 @@ def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=frozenset()):
     pares: iterable de (region_id, nombre) con TODOS los nombres válidos del país.
     ya_acertadas: ids que el jugador ya tiene; solo se usan para desempatar cuando
     varias regiones comparten exactamente el mismo nombre (p. ej. dos "Zagreb"):
-    se elige la que aún le falta.
+    se elige la que aún le falta. Si todavía le faltan varias, el nombre es ambiguo
+    (hay que escribir uno más concreto), SALVO que esas regiones tengan exactamente
+    los mismos nombres (p. ej. los dos "Veszprém" de Hungría): entonces no hay ningún
+    otro nombre que las distinga y se toma la de menor id, para que no queden sin poder
+    acertarse. None (valor por defecto, p. ej. /regions/check, que no sabe qué lleva el
+    jugador) = no hay forma de desempatar: un nombre repetido es siempre ambiguo.
 
     Devuelve {"region_id", "name"} o None.
     """
@@ -127,7 +132,7 @@ def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=frozenset()):
         if normalizar(nombre) == objetivo:
             exact_regions[region_id] = nombre
 
-    if len(exact_regions) > 1 and ya_acertadas:
+    if len(exact_regions) > 1 and ya_acertadas is not None:
         pendientes = {r: n for r, n in exact_regions.items() if r not in ya_acertadas}
         if len(pendientes) == 1:
             exact_regions = pendientes
@@ -135,6 +140,18 @@ def resolver_nombre(pares, nombre_intentado: str, ya_acertadas=frozenset()):
             # Las tiene todas: que cuente como "ya la tenías", no como error.
             primera = min(exact_regions)
             exact_regions = {primera: exact_regions[primera]}
+        else:
+            # Le faltan varias con ese mismo nombre. Si algún otro nombre las distingue,
+            # es ambiguo (se sigue con la búsqueda parcial, como siempre). Si tienen
+            # exactamente los mismos nombres, ninguno las distingue: se toma la de menor
+            # id (antes quedaban inalcanzables).
+            nombres = {r: set() for r in pendientes}
+            for region_id, nombre in pares:
+                if region_id in nombres:
+                    nombres[region_id].add(normalizar(nombre))
+            if len({frozenset(v) for v in nombres.values()}) == 1:
+                elegida = min(pendientes)
+                exact_regions = {elegida: pendientes[elegida]}
 
     if len(exact_regions) == 1:
         region_id, matched_name = next(iter(exact_regions.items()))

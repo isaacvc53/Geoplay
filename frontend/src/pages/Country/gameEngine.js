@@ -16,6 +16,7 @@
 import * as d3 from 'd3';
 import { api } from '../../lib/api';
 import { normalizeText, findLocalGuess, findExactLocalMatch, hasLongerCandidate } from '../../lib/textMatch';
+import { matchBackendRegions } from './matchRegions';
 
 // MODO ONLINE (partida 1 contra 1, ver pages/Match): si se pasa `online`, el motor no
 // decide nada por su cuenta. Cada intento se manda al servidor (`online.guess`) y solo se
@@ -614,24 +615,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       const data = await api.getRegionsNames(country.slug);
       if (disposed) return;
 
-      data.forEach((backendRegion) => {
-        const backendKeys = (backendRegion.names || []).map(normalizeSafe);
-        const local = regions.find((r) =>
-          (r.names || []).some((n) => backendKeys.includes(normalizeSafe(n)))
-        );
-        if (local) {
-          local.region_id = backendRegion.region_id;
-          // Añade los nombres que solo conoce el backend (español, alias...): así el
-          // autoacierto al teclear también los reconoce, no solo el botón Check.
-          const known = new Set((local.names || []).map(normalizeSafe));
-          (backendRegion.names || []).forEach((n) => {
-            if (n && !known.has(normalizeSafe(n))) {
-              (local.names = local.names || []).push(n);
-              known.add(normalizeSafe(n));
-            }
-          });
-        }
-      });
+      matchBackendRegions(regions, data, normalizeSafe);
 
       localMode = false;
     } catch (err) {
