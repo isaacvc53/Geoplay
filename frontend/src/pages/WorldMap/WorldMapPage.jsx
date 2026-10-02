@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import * as d3 from 'd3';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import WorldMapCanvas from './WorldMapCanvas';
 import './WorldMap.css';
 
+// Mapa mundial: mapa plano a pantalla completa; al tocar un país se abre una ficha simple con
+// su nombre y el botón para explorar sus regiones. Mismo estilo plano que el resto de la web.
 export default function WorldMapPage() {
   const navigate = useNavigate();
   const canvasRef = useRef(null);
-  const watermarkRef = useRef(null);
   const closeBtnRef = useRef(null);
   const [selected, setSelected] = useState(null);
 
@@ -21,21 +21,9 @@ export default function WorldMapPage() {
     return () => document.removeEventListener('keydown', onKey);
   }, [closePanel]);
 
-  // Silueta (D3, imperativa) + foco al abrir el panel.
+  // Al abrir el panel, el foco va al botón de cerrar.
   useEffect(() => {
-    const el = watermarkRef.current;
-    if (!el) return undefined;
-    el.replaceChildren();
     if (!selected) return undefined;
-
-    // Silueta: si el país tiene varios polígonos (p. ej. Francia con la Guayana)
-    // se dibuja solo el más grande (`main`); el viewBox se ajusta a su caja.
-    const miniSvg = d3.select(el).append('svg').attr('aria-hidden', 'true');
-    const miniPath = miniSvg.append('path').attr('d', selected.main || selected.d);
-    const { x, y, width, height } = miniPath.node().getBBox();
-    const side = Math.max(width, height) * 1.1 || 1;
-    miniSvg.attr('viewBox', [x + width / 2 - side / 2, y + height / 2 - side / 2, side, side]);
-
     const raf = requestAnimationFrame(() => closeBtnRef.current?.focus());
     return () => cancelAnimationFrame(raf);
   }, [selected]);
@@ -59,10 +47,8 @@ export default function WorldMapPage() {
           <Link className="btn-back" id="backToMenu" to="/">
             <span className="arrow">←</span> Main menu
           </Link>
-          <div className="eyebrow-row">
-            <h1>Atlas <em>World</em></h1>
-            <div className="coords">Equal Earth projection<br />drag to pan · scroll to zoom · select a country</div>
-          </div>
+          <h1>Atlas World</h1>
+          <p className="coords">Drag to pan · scroll to zoom · select a country</p>
         </header>
 
         <WorldMapCanvas ref={canvasRef} selected={selected} onSelect={setSelected} />
@@ -72,7 +58,6 @@ export default function WorldMapPage() {
           <button aria-label="Zoom out" onClick={() => canvasRef.current?.zoomOut()}>–</button>
           <button aria-label="Reset zoom" onClick={() => canvasRef.current?.reset()}>⟲</button>
         </div>
-        <div className="scale"><span>0</span><span className="bar" /><span>2000 km</span></div>
       </div>
 
       <div className={'overlay' + (open ? ' open' : '')} onClick={closePanel} />
@@ -86,7 +71,6 @@ export default function WorldMapPage() {
         aria-labelledby="panelTitle"
       >
         <button className="panel-close" ref={closeBtnRef} aria-label="Close" onClick={closePanel}>✕</button>
-        <div className="panel-watermark" ref={watermarkRef} aria-hidden="true" />
         <div className="panel-scroll">
           <div className="panel-header">
             <img

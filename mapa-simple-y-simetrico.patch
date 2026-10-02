@@ -1,0 +1,992 @@
+diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.css
+--- a/frontend/src/pages/Match/Match.css	2026-10-02 21:46:42.787242628 +0000
++++ b/frontend/src/pages/Match/Match.css	2026-10-02 21:46:42.794504926 +0000
+@@ -61,6 +61,8 @@
+   font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; color:var(--brass-bright);
+ }
+ .match-page .mp-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
++/* Same colours as in the match itself: gold for me, orange for the opponent. */
++.match-page .mp-player.rival .mp-avatar{ border-color:var(--seal); color:var(--seal); }
+ .match-page .mp-player-name{
+   max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+   font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:19px; color:var(--parchment);
+diff -ruN a/frontend/src/pages/Match/MatchPage.jsx b/frontend/src/pages/Match/MatchPage.jsx
+--- a/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 21:46:42.751242629 +0000
++++ b/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 21:46:42.757338956 +0000
+@@ -37,12 +37,14 @@
+ // of the match itself comes after).
+ const AUTO_START_SECONDS = 3;
+ 
+-function Player({ player, isMe, role }) {
++// Both players see the room the same way: me on the left, the rival on the right, with no
++// host/guest labels (who sent the challenge doesn't change what each side sees).
++function Player({ player, isMe }) {
+   return (
+-    <div className="mp-player">
++    <div className={'mp-player' + (isMe ? ' me' : ' rival')}>
+       <UserAvatar className="mp-avatar" userId={player.user_id} name={player.username} version={player.avatar_updated_at} />
+       <span className="mp-player-name">{player.username}</span>
+-      <span className="mp-player-tag">{isMe ? `You · ${role}` : role}</span>
++      <span className="mp-player-tag">{isMe ? 'You' : 'Opponent'}</span>
+     </div>
+   );
+ }
+@@ -323,13 +325,18 @@
+     return <PlayScreen match={m} clock={clock} preload={preload} reload={poll.reload} />;
+   }
+ 
++  // Me on the left, the rival on the right, whichever of us sent the challenge.
++  const meHost = m ? m.my_role === 'host' : false;
++  const mePlayer = m ? (meHost ? m.host : m.guest) : null;
++  const rivalPlayer = m ? (meHost ? m.guest : m.host) : null;
++
+   return (
+     <Card>
+       {m && (
+         <div className="mp-versus" aria-label="Players">
+-          <Player player={m.host} isMe={m.my_role === 'host'} role="host" />
++          <Player player={mePlayer} isMe />
+           <span className="mp-vs" aria-hidden="true">vs</span>
+-          <Player player={m.guest} isMe={m.my_role === 'guest'} role="guest" />
++          <Player player={rivalPlayer} isMe={false} />
+         </div>
+       )}
+       {m && poll.error && <p className="mp-warn">Connection lost — retrying…</p>}
+diff -ruN a/frontend/src/pages/Match/MatchPlay.css b/frontend/src/pages/Match/MatchPlay.css
+--- a/frontend/src/pages/Match/MatchPlay.css	2026-10-02 21:46:42.771242629 +0000
++++ b/frontend/src/pages/Match/MatchPlay.css	2026-10-02 21:46:42.781329255 +0000
+@@ -4,14 +4,16 @@
+ 
+ .country-page.mpg{ position:relative; }
+ 
+-/* ---- scoreboard: [menu] [me] [clock + country] [rival] ---- */
++/* ---- scoreboard: [me] [clock + country] [rival] ----
++   Mirror image: the two sides get the same width, so each score sits above its own map (the
++   maps below are split exactly half and half). The rival's side is the mirror of mine. */
+ .country-page .mpg-bar{
+   flex:0 0 auto;
+-  display:grid; grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px;
++  display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px;
+   padding:12px 18px 0;
+ }
+ .country-page .mpg-side{ display:flex; align-items:center; gap:10px; min-width:0; }
+-.country-page .mpg-side:last-child{ flex-direction:row-reverse; text-align:right; }
++.country-page .mpg-side.rival{ flex-direction:row-reverse; text-align:right; }
+ .country-page .mpg-avatar{
+   flex:none; width:40px; height:40px; border-radius:50%;
+   border:1px solid var(--line); background:rgba(201,162,75,.06);
+@@ -20,7 +22,9 @@
+   transition:border-color var(--ease);
+ }
+ .country-page .mpg-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+-.country-page .mpg-side.me .mpg-avatar{ border-color:var(--accent); }
++/* Each player has their own colour, the same one their map and bar use. */
++.country-page .mpg-side.me .mpg-avatar{ border-color:var(--found); }
++.country-page .mpg-side.rival .mpg-avatar{ border-color:var(--rival); }
+ .country-page .mpg-who{ display:flex; flex-direction:column; flex:1 1 auto; min-width:0; }
+ .country-page .mpg-name{
+   font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
+@@ -30,7 +34,9 @@
+   font:600 28px/1.05 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--ink);
+   transition:color var(--ease);
+ }
+-.country-page .mpg-side.lead .mpg-score{ color:var(--accent); }
++/* The one in front takes their own colour (gold for me, the rival's colour for them). */
++.country-page .mpg-side.me.lead .mpg-score{ color:var(--found); }
++.country-page .mpg-side.rival.lead .mpg-score{ color:var(--rival); }
+ /* "/16": the total, quieter than the number that moves. */
+ .country-page .mpg-total{ font-size:.55em; font-weight:600; color:var(--muted); margin-left:1px; }
+ /* Progress bar under the score: gold for me, the rival's colour for them (and it grows from
+@@ -152,7 +158,7 @@
+ 
+ @media (max-width:720px){
+   .country-page .mpg-bar{
+-    grid-template-columns:44px minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;
++    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;
+   }
+   .country-page .mpg-avatar{ width:32px; height:32px; font-size:13px; }
+   .country-page .mpg-score{ font-size:22px; }
+diff -ruN a/frontend/src/pages/Match/PlayScreen.jsx b/frontend/src/pages/Match/PlayScreen.jsx
+--- a/frontend/src/pages/Match/PlayScreen.jsx	2026-10-02 21:46:42.759242629 +0000
++++ b/frontend/src/pages/Match/PlayScreen.jsx	2026-10-02 21:46:42.767989231 +0000
+@@ -276,6 +276,9 @@
+           <button type="button" className="secondary" onClick={() => setConfirmLeave(true)}>Leave match</button>
+         </div>
+         {leaveError && <p className="mpg-confirm" role="alert">{leaveError}</p>}
++        <div className="right-actions">
++          <Link className="btn-ghost mpg-link" to="/" title="Back to the menu (the match keeps running)">Menu</Link>
++        </div>
+       </>
+     );
+     // eslint-disable-next-line react-hooks/exhaustive-deps -- `leave` only reads refs/stable setters
+@@ -285,10 +288,6 @@
+     <div className="country-page mpg">
+       <div className="page">
+         <header className="mpg-bar">
+-          <Link to="/" className="btn-back" title="Back to the menu (the match keeps running)">
+-            <span className="arrow" aria-hidden="true">←</span>
+-            <span className="label">Menu</span>
+-          </Link>
+           <Side player={mine} score={myScore} total={totalRegions} isMe leading={myScore > rivalScore} />
+           <div className="mpg-mid">
+             <span className={'mpg-clock' + (low ? ' low' : '')} aria-label={untimed ? 'Time elapsed' : 'Time left'}>
+diff -ruN a/frontend/src/pages/WorldMap/WorldMap.css b/frontend/src/pages/WorldMap/WorldMap.css
+--- a/frontend/src/pages/WorldMap/WorldMap.css	2026-10-02 21:46:42.739242630 +0000
++++ b/frontend/src/pages/WorldMap/WorldMap.css	2026-10-02 21:46:42.745962508 +0000
+@@ -1,123 +1,73 @@
++/* Mapa mundial. Estilo plano, con la misma paleta que el resto de la web (Country, Menu,
++   Compare): fondo azul, paneles #123049, líneas #1f4666, acento dorado, esquinas rectas y
++   sin brillos, degradados decorativos ni cristal. Todo va bajo .worldmap-page. */
+ 
+ .worldmap-page{
+ 
+   &{
+-    --ocean-deep:#081826;
+-    --ocean-mid:#0f2c44;
+-    --ocean-glow:#1d6386;
+-    --land:#e9ddbd;
+-    --land-hover:#ffd27a;
+-    --land-active:#f08a45;
+-    --land-disabled:#5d5b57;
+-    --land-disabled-line:#3b3a38;
+-    --ink:#0e2233;
+-    --paper:#f6f1e4;
+-    --brass:#d4ac55;
+-    --brass-bright:#f0cd82;
+-    --brass-dim:#9a8556;
+-    --panel-bg:#f8f3e6;
+-    --hairline:rgba(14,34,51,0.14);
+-    --shadow:rgba(3,10,16,0.55);
+-    --glass:rgba(8,24,38,0.62);
+-    --glass-line:rgba(212,172,85,0.38);
++    --bg:#0e2233;
++    --panel:#123049;
++    --ink:#f6f1e4;
++    --muted:#93a4b3;
++    --line:#1f4666;
++    --accent:#c9a24b;
++    --accent-hover:#d9b661;
++    --accent-ink:#1a1405;
++    /* El canvas lee estos cuatro colores (ver WorldMapCanvas.jsx). */
++    --land:#2d5877;
++    --land-hover:#3b6d90;
++    --land-active:#c9a24b;
++    --land-line:#0b1a28;
++    --land-outline:#f6f1e4;
+   }
+   *{box-sizing:border-box;}
+   &{
+     margin:0; padding:0; width:100%; height:100%;
+-    background:var(--ocean-deep);
++    background:var(--bg);
+     font-family:Inter,system-ui,sans-serif;
+-    color:var(--paper);
++    color:var(--ink);
+     overflow:hidden;
+   }
+   button{ font:inherit; }
+   button:focus-visible, a:focus-visible{
+-    outline:2px solid var(--brass-bright); outline-offset:2px;
++    outline:2px solid var(--accent); outline-offset:2px;
+   }
+ 
+-  /* ---------- Escenario: noche de carta náutica con polvo de estrellas ---------- */
++  /* ---------- Escenario: el mismo fondo que los mapas del juego ---------- */
+   .stage{
+     position:relative; width:100vw; height:100vh; height:100dvh;
+-    background:
+-      radial-gradient(1.2px 1.2px at 8% 18%, rgba(255,255,255,0.38), transparent 100%),
+-      radial-gradient(1px 1px at 17% 71%, rgba(255,255,255,0.28), transparent 100%),
+-      radial-gradient(1.4px 1.4px at 27% 38%, rgba(240,205,130,0.34), transparent 100%),
+-      radial-gradient(1px 1px at 41% 88%, rgba(255,255,255,0.26), transparent 100%),
+-      radial-gradient(1.2px 1.2px at 56% 12%, rgba(255,255,255,0.34), transparent 100%),
+-      radial-gradient(1px 1px at 68% 80%, rgba(240,205,130,0.3), transparent 100%),
+-      radial-gradient(1.3px 1.3px at 79% 27%, rgba(255,255,255,0.32), transparent 100%),
+-      radial-gradient(1px 1px at 91% 60%, rgba(255,255,255,0.28), transparent 100%),
+-      radial-gradient(1px 1px at 95% 9%, rgba(255,255,255,0.3), transparent 100%),
+-      radial-gradient(1px 1px at 4% 52%, rgba(255,255,255,0.25), transparent 100%),
+-      radial-gradient(ellipse at 50% 42%, #13384f 0%, #0a1f31 52%, #040c14 100%);
++    background:radial-gradient(ellipse at 50% 42%, #17415f 0%, #0d2738 58%, #081a28 100%);
+     touch-action:none;
+     -webkit-tap-highlight-color:transparent;
+     overscroll-behavior:none;
+   }
+-  /* Viñeta: oscurece los bordes y da profundidad (no bloquea el ratón). */
+-  .stage::after{
+-    content:''; position:absolute; inset:0; z-index:10; pointer-events:none;
+-    background:radial-gradient(ellipse at 50% 46%, transparent 58%, rgba(2,7,12,0.55) 100%);
+-  }
+ 
+-  /* ---------- Cabecera ---------- */
++  /* ---------- Cabecera: una sola línea ---------- */
+   header{
+-    position:absolute; top:0; left:0; right:0;
+-    padding:26px 40px 0 40px;
+-    z-index:20;
+-    pointer-events:none;
+-  }
+-  header::before{
+-    content:''; position:absolute; left:0; right:0; top:0; bottom:-18px; z-index:-1;
+-    background:linear-gradient(to bottom, rgba(4,12,20,0.7) 0%, rgba(4,12,20,0.32) 65%, rgba(4,12,20,0) 100%);
++    position:absolute; top:0; left:0; right:0; z-index:20;
++    display:flex; align-items:center; gap:16px;
++    padding:14px 20px;
+     pointer-events:none;
+   }
+-  header .eyebrow-row{
+-    position:relative;
+-    display:flex; align-items:baseline; justify-content:space-between;
+-    padding-bottom:14px;
+-  }
+-  header .eyebrow-row::after{
+-    content:''; position:absolute; left:0; right:0; bottom:0; height:1px;
+-    background:linear-gradient(90deg, var(--brass) 0%, rgba(212,172,85,0.35) 55%, rgba(212,172,85,0) 100%);
+-  }
+-  header .eyebrow-row::before{
+-    content:''; position:absolute; left:0; bottom:-3px; width:7px; height:7px;
+-    background:var(--brass-bright); transform:rotate(45deg);
+-    box-shadow:0 0 10px rgba(240,205,130,0.7);
+-  }
+   h1{
+-    font-family:'Fraunces',serif;
+-    font-weight:500;
+-    font-size:clamp(26px,3.2vw,44px);
+-    letter-spacing:0.01em;
+     margin:0;
+-    color:var(--paper);
+-    text-shadow:0 2px 18px rgba(0,0,0,0.5);
+-  }
+-  h1 em{
+-    font-style:italic;
+-    background:linear-gradient(100deg, #f6dd9a 0%, #d4ac55 55%, #b98f3c 100%);
+-    -webkit-background-clip:text; background-clip:text;
+-    -webkit-text-fill-color:transparent; color:transparent;
++    font-family:'Fraunces',Georgia,serif; font-weight:500;
++    font-size:clamp(20px,2.4vw,26px);
++    color:var(--ink);
+   }
+   .coords{
+-    font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase;
+-    color:var(--brass-dim);
+-    text-align:right; line-height:1.7;
++    margin:0 0 0 auto;
++    font-size:12px; color:var(--muted); text-align:right;
+   }
+   /* El aspecto del botón «volver» lo unifica styles/theme.css en todas las páginas. */
+   .btn-back{
+     pointer-events:auto;
+     display:inline-flex; align-items:center; gap:8px;
+     padding:8px 14px;
+-    margin-bottom:14px;
+-    color:var(--paper);
++    color:var(--ink);
+     text-decoration:none;
+     cursor:pointer;
+-    transition:border-color 0.2s ease, color 0.2s ease;
+   }
+-  .btn-back .arrow{ font-size:14px; line-height:1; transition:transform 0.2s ease; }
+-  .btn-back:hover .arrow{ transform:translateX(-3px); }
+ 
+   /* ---------- Mapa ---------- */
+   /* El mapa es un <canvas> que se redibuja en vectores a resolución real en cada
+@@ -128,55 +78,42 @@
+     touch-action:none;
+     user-select:none; -webkit-user-select:none; -webkit-touch-callout:none;
+     /* Fundido suave al terminar de cargar. */
+-    opacity:0; transition:opacity 0.8s ease;
++    opacity:0; transition:opacity 0.4s ease;
+   }
+   canvas#worldmap.ready{ opacity:1; }
+   canvas#worldmap.grabbing{ cursor:grabbing !important; }
+ 
+   .loading{
+     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+-    display:flex; flex-direction:column; align-items:center; gap:14px;
+-    font-size:11px; letter-spacing:0.18em; text-transform:uppercase;
+-    color:var(--brass-dim); z-index:5;
+-    animation:wmPulse 1.6s ease-in-out infinite;
++    display:flex; flex-direction:column; align-items:center; gap:12px;
++    font-size:13px; color:var(--muted); z-index:5;
+   }
+   .loading::before{
+-    content:''; width:34px; height:34px; border-radius:50%;
+-    border:1.5px solid rgba(212,172,85,0.25); border-top-color:var(--brass-bright);
++    content:''; width:28px; height:28px; border-radius:50%;
++    border:2px solid var(--line); border-top-color:var(--accent);
+     animation:wmSpin 0.9s linear infinite;
+   }
+ 
+-  /* ---------- Tooltip ---------- */
++  /* ---------- Tooltip y aviso ---------- */
+   .tooltip{
+     position:fixed;
+     pointer-events:none;
+     display:flex; align-items:center; gap:10px;
+-    background:rgba(8,24,38,0.97);
+-    color:var(--paper);
+-    font-family:Inter,system-ui,sans-serif;
+-    padding:8px 13px 8px 9px;
+-    border:1px solid rgba(212,172,85,0.6);
+-    border-radius:0;
+-    box-shadow:0 10px 28px var(--shadow);
++    background:rgba(14,34,51,0.96);
++    color:var(--ink);
++    padding:6px 12px 6px 8px;
++    border:1px solid var(--line);
+     opacity:0;
+     transform:translate(-50%,-150%);
+     transition:opacity 0.12s ease;
+     z-index:60;
+     white-space:nowrap;
+   }
+-  .tooltip::after{
+-    content:''; position:absolute; left:50%; bottom:-5px; width:8px; height:8px; margin-left:-4px;
+-    background:rgba(8,24,38,0.94);
+-    border-right:1px solid rgba(212,172,85,0.6); border-bottom:1px solid rgba(212,172,85,0.6);
+-    transform:rotate(45deg);
+-  }
+   .tooltip.show{ opacity:1; }
+-  .tooltip.is-disabled{ border-color:rgba(154,133,86,0.55); }
+-  .tooltip.is-disabled::after{ border-color:rgba(154,133,86,0.55); }
+-  .tooltip-flag{ width:26px; height:18px; object-fit:cover; border-radius:0; box-shadow:0 0 0 1px rgba(255,255,255,0.18); flex-shrink:0; }
++  .tooltip-flag{ width:24px; height:16px; object-fit:cover; flex-shrink:0; }
+   .tooltip-text{ display:flex; flex-direction:column; }
+-  .tooltip-name{ display:block; font-size:12px; font-weight:600; letter-spacing:0.03em; }
+-  .tooltip-note{ display:block; font-size:10px; letter-spacing:0.03em; color:var(--brass-dim); font-style:italic; margin-top:2px; }
++  .tooltip-name{ display:block; font-size:13px; font-weight:600; }
++  .tooltip-note{ display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+ 
+   @media (hover:none){
+     .tooltip{ display:none !important; }
+@@ -186,11 +123,9 @@
+     position:fixed; left:50%; bottom:calc(76px + env(safe-area-inset-bottom,0px));
+     transform:translate(-50%,8px);
+     max-width:calc(100vw - 32px);
+-    padding:10px 16px;
+-    background:rgba(8,24,38,0.94); color:var(--paper);
+-    border:1px solid var(--glass-line);
+-    border-radius:0;
+-    box-shadow:0 10px 30px var(--shadow);
++    padding:8px 16px;
++    background:rgba(14,34,51,0.96); color:var(--ink);
++    border:1px solid var(--line);
+     text-align:center;
+     opacity:0; pointer-events:none;
+     transition:opacity 0.18s ease, transform 0.18s ease;
+@@ -198,172 +133,129 @@
+   }
+   .map-toast.show{ opacity:1; transform:translate(-50%,0); }
+   .toast-name{ display:block; font-size:13px; font-weight:600; }
+-  .toast-note{ display:block; font-size:11px; color:var(--brass-dim); font-style:italic; margin-top:2px; }
++  .toast-note{ display:block; font-size:11px; color:var(--muted); margin-top:2px; }
+ 
+-  /* ---------- Controles ---------- */
++  /* ---------- Controles de zoom (como .map-tools del juego) ---------- */
+   .zoom-controls{
+-    position:absolute;
+-    bottom:26px; left:40px;
+-    z-index:20;
+-    display:flex;
+-    background:var(--glass);
+-    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+-    border:1px solid var(--glass-line);
+-    border-radius:0;
+-    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+-    overflow:hidden;
++    position:absolute; bottom:20px; left:20px; z-index:20;
++    display:flex; gap:6px;
+   }
+   .zoom-controls button{
+-    width:38px; height:38px;
+-    border:0; border-right:1px solid rgba(212,172,85,0.2);
+-    background:transparent;
+-    color:var(--paper);
++    width:36px; height:36px;
++    display:flex; align-items:center; justify-content:center; padding:0;
++    border:1px solid var(--line);
++    background:rgba(18,48,73,0.92);
++    color:var(--ink);
+     font-size:16px;
+     cursor:pointer;
+-    transition:background 0.18s ease, color 0.18s ease;
+-  }
+-  .zoom-controls button:last-child{ border-right:0; }
+-  .zoom-controls button:hover{ background:rgba(212,172,85,0.16); color:var(--brass-bright); }
+-  .zoom-controls button:active{ background:rgba(212,172,85,0.28); }
+-
+-  .scale{
+-    position:absolute; bottom:30px; right:40px; z-index:20;
+-    display:flex; align-items:center; gap:8px;
+-    font-size:10.5px; color:var(--brass-dim); letter-spacing:0.1em;
+-  }
+-  .scale .bar{ width:90px; height:1px; background:var(--brass-dim); position:relative; }
+-  .scale .bar::before,.scale .bar::after{
+-    content:''; position:absolute; top:-3px; width:1px; height:7px; background:var(--brass-dim);
++    transition:border-color 0.16s ease, color 0.16s ease;
+   }
+-  .scale .bar::before{ left:0; } .scale .bar::after{ right:0; }
++  .zoom-controls button:hover{ border-color:var(--accent); color:var(--accent); }
+ 
+-  /* ---------- Panel de país ---------- */
++  /* ---------- Ficha del país ---------- */
+   .overlay{
+-    position:fixed; inset:0; background:rgba(3,10,16,0.58);
+-    opacity:0; pointer-events:none; transition:opacity 0.28s ease; z-index:40;
+-  }
+-  /* El desenfoque solo cuando el panel está abierto: un blur a pantalla completa
+-     siempre presente encarece cada fotograma del mapa en pantallas grandes. */
+-  .overlay.open{
+-    opacity:1; pointer-events:auto;
+-    -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
++    position:fixed; inset:0; background:rgba(3,10,16,0.6);
++    opacity:0; pointer-events:none; transition:opacity 0.2s ease; z-index:40;
+   }
++  .overlay.open{ opacity:1; pointer-events:auto; }
+ 
+   .panel{
+     position:fixed;
+     top:50%; left:50%;
+-    width:min(540px, calc(100vw - 32px));
+-    max-height:min(82vh, 600px);
++    width:min(460px, calc(100vw - 32px));
++    max-height:min(82vh, 560px);
+     overflow:hidden;
+-    background:linear-gradient(180deg,#194563 0%, var(--panel-bg) 38%, #0f2a40 100%);
++    background:var(--panel);
+     color:var(--ink);
+-    transform:translate(-50%,-50%) scale(0.96);
++    border:1px solid var(--line);
++    transform:translate(-50%,-48%);
+     opacity:0;
+     pointer-events:none;
+-    transition:transform 0.32s cubic-bezier(.16,.84,.32,1), opacity 0.25s ease;
++    transition:transform 0.2s ease, opacity 0.2s ease;
+     z-index:50;
+-    box-shadow:0 30px 80px var(--shadow), 0 0 0 1px rgba(212,172,85,0.22);
+-    border:1px solid var(--hairline);
+-    border-radius:0;
+-  }
+-  .panel::after{
+-    content:''; position:absolute; left:0; right:0; top:0; height:4px; z-index:3;
+-    background:linear-gradient(90deg,#b98f3c,#f0cd82 50%,#b98f3c);
+   }
+   .panel.open{
+-    transform:translate(-50%,-50%) scale(1);
++    transform:translate(-50%,-50%);
+     opacity:1;
+     pointer-events:auto;
+   }
+   .panel:focus{ outline:none; }
+ 
+-  .panel-watermark{
+-    position:absolute; top:-12%; right:-10%; width:280px; height:280px;
+-    opacity:0.06; pointer-events:none;
+-  }
+-  .panel-watermark svg{ width:100%; height:100%; display:block; }
+-  .panel-watermark path{ fill:var(--ink); }
+-
+   .panel-close{
+-    position:absolute; top:20px; right:18px; width:32px; height:32px;
+-    border:1px solid var(--hairline); background:var(--panel-bg); border-radius:50%;
+-    cursor:pointer; font-size:14px; color:var(--ink);
++    position:absolute; top:14px; right:14px; width:32px; height:32px;
++    border:1px solid var(--line); background:transparent;
++    cursor:pointer; font-size:13px; color:var(--muted);
+     display:flex; align-items:center; justify-content:center;
+-    opacity:0.65; transition:opacity 0.2s ease, transform 0.2s ease;
+     z-index:4;
++    transition:border-color 0.16s ease, color 0.16s ease;
+   }
+-  .panel-close:hover{ opacity:1; transform:rotate(90deg); }
++  .panel-close:hover{ border-color:var(--accent); color:var(--accent); }
+ 
+   .panel-scroll{
+-    position:relative; z-index:1;
+-    overflow:auto; max-height:min(82vh, 600px);
+-    padding:36px 34px 28px;
++    position:relative;
++    overflow:auto; max-height:min(82vh, 560px);
++    padding:26px 26px 22px;
+   }
+ 
+   .panel-header{
+-    display:flex; align-items:center; gap:18px;
+-    padding-right:36px;
++    display:flex; align-items:center; gap:16px;
++    padding-right:40px;
+   }
+   .panel-flag{
+-    width:66px; height:46px; object-fit:cover; flex-shrink:0;
+-    border-radius:0;
+-    box-shadow:0 0 0 1px var(--hairline), 0 6px 16px rgba(0,0,0,0.35);
+-    background:#ece6d6;
++    width:60px; height:42px; object-fit:cover; flex-shrink:0;
++    border:1px solid var(--line);
+   }
+   .panel-heading{ min-width:0; }
+   .panel-title{
+-    font-family:'Fraunces',serif; font-weight:600; font-size:30px;
+-    margin:0; line-height:1.08; letter-spacing:-0.005em;
++    font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:26px;
++    margin:0; line-height:1.15;
+   }
+   .panel-code{
+-    display:inline-block; margin-top:8px;
+-    font-size:10px; letter-spacing:0.12em; color:var(--brass);
+-    border:1px solid rgba(212,172,85,0.45); border-radius:0; padding:2px 9px;
++    display:inline-block; margin-top:6px;
++    font-size:11px; letter-spacing:0.1em; color:var(--accent);
++    border:1px solid var(--line); padding:1px 8px;
+   }
+ 
+   .panel-sub{
+-    font-size:12.5px; color:#6b6250;
+-    margin:20px 0 20px 0;
+-    padding-top:18px;
+-    border-top:1px solid var(--hairline);
++    font-size:13px; color:var(--muted);
++    margin:18px 0 16px 0;
++    padding-top:16px;
++    border-top:1px solid var(--line);
+   }
+ 
++  /* Mismo botón principal que el del juego: dorado, texto oscuro. */
+   .action-primary{
+     position:relative;
+     width:100%;
+-    display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+-    padding:17px 56px 17px 20px;
+-    border:0; border-radius:0;
+-    background:linear-gradient(135deg,#123049 0%, #0e2233 100%);
+-    color:var(--paper);
++    display:flex; flex-direction:column; align-items:flex-start; gap:3px;
++    padding:14px 52px 14px 18px;
++    border:1px solid var(--accent);
++    background:var(--accent);
++    color:var(--accent-ink);
+     cursor:pointer; text-align:left;
+-    box-shadow:0 10px 24px rgba(14,34,51,0.28);
+-    transition:transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
++    transition:background 0.16s ease, border-color 0.16s ease;
+   }
+   .action-primary::after{
+-    content:'→'; position:absolute; right:20px; top:50%; transform:translateY(-50%);
+-    font-size:20px; color:var(--g-accent-ink, #1a1405); transition:transform 0.18s ease;
++    content:'→'; position:absolute; right:18px; top:50%; transform:translateY(-50%);
++    font-size:18px;
+   }
+-  .action-primary:hover{ background:linear-gradient(135deg,#1b4565 0%, #123049 100%); transform:translateY(-1px); box-shadow:0 14px 30px rgba(14,34,51,0.34); }
+-  .action-primary:hover::after{ transform:translate(4px,-50%); }
+-  .action-primary .a-title{ font-family:'Fraunces',serif; font-size:18px; font-weight:500; }
+-  .action-primary .a-desc{ font-size:11.5px; color:rgba(246,241,228,0.7); }
++  .action-primary:hover{ background:var(--accent-hover); border-color:var(--accent-hover); }
++  .action-primary .a-title{ font-family:'Fraunces',Georgia,serif; font-size:17px; font-weight:600; }
++  .action-primary .a-desc{ font-size:12px; opacity:0.8; }
+ 
+   .panel-note{
+-    margin:14px 0 0 0;
+-    font-size:11px; color:#a79d84; line-height:1.5;
++    margin:12px 0 0 0;
++    font-size:12px; color:var(--muted); line-height:1.5;
+   }
+ 
+   @media (prefers-reduced-motion: reduce){
+-    .panel, .panel-close, .overlay, .action-primary, canvas#worldmap{ transition:none !important; }
+-    .loading, .loading::before{ animation:none !important; }
++    .panel, .overlay, .zoom-controls button, canvas#worldmap{ transition:none !important; }
++    .loading::before{ animation:none !important; }
+   }
+ 
+   @media (max-width:640px){
+-    header{ padding:max(18px, env(safe-area-inset-top,0px)) 18px 0 18px; }
+-    header .eyebrow-row{ padding-bottom:10px; }
++    header{ padding:max(12px, env(safe-area-inset-top,0px)) 14px 12px 14px; gap:12px; }
+     .coords{ display:none; }
+-    .scale{ display:none; }
+ 
+     /* Panel como hoja que sube desde abajo (más cómodo con el pulgar que un modal centrado). */
+     .panel{
+@@ -372,39 +264,30 @@
+       max-height:85vh; max-height:85dvh;
+       transform:translateY(100%);
+       border-width:1px 0 0 0;
+-      border-radius:0;
+     }
+     .panel.open{ transform:translateY(0); }
+-    .panel::before{
+-      content:''; position:absolute; top:10px; left:50%; z-index:3;
+-      width:38px; height:4px; margin-left:-19px; border-radius:2px;
+-      background:var(--hairline);
+-    }
+     .panel-scroll{
+       max-height:85vh; max-height:85dvh;
+-      padding:34px 20px calc(24px + env(safe-area-inset-bottom,0px));
++      padding:24px 18px calc(22px + env(safe-area-inset-bottom,0px));
+       overscroll-behavior:contain;
+     }
+-    .panel-close{ top:16px; right:14px; width:36px; height:36px; }
+-    .panel-watermark{ top:-4%; right:-14%; }
+-    .action-primary{ padding:18px 52px 18px 18px; }
+-    .panel-title{ font-size:25px; }
++    .panel-close{ top:12px; right:12px; width:36px; height:36px; }
++    .panel-title{ font-size:23px; }
+     .panel-flag{ width:54px; height:38px; }
+-    .zoom-controls{ bottom:calc(18px + env(safe-area-inset-bottom,0px)); left:16px; }
++    .zoom-controls{ bottom:calc(16px + env(safe-area-inset-bottom,0px)); left:14px; }
+     .zoom-controls button{ width:44px; height:44px; font-size:18px; }
+   }
+ 
+   /* Móvil en horizontal: poca altura, cabecera y controles compactos. */
+   @media (max-height:520px){
+-    header{ padding:max(8px, env(safe-area-inset-top,0px)) 18px 0 18px; }
+-    header .eyebrow-row{ padding-bottom:6px; }
+-    h1{ font-size:22px; }
+-    .btn-back{ margin-bottom:6px; padding:5px 10px; }
+-    .coords, .scale{ display:none; }
+-    .zoom-controls{ bottom:calc(10px + env(safe-area-inset-bottom,0px)); left:16px; }
+-    .zoom-controls button{ width:38px; height:38px; }
++    header{ padding:max(6px, env(safe-area-inset-top,0px)) 14px 6px 14px; }
++    h1{ font-size:18px; }
++    .btn-back{ padding:5px 10px; }
++    .coords{ display:none; }
++    .zoom-controls{ bottom:calc(10px + env(safe-area-inset-bottom,0px)); left:14px; }
++    .zoom-controls button{ width:36px; height:36px; }
+     .panel{ max-height:92vh; max-height:92dvh; }
+-    .panel-scroll{ max-height:92vh; max-height:92dvh; padding:24px 24px 18px; }
++    .panel-scroll{ max-height:92vh; max-height:92dvh; padding:20px 22px 16px; }
+     .map-toast{ bottom:calc(58px + env(safe-area-inset-bottom,0px)); }
+   }
+ 
+@@ -414,4 +297,3 @@
+ 
+ /* @keyframes van fuera del bloque anidado (son globales; nombres con prefijo wm). */
+ @keyframes wmSpin{ to{ transform:rotate(360deg); } }
+-@keyframes wmPulse{ 0%,100%{ opacity:0.6; } 50%{ opacity:1; } }
+diff -ruN a/frontend/src/pages/WorldMap/WorldMapCanvas.jsx b/frontend/src/pages/WorldMap/WorldMapCanvas.jsx
+--- a/frontend/src/pages/WorldMap/WorldMapCanvas.jsx	2026-10-02 21:46:42.715242630 +0000
++++ b/frontend/src/pages/WorldMap/WorldMapCanvas.jsx	2026-10-02 21:46:42.724203895 +0000
+@@ -3,8 +3,7 @@
+ import { countrySlug } from '../../lib/worldMapSlugs';
+ import { findAvailableCountries } from '../../lib/availability';
+ 
+-// Mapa mundial dibujado en <canvas> (no en SVG) con D3 solo para zoom/paneo y para
+-// proyectar la esfera y la cuadrícula. Se monta UNA vez dentro de un useEffect y se
++// Mapa mundial dibujado en <canvas> (no en SVG) con D3 solo para zoom/paneo. Se monta UNA vez dentro de un useEffect y se
+ // limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
+ //
+ // Por qué canvas: con SVG el navegador rasteriza el grupo y, durante un gesto de zoom,
+@@ -14,23 +13,18 @@
+ //
+ // Rendimiento (importante en ordenador, donde el canvas es mucho más grande que en móvil):
+ //  - Todos los países comparten estilo: se unen en UN solo Path2D (fill + stroke).
+-//  - El sombreado del océano (degradado, brillo, sombra de borde) es suave y estático:
+-//    se pinta UNA vez en un bitmap y cada fotograma solo se estampa (drawImage).
+ //  - El hover (isPointInPath sobre paths enormes) NO se calcula mientras haces zoom o
+ //    arrastras, y se limita a ~20 veces por segundo; se recalcula al soltar.
+ //  - Resolución del canvas limitada por número de píxeles.
+ //
+-// El SVG de origen está en proyección Equal Earth (meridiano central ~12,65°E); su
+-// descripción viaja en `projection` dentro de world-map.json (ver build-world-map.py).
++// Estilo plano, igual que el resto de mapas de la web: tierra de un solo color sobre el
++// fondo de la página, sin océano pintado, cuadrícula, halos ni brillos.
+ //
+ // Props:
+ //   selected        país actualmente abierto en el panel (para pintarlo "active")
+ //   onSelect(f)     se llama al hacer clic en un país disponible; f = { id, properties:{name,slug}, d, main? }
+ //   ref             { zoomIn(), zoomOut(), reset() }
+ 
+-// Proyecciones que puede declarar world-map.json en `projection.type`.
+-const PROJECTIONS = { equalEarth: d3.geoEqualEarth, naturalEarth1: d3.geoNaturalEarth1 };
+-
+ // El mapa está muy detallado (islas y microestados): se permite bastante zoom.
+ const MAX_ZOOM = 20;
+ 
+@@ -53,14 +47,6 @@
+ 
+ const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+ 
+-// Halo exterior de la esfera [ancho en px, opacidad] y sombreado interior (va dentro
+-// del bitmap del océano; los anchos se escalan al tamaño del mapa).
+-const HALO = [[30, 0.03], [12, 0.06]];
+-const SHADE = [[84, 0.07], [52, 0.09], [28, 0.12], [12, 0.16]];
+-// Resolución del bitmap del océano (px por unidad del mapa) y margen alrededor.
+-const OCEAN_RES = 1.5;
+-const OCEAN_MARGIN = 8;
+-
+ export default function WorldMapCanvas({ selected, onSelect, ref }) {
+   const wrapRef = useRef(null);
+   const canvasRef = useRef(null);
+@@ -104,9 +90,11 @@
+     // Colores del tema (variables CSS de la página).
+     const rootStyles = getComputedStyle(wrap.closest('.worldmap-page') || document.documentElement);
+     const cssVar = (name, fallback) => rootStyles.getPropertyValue(name).trim() || fallback;
+-    const LAND = cssVar('--land', '#e9ddbd');
+-    const LAND_HOVER = cssVar('--land-hover', '#ffd27a');
+-    const LAND_ACTIVE = cssVar('--land-active', '#f08a45');
++    const LAND = cssVar('--land', '#2d5877');
++    const LAND_HOVER = cssVar('--land-hover', '#3b6d90');
++    const LAND_ACTIVE = cssVar('--land-active', '#c9a24b');
++    const LAND_LINE = cssVar('--land-line', '#0b1a28');
++    const OUTLINE = cssVar('--land-outline', '#f6f1e4');
+ 
+     let cancelled = false;
+     let frameId = 0;
+@@ -135,12 +123,6 @@
+     // Datos dibujables (se rellenan al cargar world-map.json).
+     let features = [];
+     let allLand = null;
+-    let sphere = null;
+-    let oceanBitmap = null;
+-    let gratMinor = null;
+-    let gratMajor = null;
+-    let equator = null;
+-    let parallels = null;
+     let availableSlugs = null; // null = "aún sin comprobar": todos cuentan como disponibles
+ 
+     let pointer = null; // posición del ratón relativa al canvas
+@@ -153,85 +135,11 @@
+       return !availableSlugs.has(countrySlug(f));
+     }
+ 
+-    // Océano suave y estático (degradado + brillo + sombra de borde) en un bitmap: se
+-    // pinta una vez y luego solo se estampa. Al ser degradados suaves no se nota la
+-    // resolución, y el borde de la esfera sigue nítido porque se recorta con el path.
+-    function buildOceanBitmap() {
+-      const bmp = document.createElement('canvas');
+-      bmp.width = Math.ceil((mapW + OCEAN_MARGIN * 2) * OCEAN_RES);
+-      bmp.height = Math.ceil((mapH + OCEAN_MARGIN * 2) * OCEAN_RES);
+-      const o = bmp.getContext('2d');
+-      o.scale(OCEAN_RES, OCEAN_RES);
+-      o.translate(OCEAN_MARGIN, OCEAN_MARGIN);
+-
+-      const ocean = o.createRadialGradient(mapW * 0.34, mapH * 0.3, 0, mapW * 0.34, mapH * 0.3, mapW * 0.85);
+-      ocean.addColorStop(0, '#2b7fa6');
+-      ocean.addColorStop(0.35, '#17597e');
+-      ocean.addColorStop(0.7, '#0d3553');
+-      ocean.addColorStop(1, '#06192a');
+-      o.fillStyle = ocean;
+-      o.fill(sphere);
+-
+-      o.save();
+-      o.clip(sphere);
+-      // Brillo suave arriba a la izquierda (como luz sobre un globo).
+-      const sheen = o.createRadialGradient(mapW * 0.3, mapH * 0.16, 0, mapW * 0.3, mapH * 0.16, mapW * 0.5);
+-      sheen.addColorStop(0, 'rgba(180,225,255,0.14)');
+-      sheen.addColorStop(1, 'rgba(180,225,255,0)');
+-      o.fillStyle = sheen;
+-      o.fillRect(-OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
+-      // Sombreado interior hacia el borde (da volumen de esfera).
+-      const unit = mapW / 1400;
+-      o.strokeStyle = '#02070d';
+-      SHADE.forEach(([w, a]) => {
+-        o.globalAlpha = a;
+-        o.lineWidth = w * unit;
+-        o.stroke(sphere);
+-      });
+-      o.restore();
+-      return bmp;
+-    }
+-
+     // ---------- Dibujo ----------
+-    function drawOcean(u) {
+-      // Halo atmosférico exterior (anchos en px de pantalla → unidades del mapa).
+-      ctx.strokeStyle = 'rgb(96,176,226)';
+-      HALO.forEach(([w, a]) => {
+-        ctx.globalAlpha = a;
+-        ctx.lineWidth = w * u;
+-        ctx.stroke(sphere);
+-      });
+-      ctx.globalAlpha = 1;
+-
+-      ctx.save();
+-      ctx.clip(sphere);
+-      ctx.imageSmoothingEnabled = true;
+-      ctx.imageSmoothingQuality = 'high';
+-      ctx.drawImage(oceanBitmap, -OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
+-      ctx.restore();
+-
+-      // Cuadrícula: cada 10° tenue, cada 30° dorada, ecuador y trópicos/círculos polares.
+-      ctx.lineWidth = 0.5 * u;
+-      ctx.strokeStyle = 'rgba(140,200,235,0.10)';
+-      ctx.stroke(gratMinor);
+-      ctx.lineWidth = 0.6 * u;
+-      ctx.strokeStyle = 'rgba(212,172,85,0.20)';
+-      ctx.stroke(gratMajor);
+-      ctx.lineWidth = 0.9 * u;
+-      ctx.strokeStyle = 'rgba(240,205,130,0.38)';
+-      ctx.stroke(equator);
+-      ctx.save();
+-      ctx.setLineDash([5 * u, 6 * u]);
+-      ctx.lineWidth = 0.8 * u;
+-      ctx.strokeStyle = 'rgba(212,172,85,0.30)';
+-      ctx.stroke(parallels);
+-      ctx.restore();
+-    }
+-
+     function drawLand(u) {
+       ctx.fillStyle = LAND;
+       ctx.fill(allLand);
+-      ctx.strokeStyle = 'rgba(6,18,28,0.9)';
++      ctx.strokeStyle = LAND_LINE;
+       ctx.lineWidth = 0.6 * u;
+       ctx.stroke(allLand);
+ 
+@@ -251,38 +159,18 @@
+         ctx.stroke(activeFx.f.path);
+       }
+ 
+-      // Anillos: brillo ancho + línea fina, de grosor constante en pantalla.
+-      function ring(fx, glow, line, lineW) {
++      // Contorno fino, de grosor constante en pantalla: ayuda a localizar países diminutos.
++      function outline(fx) {
+         if (!fx.f || fx.a <= 0) return;
+         ctx.globalAlpha = fx.a;
+-        ctx.strokeStyle = glow;
+-        ctx.lineWidth = 7 * u;
+-        ctx.stroke(fx.f.path);
+-        ctx.strokeStyle = line;
+-        ctx.lineWidth = lineW * u;
++        ctx.strokeStyle = OUTLINE;
++        ctx.lineWidth = 1.4 * u;
+         ctx.stroke(fx.f.path);
+         ctx.globalAlpha = 1;
+       }
+-      if (!touchOnly.matches) { // en táctil el "hover" se queda pegado tras tocar
+-        if (hoverFx.f && isUnavailable(hoverFx.f)) {
+-          ring(hoverFx, 'rgba(212,172,85,0.10)', 'rgba(212,172,85,0.5)', 1.7);
+-        } else {
+-          ring(hoverFx, 'rgba(255,214,130,0.38)', '#fff6dc', 2);
+-        }
+-      }
+-      ring(activeFx, 'rgba(240,138,69,0.34)', '#ffb878', 2);
+-    }
+-
+-    function drawRim(u) {
+-      ctx.strokeStyle = 'rgba(212,172,85,0.10)';
+-      ctx.lineWidth = 9 * u;
+-      ctx.stroke(sphere);
+-      ctx.strokeStyle = 'rgba(212,172,85,0.65)';
+-      ctx.lineWidth = 2.4 * u;
+-      ctx.stroke(sphere);
+-      ctx.strokeStyle = 'rgba(255,236,190,0.40)';
+-      ctx.lineWidth = 0.8 * u;
+-      ctx.stroke(sphere);
++      // En táctil el "hover" se queda pegado tras tocar; y los países sin datos no se resaltan.
++      if (!touchOnly.matches && hoverFx.f && !isUnavailable(hoverFx.f)) outline(hoverFx);
++      outline(activeFx);
+     }
+ 
+     function draw() {
+@@ -295,9 +183,7 @@
+       ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * (view.x - k * vbX), dpr * (view.y - k * vbY));
+       ctx.lineJoin = 'round';
+       ctx.lineCap = 'round';
+-      if (oceanBitmap) drawOcean(u);
+       drawLand(u);
+-      if (sphere) drawRim(u);
+     }
+ 
+     // ---------- Bucle de fotogramas ----------
+@@ -618,30 +504,6 @@
+         mapW = worldData.width;
+         mapH = worldData.height;
+ 
+-        // Esfera + cuadrícula a partir de la proyección del SVG (ver build-world-map.py).
+-        const proj = worldData.projection;
+-        const makeProjection = PROJECTIONS[proj?.type];
+-        if (makeProjection) {
+-          const projection = makeProjection()
+-            .rotate([-proj.rotate, 0])
+-            .scale(proj.scale)
+-            .translate(proj.translate);
+-          const geoPath = d3.geoPath(projection).digits(1);
+-          sphere = new Path2D(geoPath({ type: 'Sphere' }));
+-          gratMinor = new Path2D(geoPath(d3.geoGraticule10()));
+-          gratMajor = new Path2D(geoPath(d3.geoGraticule().step([30, 30]).extent([[-180, -90], [180, 90]])()));
+-          const parallel = (lat) => d3.range(-180, 181, 5).map((lon) => [lon, lat]);
+-          equator = new Path2D(geoPath({ type: 'LineString', coordinates: parallel(0) }));
+-          // Trópicos de Cáncer y Capricornio y círculos polares (discontinuas).
+-          parallels = new Path2D(geoPath({
+-            type: 'MultiLineString',
+-            coordinates: [23.4363, -23.4363, 66.5636, -66.5636].map(parallel),
+-          }));
+-          oceanBitmap = buildOceanBitmap();
+-        } else {
+-          console.warn('world-map.json sin `projection` válida: se dibuja el mapa sin esfera ni cuadrícula.');
+-        }
+-
+         features = worldData.countries.map((c) => ({
+           id: c.id,
+           properties: { name: c.name, slug: c.slug },
+diff -ruN a/frontend/src/pages/WorldMap/WorldMapPage.jsx b/frontend/src/pages/WorldMap/WorldMapPage.jsx
+--- a/frontend/src/pages/WorldMap/WorldMapPage.jsx	2026-10-02 21:46:42.727242630 +0000
++++ b/frontend/src/pages/WorldMap/WorldMapPage.jsx	2026-10-02 21:46:42.735325790 +0000
+@@ -1,14 +1,14 @@
+ import { useCallback, useEffect, useRef, useState } from 'react';
+ import { Link, useNavigate } from 'react-router-dom';
+-import * as d3 from 'd3';
+ import { countrySlug } from '../../lib/worldMapSlugs';
+ import WorldMapCanvas from './WorldMapCanvas';
+ import './WorldMap.css';
+ 
++// Mapa mundial: mapa plano a pantalla completa; al tocar un país se abre una ficha simple con
++// su nombre y el botón para explorar sus regiones. Mismo estilo plano que el resto de la web.
+ export default function WorldMapPage() {
+   const navigate = useNavigate();
+   const canvasRef = useRef(null);
+-  const watermarkRef = useRef(null);
+   const closeBtnRef = useRef(null);
+   const [selected, setSelected] = useState(null);
+ 
+@@ -21,21 +21,9 @@
+     return () => document.removeEventListener('keydown', onKey);
+   }, [closePanel]);
+ 
+-  // Silueta (D3, imperativa) + foco al abrir el panel.
++  // Al abrir el panel, el foco va al botón de cerrar.
+   useEffect(() => {
+-    const el = watermarkRef.current;
+-    if (!el) return undefined;
+-    el.replaceChildren();
+     if (!selected) return undefined;
+-
+-    // Silueta: si el país tiene varios polígonos (p. ej. Francia con la Guayana)
+-    // se dibuja solo el más grande (`main`); el viewBox se ajusta a su caja.
+-    const miniSvg = d3.select(el).append('svg').attr('aria-hidden', 'true');
+-    const miniPath = miniSvg.append('path').attr('d', selected.main || selected.d);
+-    const { x, y, width, height } = miniPath.node().getBBox();
+-    const side = Math.max(width, height) * 1.1 || 1;
+-    miniSvg.attr('viewBox', [x + width / 2 - side / 2, y + height / 2 - side / 2, side, side]);
+-
+     const raf = requestAnimationFrame(() => closeBtnRef.current?.focus());
+     return () => cancelAnimationFrame(raf);
+   }, [selected]);
+@@ -59,10 +47,8 @@
+           <Link className="btn-back" id="backToMenu" to="/">
+             <span className="arrow">←</span> Main menu
+           </Link>
+-          <div className="eyebrow-row">
+-            <h1>Atlas <em>World</em></h1>
+-            <div className="coords">Equal Earth projection<br />drag to pan · scroll to zoom · select a country</div>
+-          </div>
++          <h1>Atlas World</h1>
++          <p className="coords">Drag to pan · scroll to zoom · select a country</p>
+         </header>
+ 
+         <WorldMapCanvas ref={canvasRef} selected={selected} onSelect={setSelected} />
+@@ -72,7 +58,6 @@
+           <button aria-label="Zoom out" onClick={() => canvasRef.current?.zoomOut()}>–</button>
+           <button aria-label="Reset zoom" onClick={() => canvasRef.current?.reset()}>⟲</button>
+         </div>
+-        <div className="scale"><span>0</span><span className="bar" /><span>2000 km</span></div>
+       </div>
+ 
+       <div className={'overlay' + (open ? ' open' : '')} onClick={closePanel} />
+@@ -86,7 +71,6 @@
+         aria-labelledby="panelTitle"
+       >
+         <button className="panel-close" ref={closeBtnRef} aria-label="Close" onClick={closePanel}>✕</button>
+-        <div className="panel-watermark" ref={watermarkRef} aria-hidden="true" />
+         <div className="panel-scroll">
+           <div className="panel-header">
+             <img

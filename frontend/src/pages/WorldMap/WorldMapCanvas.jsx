@@ -3,8 +3,7 @@ import * as d3 from 'd3';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import { findAvailableCountries } from '../../lib/availability';
 
-// Mapa mundial dibujado en <canvas> (no en SVG) con D3 solo para zoom/paneo y para
-// proyectar la esfera y la cuadrícula. Se monta UNA vez dentro de un useEffect y se
+// Mapa mundial dibujado en <canvas> (no en SVG) con D3 solo para zoom/paneo. Se monta UNA vez dentro de un useEffect y se
 // limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
 //
 // Por qué canvas: con SVG el navegador rasteriza el grupo y, durante un gesto de zoom,
@@ -14,22 +13,17 @@ import { findAvailableCountries } from '../../lib/availability';
 //
 // Rendimiento (importante en ordenador, donde el canvas es mucho más grande que en móvil):
 //  - Todos los países comparten estilo: se unen en UN solo Path2D (fill + stroke).
-//  - El sombreado del océano (degradado, brillo, sombra de borde) es suave y estático:
-//    se pinta UNA vez en un bitmap y cada fotograma solo se estampa (drawImage).
 //  - El hover (isPointInPath sobre paths enormes) NO se calcula mientras haces zoom o
 //    arrastras, y se limita a ~20 veces por segundo; se recalcula al soltar.
 //  - Resolución del canvas limitada por número de píxeles.
 //
-// El SVG de origen está en proyección Equal Earth (meridiano central ~12,65°E); su
-// descripción viaja en `projection` dentro de world-map.json (ver build-world-map.py).
+// Estilo plano, igual que el resto de mapas de la web: tierra de un solo color sobre el
+// fondo de la página, sin océano pintado, cuadrícula, halos ni brillos.
 //
 // Props:
 //   selected        país actualmente abierto en el panel (para pintarlo "active")
 //   onSelect(f)     se llama al hacer clic en un país disponible; f = { id, properties:{name,slug}, d, main? }
 //   ref             { zoomIn(), zoomOut(), reset() }
-
-// Proyecciones que puede declarar world-map.json en `projection.type`.
-const PROJECTIONS = { equalEarth: d3.geoEqualEarth, naturalEarth1: d3.geoNaturalEarth1 };
 
 // El mapa está muy detallado (islas y microestados): se permite bastante zoom.
 const MAX_ZOOM = 20;
@@ -52,14 +46,6 @@ const PICK_TOLERANCE_MOUSE = 8;
 const PICK_TOLERANCE_TOUCH = 14;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
-
-// Halo exterior de la esfera [ancho en px, opacidad] y sombreado interior (va dentro
-// del bitmap del océano; los anchos se escalan al tamaño del mapa).
-const HALO = [[30, 0.03], [12, 0.06]];
-const SHADE = [[84, 0.07], [52, 0.09], [28, 0.12], [12, 0.16]];
-// Resolución del bitmap del océano (px por unidad del mapa) y margen alrededor.
-const OCEAN_RES = 1.5;
-const OCEAN_MARGIN = 8;
 
 export default function WorldMapCanvas({ selected, onSelect, ref }) {
   const wrapRef = useRef(null);
@@ -104,9 +90,11 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     // Colores del tema (variables CSS de la página).
     const rootStyles = getComputedStyle(wrap.closest('.worldmap-page') || document.documentElement);
     const cssVar = (name, fallback) => rootStyles.getPropertyValue(name).trim() || fallback;
-    const LAND = cssVar('--land', '#e9ddbd');
-    const LAND_HOVER = cssVar('--land-hover', '#ffd27a');
-    const LAND_ACTIVE = cssVar('--land-active', '#f08a45');
+    const LAND = cssVar('--land', '#2d5877');
+    const LAND_HOVER = cssVar('--land-hover', '#3b6d90');
+    const LAND_ACTIVE = cssVar('--land-active', '#c9a24b');
+    const LAND_LINE = cssVar('--land-line', '#0b1a28');
+    const OUTLINE = cssVar('--land-outline', '#f6f1e4');
 
     let cancelled = false;
     let frameId = 0;
@@ -135,12 +123,6 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     // Datos dibujables (se rellenan al cargar world-map.json).
     let features = [];
     let allLand = null;
-    let sphere = null;
-    let oceanBitmap = null;
-    let gratMinor = null;
-    let gratMajor = null;
-    let equator = null;
-    let parallels = null;
     let availableSlugs = null; // null = "aún sin comprobar": todos cuentan como disponibles
 
     let pointer = null; // posición del ratón relativa al canvas
@@ -153,85 +135,11 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       return !availableSlugs.has(countrySlug(f));
     }
 
-    // Océano suave y estático (degradado + brillo + sombra de borde) en un bitmap: se
-    // pinta una vez y luego solo se estampa. Al ser degradados suaves no se nota la
-    // resolución, y el borde de la esfera sigue nítido porque se recorta con el path.
-    function buildOceanBitmap() {
-      const bmp = document.createElement('canvas');
-      bmp.width = Math.ceil((mapW + OCEAN_MARGIN * 2) * OCEAN_RES);
-      bmp.height = Math.ceil((mapH + OCEAN_MARGIN * 2) * OCEAN_RES);
-      const o = bmp.getContext('2d');
-      o.scale(OCEAN_RES, OCEAN_RES);
-      o.translate(OCEAN_MARGIN, OCEAN_MARGIN);
-
-      const ocean = o.createRadialGradient(mapW * 0.34, mapH * 0.3, 0, mapW * 0.34, mapH * 0.3, mapW * 0.85);
-      ocean.addColorStop(0, '#2b7fa6');
-      ocean.addColorStop(0.35, '#17597e');
-      ocean.addColorStop(0.7, '#0d3553');
-      ocean.addColorStop(1, '#06192a');
-      o.fillStyle = ocean;
-      o.fill(sphere);
-
-      o.save();
-      o.clip(sphere);
-      // Brillo suave arriba a la izquierda (como luz sobre un globo).
-      const sheen = o.createRadialGradient(mapW * 0.3, mapH * 0.16, 0, mapW * 0.3, mapH * 0.16, mapW * 0.5);
-      sheen.addColorStop(0, 'rgba(180,225,255,0.14)');
-      sheen.addColorStop(1, 'rgba(180,225,255,0)');
-      o.fillStyle = sheen;
-      o.fillRect(-OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
-      // Sombreado interior hacia el borde (da volumen de esfera).
-      const unit = mapW / 1400;
-      o.strokeStyle = '#02070d';
-      SHADE.forEach(([w, a]) => {
-        o.globalAlpha = a;
-        o.lineWidth = w * unit;
-        o.stroke(sphere);
-      });
-      o.restore();
-      return bmp;
-    }
-
     // ---------- Dibujo ----------
-    function drawOcean(u) {
-      // Halo atmosférico exterior (anchos en px de pantalla → unidades del mapa).
-      ctx.strokeStyle = 'rgb(96,176,226)';
-      HALO.forEach(([w, a]) => {
-        ctx.globalAlpha = a;
-        ctx.lineWidth = w * u;
-        ctx.stroke(sphere);
-      });
-      ctx.globalAlpha = 1;
-
-      ctx.save();
-      ctx.clip(sphere);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(oceanBitmap, -OCEAN_MARGIN, -OCEAN_MARGIN, mapW + OCEAN_MARGIN * 2, mapH + OCEAN_MARGIN * 2);
-      ctx.restore();
-
-      // Cuadrícula: cada 10° tenue, cada 30° dorada, ecuador y trópicos/círculos polares.
-      ctx.lineWidth = 0.5 * u;
-      ctx.strokeStyle = 'rgba(140,200,235,0.10)';
-      ctx.stroke(gratMinor);
-      ctx.lineWidth = 0.6 * u;
-      ctx.strokeStyle = 'rgba(212,172,85,0.20)';
-      ctx.stroke(gratMajor);
-      ctx.lineWidth = 0.9 * u;
-      ctx.strokeStyle = 'rgba(240,205,130,0.38)';
-      ctx.stroke(equator);
-      ctx.save();
-      ctx.setLineDash([5 * u, 6 * u]);
-      ctx.lineWidth = 0.8 * u;
-      ctx.strokeStyle = 'rgba(212,172,85,0.30)';
-      ctx.stroke(parallels);
-      ctx.restore();
-    }
-
     function drawLand(u) {
       ctx.fillStyle = LAND;
       ctx.fill(allLand);
-      ctx.strokeStyle = 'rgba(6,18,28,0.9)';
+      ctx.strokeStyle = LAND_LINE;
       ctx.lineWidth = 0.6 * u;
       ctx.stroke(allLand);
 
@@ -251,38 +159,18 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         ctx.stroke(activeFx.f.path);
       }
 
-      // Anillos: brillo ancho + línea fina, de grosor constante en pantalla.
-      function ring(fx, glow, line, lineW) {
+      // Contorno fino, de grosor constante en pantalla: ayuda a localizar países diminutos.
+      function outline(fx) {
         if (!fx.f || fx.a <= 0) return;
         ctx.globalAlpha = fx.a;
-        ctx.strokeStyle = glow;
-        ctx.lineWidth = 7 * u;
-        ctx.stroke(fx.f.path);
-        ctx.strokeStyle = line;
-        ctx.lineWidth = lineW * u;
+        ctx.strokeStyle = OUTLINE;
+        ctx.lineWidth = 1.4 * u;
         ctx.stroke(fx.f.path);
         ctx.globalAlpha = 1;
       }
-      if (!touchOnly.matches) { // en táctil el "hover" se queda pegado tras tocar
-        if (hoverFx.f && isUnavailable(hoverFx.f)) {
-          ring(hoverFx, 'rgba(212,172,85,0.10)', 'rgba(212,172,85,0.5)', 1.7);
-        } else {
-          ring(hoverFx, 'rgba(255,214,130,0.38)', '#fff6dc', 2);
-        }
-      }
-      ring(activeFx, 'rgba(240,138,69,0.34)', '#ffb878', 2);
-    }
-
-    function drawRim(u) {
-      ctx.strokeStyle = 'rgba(212,172,85,0.10)';
-      ctx.lineWidth = 9 * u;
-      ctx.stroke(sphere);
-      ctx.strokeStyle = 'rgba(212,172,85,0.65)';
-      ctx.lineWidth = 2.4 * u;
-      ctx.stroke(sphere);
-      ctx.strokeStyle = 'rgba(255,236,190,0.40)';
-      ctx.lineWidth = 0.8 * u;
-      ctx.stroke(sphere);
+      // En táctil el "hover" se queda pegado tras tocar; y los países sin datos no se resaltan.
+      if (!touchOnly.matches && hoverFx.f && !isUnavailable(hoverFx.f)) outline(hoverFx);
+      outline(activeFx);
     }
 
     function draw() {
@@ -295,9 +183,7 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       ctx.setTransform(dpr * k, 0, 0, dpr * k, dpr * (view.x - k * vbX), dpr * (view.y - k * vbY));
       ctx.lineJoin = 'round';
       ctx.lineCap = 'round';
-      if (oceanBitmap) drawOcean(u);
       drawLand(u);
-      if (sphere) drawRim(u);
     }
 
     // ---------- Bucle de fotogramas ----------
@@ -617,30 +503,6 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         if (cancelled) return;
         mapW = worldData.width;
         mapH = worldData.height;
-
-        // Esfera + cuadrícula a partir de la proyección del SVG (ver build-world-map.py).
-        const proj = worldData.projection;
-        const makeProjection = PROJECTIONS[proj?.type];
-        if (makeProjection) {
-          const projection = makeProjection()
-            .rotate([-proj.rotate, 0])
-            .scale(proj.scale)
-            .translate(proj.translate);
-          const geoPath = d3.geoPath(projection).digits(1);
-          sphere = new Path2D(geoPath({ type: 'Sphere' }));
-          gratMinor = new Path2D(geoPath(d3.geoGraticule10()));
-          gratMajor = new Path2D(geoPath(d3.geoGraticule().step([30, 30]).extent([[-180, -90], [180, 90]])()));
-          const parallel = (lat) => d3.range(-180, 181, 5).map((lon) => [lon, lat]);
-          equator = new Path2D(geoPath({ type: 'LineString', coordinates: parallel(0) }));
-          // Trópicos de Cáncer y Capricornio y círculos polares (discontinuas).
-          parallels = new Path2D(geoPath({
-            type: 'MultiLineString',
-            coordinates: [23.4363, -23.4363, 66.5636, -66.5636].map(parallel),
-          }));
-          oceanBitmap = buildOceanBitmap();
-        } else {
-          console.warn('world-map.json sin `projection` válida: se dibuja el mapa sin esfera ni cuadrícula.');
-        }
 
         features = worldData.countries.map((c) => ({
           id: c.id,

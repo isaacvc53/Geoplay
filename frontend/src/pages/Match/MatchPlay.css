@@ -4,14 +4,16 @@
 
 .country-page.mpg{ position:relative; }
 
-/* ---- scoreboard: [menu] [me] [clock + country] [rival] ---- */
+/* ---- scoreboard: [me] [clock + country] [rival] ----
+   Mirror image: the two sides get the same width, so each score sits above its own map (the
+   maps below are split exactly half and half). The rival's side is the mirror of mine. */
 .country-page .mpg-bar{
   flex:0 0 auto;
-  display:grid; grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px;
+  display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px;
   padding:12px 18px 0;
 }
 .country-page .mpg-side{ display:flex; align-items:center; gap:10px; min-width:0; }
-.country-page .mpg-side:last-child{ flex-direction:row-reverse; text-align:right; }
+.country-page .mpg-side.rival{ flex-direction:row-reverse; text-align:right; }
 .country-page .mpg-avatar{
   flex:none; width:40px; height:40px; border-radius:50%;
   border:1px solid var(--line); background:rgba(201,162,75,.06);
@@ -20,7 +22,9 @@
   transition:border-color var(--ease);
 }
 .country-page .mpg-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
-.country-page .mpg-side.me .mpg-avatar{ border-color:var(--accent); }
+/* Each player has their own colour, the same one their map and bar use. */
+.country-page .mpg-side.me .mpg-avatar{ border-color:var(--found); }
+.country-page .mpg-side.rival .mpg-avatar{ border-color:var(--rival); }
 .country-page .mpg-who{ display:flex; flex-direction:column; flex:1 1 auto; min-width:0; }
 .country-page .mpg-name{
   font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted);
@@ -30,7 +34,9 @@
   font:600 28px/1.05 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--ink);
   transition:color var(--ease);
 }
-.country-page .mpg-side.lead .mpg-score{ color:var(--accent); }
+/* The one in front takes their own colour (gold for me, the rival's colour for them). */
+.country-page .mpg-side.me.lead .mpg-score{ color:var(--found); }
+.country-page .mpg-side.rival.lead .mpg-score{ color:var(--rival); }
 /* "/16": the total, quieter than the number that moves. */
 .country-page .mpg-total{ font-size:.55em; font-weight:600; color:var(--muted); margin-left:1px; }
 /* Progress bar under the score: gold for me, the rival's colour for them (and it grows from
@@ -152,7 +158,7 @@
 
 @media (max-width:720px){
   .country-page .mpg-bar{
-    grid-template-columns:44px minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;
+    grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; padding:10px 10px 0;
   }
   .country-page .mpg-avatar{ width:32px; height:32px; font-size:13px; }
   .country-page .mpg-score{ font-size:22px; }

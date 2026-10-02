@@ -37,12 +37,14 @@ import './Match.css';
 // of the match itself comes after).
 const AUTO_START_SECONDS = 3;
 
-function Player({ player, isMe, role }) {
+// Both players see the room the same way: me on the left, the rival on the right, with no
+// host/guest labels (who sent the challenge doesn't change what each side sees).
+function Player({ player, isMe }) {
   return (
-    <div className="mp-player">
+    <div className={'mp-player' + (isMe ? ' me' : ' rival')}>
       <UserAvatar className="mp-avatar" userId={player.user_id} name={player.username} version={player.avatar_updated_at} />
       <span className="mp-player-name">{player.username}</span>
-      <span className="mp-player-tag">{isMe ? `You · ${role}` : role}</span>
+      <span className="mp-player-tag">{isMe ? 'You' : 'Opponent'}</span>
     </div>
   );
 }
@@ -323,13 +325,18 @@ function MatchRoom({ id }) {
     return <PlayScreen match={m} clock={clock} preload={preload} reload={poll.reload} />;
   }
 
+  // Me on the left, the rival on the right, whichever of us sent the challenge.
+  const meHost = m ? m.my_role === 'host' : false;
+  const mePlayer = m ? (meHost ? m.host : m.guest) : null;
+  const rivalPlayer = m ? (meHost ? m.guest : m.host) : null;
+
   return (
     <Card>
       {m && (
         <div className="mp-versus" aria-label="Players">
-          <Player player={m.host} isMe={m.my_role === 'host'} role="host" />
+          <Player player={mePlayer} isMe />
           <span className="mp-vs" aria-hidden="true">vs</span>
-          <Player player={m.guest} isMe={m.my_role === 'guest'} role="guest" />
+          <Player player={rivalPlayer} isMe={false} />
         </div>
       )}
       {m && poll.error && <p className="mp-warn">Connection lost — retrying…</p>}

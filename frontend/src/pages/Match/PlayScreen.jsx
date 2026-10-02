@@ -276,6 +276,9 @@ export default function PlayScreen({ match, clock, preload, reload }) {
           <button type="button" className="secondary" onClick={() => setConfirmLeave(true)}>Leave match</button>
         </div>
         {leaveError && <p className="mpg-confirm" role="alert">{leaveError}</p>}
+        <div className="right-actions">
+          <Link className="btn-ghost mpg-link" to="/" title="Back to the menu (the match keeps running)">Menu</Link>
+        </div>
       </>
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps -- `leave` only reads refs/stable setters
@@ -285,10 +288,6 @@ export default function PlayScreen({ match, clock, preload, reload }) {
     <div className="country-page mpg">
       <div className="page">
         <header className="mpg-bar">
-          <Link to="/" className="btn-back" title="Back to the menu (the match keeps running)">
-            <span className="arrow" aria-hidden="true">←</span>
-            <span className="label">Menu</span>
-          </Link>
           <Side player={mine} score={myScore} total={totalRegions} isMe leading={myScore > rivalScore} />
           <div className="mpg-mid">
             <span className={'mpg-clock' + (low ? ' low' : '')} aria-label={untimed ? 'Time elapsed' : 'Time left'}>

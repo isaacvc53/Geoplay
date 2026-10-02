@@ -61,6 +61,8 @@
   font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:23px; color:var(--brass-bright);
 }
 .match-page .mp-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+/* Same colours as in the match itself: gold for me, orange for the opponent. */
+.match-page .mp-player.rival .mp-avatar{ border-color:var(--seal); color:var(--seal); }
 .match-page .mp-player-name{
   max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-family:'Fraunces',Georgia,serif; font-weight:600; font-size:19px; color:var(--parchment);
