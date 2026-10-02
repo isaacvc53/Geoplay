@@ -122,7 +122,6 @@ export default function WorldRegionsPage() {
   }
   const confirmLose = () => !inGame || count === 0 || window.confirm('This will end the current game and you will lose your progress. Continue?');
   function restart() { if (scope && confirmLose()) newGame(zone); }
-  function pickZone(key) { if (key && key !== zone && confirmLose()) newGame(key); }
   function backToStart() {
     clearTimeout(auto.current);
     const empty = new Set();
@@ -239,12 +238,7 @@ export default function WorldRegionsPage() {
 
           <aside className="wr-side">
             <div className="wr-side-head">
-              <label>Zone
-                <select value={zone || ''} onChange={(e) => pickZone(e.target.value)} disabled={!data}>
-                  {!zone && <option value="">—</option>}
-                  {ZONES.map((z) => <option key={z.key} value={z.key}>{z.label}</option>)}
-                </select>
-              </label>
+              <div className="wr-zone-now"><span>Zone</span><b>{zone ? ZONES.find((z) => z.key === zone).label : '—'}</b></div>
               <label className="wr-check"><input type="checkbox" checked={onlyPending} onChange={(e) => setOnlyPending(e.target.checked)} /> Only pending</label>
             </div>
             <ul className="wr-countries">
