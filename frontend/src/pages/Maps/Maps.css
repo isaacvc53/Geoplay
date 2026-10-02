@@ -1,6 +1,6 @@
 /* "More ways to play" (/mapas). Uses the colour variables and base styles of Menu.css (.menu-page). */
 
-.maps-page .mx-shell{ width:100%; max-width:1080px; margin:0 auto; padding:32px 32px 72px; display:flex; flex-direction:column; gap:22px; }
+.maps-page .mx-shell{ width:100%; max-width:1080px; margin:0 auto; padding:32px 32px 72px; display:flex; flex-direction:column; gap:24px; }
 
 .maps-page .mx-back{ align-self:flex-start; display:inline-flex; align-items:center; gap:8px; padding:7px 14px; text-decoration:none; transition:transform .2s ease; }
 .maps-page .mx-back:hover{ transform:translateX(-2px); }
@@ -16,65 +16,82 @@
 .maps-page .mx-hero h1 i{ font-style:italic; color:var(--brass-bright); }
 .maps-page .mx-hero p{ font-size:15px; color:#9fb0bf; }
 
-/* ---------- sections ---------- */
-.maps-page .mx-section{ padding:20px 20px 22px; border:1px solid var(--line); background:var(--panel-bg); animation:riseIn var(--ease-slow) both; }
-.maps-page .mx-section-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:16px; }
-.maps-page .mx-num{ font-family:'Fraunces',Georgia,serif; font-size:28px; line-height:1; color:var(--brass); opacity:.8; }
-.maps-page .mx-section h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:21px; line-height:1.2; }
-.maps-page .mx-section-head p{ margin-top:3px; font-size:13px; color:var(--parchment-dim); }
+/* ---------- grid ---------- */
+.maps-page .mx-grid{ display:grid; gap:20px; }
+.maps-page .mx-grid.two{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+.maps-page .mx-grid.three{ grid-template-columns:repeat(3, minmax(0,1fr)); }
 
-/* ---------- main options ---------- */
-.maps-page .mx-main{ display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
-.maps-page .mx-main-card{
-  display:flex; flex-direction:column; align-items:flex-start; gap:8px; text-align:left;
-  padding:26px 24px 22px; min-height:230px; font-family:inherit; color:var(--parchment); text-decoration:none; cursor:pointer;
+/* ---------- card ---------- */
+.maps-page .mx-card{
+  position:relative; display:flex; flex-direction:column; overflow:hidden; text-align:left;
+  font-family:inherit; color:var(--parchment); text-decoration:none; cursor:pointer; padding:0;
   border:1px solid var(--line); background:var(--panel-bg); border-radius:var(--radius);
+  box-shadow:0 18px 40px -24px var(--shadow);
   animation:riseIn var(--ease-slow) both;
-  transition:border-color var(--ease), background var(--ease), transform var(--ease), box-shadow var(--ease);
+  transition:border-color var(--ease), transform var(--ease), box-shadow var(--ease);
 }
-.maps-page .mx-main-card:hover, .maps-page .mx-main-card:focus-visible{ border-color:var(--brass); background:var(--panel-bg-hover); transform:translateY(-3px); box-shadow:0 22px 44px -24px var(--shadow); }
-.maps-page .mx-main-card:focus-visible{ outline:1.5px solid var(--brass-bright); outline-offset:3px; }
-.maps-page .mx-main-icon{ display:grid; place-items:center; width:46px; height:46px; margin-bottom:6px; font-size:24px; border:1px solid var(--brass-dim); border-radius:50%; }
-.maps-page .mx-main-card h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:21px; line-height:1.2; }
-.maps-page .mx-main-card p{ font-size:13.5px; line-height:1.55; color:var(--parchment-dim); }
-.maps-page .mx-main-cta{ margin-top:auto; padding-top:10px; font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--brass); }
-.maps-page .mx-main-card:hover .mx-main-cta{ color:var(--brass-bright); }
-
-/* ---------- small tiles ---------- */
-.maps-page .mx-tiles{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:12px; }
-.maps-page .mx-tile{
-  display:flex; align-items:center; gap:14px; min-height:76px; padding:14px 16px;
-  text-decoration:none; color:var(--parchment);
-  border:1px solid var(--line); background:var(--ocean-deep);
-  transition:border-color var(--ease), background var(--ease), transform var(--ease);
+.maps-page .mx-card:hover, .maps-page .mx-card:focus-visible{
+  border-color:var(--brass); transform:translateY(-3px);
+  box-shadow:0 26px 52px -24px var(--shadow), 0 0 70px -34px rgba(201,162,75,.6);
 }
-.maps-page .mx-tile:hover, .maps-page .mx-tile:focus-visible{ border-color:var(--brass); background:rgba(201,162,75,.12); transform:translateY(-2px); }
-.maps-page .mx-tile:focus-visible{ outline:1.5px solid var(--brass-bright); outline-offset:2px; }
-.maps-page .mx-tile.accent{ border-color:var(--brass-dim); background:rgba(201,162,75,.07); }
-.maps-page .mx-tile-icon{ flex:none; font-size:26px; line-height:1; width:34px; text-align:center; }
-.maps-page .mx-tile-text{ display:flex; flex-direction:column; gap:1px; min-width:0; }
-.maps-page .mx-tile-label{ font-size:14.5px; font-weight:600; }
-.maps-page .mx-tile-hint{ font-size:12.5px; line-height:1.4; color:var(--parchment-dim); }
-.maps-page .mx-tile:hover .mx-tile-label{ color:var(--brass-bright); }
+.maps-page .mx-card:focus-visible{ outline:1.5px solid var(--brass-bright); outline-offset:3px; }
 
+/* map artwork: same look as the atlas card on the home page */
+.maps-page .mx-art{
+  position:relative; overflow:hidden; border-bottom:1px solid var(--line);
+  background:radial-gradient(ellipse at 28% 10%, var(--ocean-shallow) 0%, var(--ocean-deep) 72%);
+}
+.maps-page .mx-art.wide{ aspect-ratio:2 / 1; }
+.maps-page .mx-art.std{ aspect-ratio:3 / 2; }
+.maps-page .mx-art::after{ content:''; position:absolute; inset:0; pointer-events:none; background:radial-gradient(ellipse 75% 65% at 50% 48%, transparent 55%, var(--ocean-deep) 100%); opacity:.85; }
+.maps-page .mx-world{ position:absolute; inset:0; width:100%; height:100%; transition:transform .8s var(--ease-slow); }
+.maps-page .mx-card:hover .mx-world{ transform:scale(1.04); }
+.maps-page .mx-world g{ transition:fill var(--ease-slow), opacity var(--ease-slow), stroke var(--ease-slow); }
+.maps-page .mx-world.fill g{ fill:var(--land); opacity:.72; }
+.maps-page .mx-card:hover .mx-world.fill g{ fill:var(--land-hover); opacity:.92; }
+/* "lines": the borders are the point, so the land is dim and the outlines are drawn in brass */
+.maps-page .mx-world.lines g{ fill:rgba(228,216,186,.16); stroke:var(--brass); stroke-width:.9; stroke-linejoin:round; opacity:.95; }
+.maps-page .mx-card:hover .mx-world.lines g{ fill:rgba(238,200,119,.3); stroke:var(--brass-bright); }
+.maps-page .mx-world.ghost g{ fill:none; stroke:var(--brass-dim); stroke-width:.7; opacity:.55; }
+
+.maps-page .mx-tick{ position:absolute; z-index:2; width:13px; height:13px; pointer-events:none; }
+.maps-page .mx-tick.tl{ top:-1px; left:-1px; border-top:1px solid var(--brass-bright); border-left:1px solid var(--brass-bright); }
+.maps-page .mx-tick.tr{ top:-1px; right:-1px; border-top:1px solid var(--brass-bright); border-right:1px solid var(--brass-bright); }
+.maps-page .mx-tick.bl{ bottom:-1px; left:-1px; border-bottom:1px solid var(--brass-bright); border-left:1px solid var(--brass-bright); }
+.maps-page .mx-tick.br{ bottom:-1px; right:-1px; border-bottom:1px solid var(--brass-bright); border-right:1px solid var(--brass-bright); }
+.maps-page .mx-soon{ position:absolute; z-index:2; left:50%; top:50%; transform:translate(-50%,-50%); }
+
+/* text */
+.maps-page .mx-body{ display:flex; flex-direction:column; gap:10px; padding:20px 22px 20px; flex:1; }
+.maps-page .mx-card h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:23px; line-height:1.15; }
+.maps-page .mx-card p{ font-size:14px; line-height:1.55; color:var(--parchment-dim); }
+.maps-page .mx-meta{ list-style:none; margin:2px 0 0; padding:0; display:flex; flex-wrap:wrap; gap:6px; }
+.maps-page .mx-meta li{
+  padding:4px 9px; font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--parchment-dim); border:1px solid var(--line); border-radius:999px;
+  transition:border-color var(--ease), color var(--ease);
+}
+.maps-page .mx-card:hover .mx-meta li{ border-color:var(--brass-dim); color:var(--parchment); }
+.maps-page .mx-cta{ margin-top:auto; padding-top:12px; border-top:1px solid var(--line-soft); font-size:12px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--brass); display:flex; justify-content:space-between; align-items:center; }
+.maps-page .mx-cta .arrow{ display:inline-block; transition:transform var(--ease); }
+.maps-page .mx-card:hover .mx-cta{ color:var(--brass-bright); }
+.maps-page .mx-card:hover .mx-cta .arrow{ transform:translateX(4px); }
+
+/* coming-soon placeholder */
+.maps-page .mx-card.soon{ border-style:dashed; background:transparent; cursor:default; box-shadow:none; }
+.maps-page .mx-card.soon:hover{ transform:none; border-color:var(--line); box-shadow:none; }
+.maps-page .mx-card.soon:hover .mx-world{ transform:none; }
+.maps-page .mx-card.soon h2{ color:var(--parchment-dim); }
+
+@media (max-width:900px){
+  .maps-page .mx-grid.three{ grid-template-columns:repeat(2, minmax(0,1fr)); }
+}
 @media (max-width:640px){
-  .maps-page .mx-shell{ padding:20px 16px 56px; gap:16px; }
+  .maps-page .mx-shell{ padding:20px 16px 56px; gap:18px; }
   .maps-page .mx-hero{ padding:24px 20px; }
-  .maps-page .mx-section{ padding:16px 14px 18px; }
-  .maps-page .mx-tiles{ grid-template-columns:repeat(2, minmax(0,1fr)); gap:8px; }
+  .maps-page .mx-grid.two, .maps-page .mx-grid.three{ grid-template-columns:1fr; }
 }
 @media (prefers-reduced-motion:reduce){
-  .maps-page .mx-main-card{ animation:none !important; transition:none !important; }
-  .maps-page .mx-section, .maps-page .mx-hero{ animation:none !important; }
-  .maps-page .mx-tile{ transition:none !important; }
-}
-
-/* placeholder tiles: nothing to open yet */
-.maps-page .mx-tile.soon{ border-style:dashed; background:transparent; cursor:default; opacity:.6; }
-.maps-page .mx-tile.soon:hover{ transform:none; border-color:var(--line); background:transparent; }
-.maps-page .mx-tile.soon:hover .mx-tile-label{ color:inherit; }
-
-@media (max-width:640px){
-  .maps-page .mx-main{ grid-template-columns:1fr; }
-  .maps-page .mx-main-card{ min-height:0; }
+  .maps-page .mx-card, .maps-page .mx-hero{ animation:none !important; transition:none !important; }
+  .maps-page .mx-world{ transition:none !important; }
 }
