@@ -308,27 +308,38 @@
   }
 
   
-  .roadmap{ flex:1; padding:18px; display:flex; flex-direction:column; }
-  .roadmap-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-  .roadmap-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:18px; }
-  .roadmap p.desc{ font-size:12.5px; color:var(--parchment-dim); line-height:1.55; margin-bottom:4px; }
-  .roadmap-list{ margin-top:6px; }
-  .roadmap-row{
+  .maps-card{ flex:1; padding:18px; display:flex; flex-direction:column; }
+  .maps-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; }
+  .maps-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:18px; }
+  .maps-card p.desc{ font-size:12.5px; color:var(--parchment-dim); line-height:1.55; margin-bottom:4px; }
+  .maps-list{ margin-top:6px; }
+  .maps-row{
     display:flex; align-items:center; gap:10px;
     padding:11px 2px; border-top:1px solid var(--line-soft);
     font-size:13px; color:var(--parchment-dim);
     border-radius:var(--radius);
     transition:background-color var(--ease), padding-left var(--ease);
   }
-  .roadmap-row:hover{ background:var(--line-soft); padding-left:8px; }
-  .roadmap-row .bullet{
+  .maps-row:hover{ background:var(--line-soft); padding-left:8px; }
+  .maps-row .bullet{
     width:6px; height:6px; background:var(--brass-dim);
     transform:rotate(45deg); flex:none;
     transition:background-color var(--ease);
   }
-  .roadmap-row:hover .bullet{ background:var(--brass-bright); }
-  .roadmap-row span.label{ flex:1; color:var(--parchment); }
-  .roadmap-row span.tag{ font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--brass-dim); }
+  .maps-row:hover .bullet{ background:var(--brass-bright); }
+  .maps-row span.label{ flex:1; color:var(--parchment); }
+  .maps-cta{
+    margin-top:auto; padding-top:14px;
+    font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--brass);
+  }
+
+  /* Pending-challenge count next to the Multiplayer link */
+  .topbar nav a.nav-multiplayer{ display:inline-flex; align-items:center; gap:7px; }
+  .nav-badge{
+    min-width:18px; height:18px; padding:0 5px; border-radius:999px;
+    background:var(--rust); color:var(--parchment);
+    font-size:11px; font-weight:700; line-height:18px; text-align:center; letter-spacing:0;
+  }
 
   .side-card{ padding:18px 18px; justify-content:space-between; gap:12px; }
   .side-card .head{ display:flex; align-items:center; justify-content:space-between; }

@@ -3,10 +3,13 @@ import { Link } from 'react-router-dom';
 import { CONTINENTES, ALIAS, ISO_POR_PAIS } from '../../data/worldQuiz';
 import './WorldQuiz.css';
 
+// Same normalisation as the "World countries" mode (and as the keys in data/worldQuiz.js):
+// no accents, hyphens/apostrophes/dots become spaces.
 function normalizar(str) {
   return str
     .toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[-’'.]/g, ' ')
     .replace(/[^a-z0-9\s]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -19,11 +22,11 @@ const TODOS = Object.entries(CONTINENTES).flatMap(([key, c]) =>
 const TOTAL = TODOS.length; // 197
 const POR_NORM = new Map(TODOS.map((p) => [p.norm, p]));
 
-// Chips ordenados alfabéticamente (locale "es") dentro de cada continente.
+// Chips sorted alphabetically within each continent.
 const CONTINENTES_ORDENADOS = Object.entries(CONTINENTES).map(([key, c]) => ({
   key,
   nombre: c.nombre,
-  paises: [...c.paises].sort((a, b) => a.localeCompare(b, 'es')).map((n) => ({ nombre: n, norm: normalizar(n) })),
+  paises: [...c.paises].sort((a, b) => a.localeCompare(b, 'en')).map((n) => ({ nombre: n, norm: normalizar(n) })),
 }));
 
 export default function WorldQuizPage() {
@@ -55,14 +58,14 @@ export default function WorldQuizPage() {
     const pais = POR_NORM.get(candidato);
 
     if (!pais) {
-      setFeedback({ msg: `No reconozco "${valor.trim()}".`, tipo: 'bad' });
+      setFeedback({ msg: `I don't recognise "${valor.trim()}".`, tipo: 'bad' });
     } else if (encontrados.has(pais.norm)) {
-      setFeedback({ msg: `Ya tenías ${pais.nombre}.`, tipo: '' });
+      setFeedback({ msg: `You already have ${pais.nombre}.`, tipo: '' });
     } else {
       const siguiente = new Set(encontrados);
       siguiente.add(pais.norm);
       setEncontrados(siguiente);
-      setFeedback({ msg: `${pais.nombre} — ${TOTAL - siguiente.size} por descubrir.`, tipo: 'ok' });
+      setFeedback({ msg: `${pais.nombre} — ${TOTAL - siguiente.size} to go.`, tipo: 'ok' });
     }
   }
 
@@ -77,29 +80,29 @@ export default function WorldQuizPage() {
   return (
     <div className="worldquiz-page">
       <header>
-        <Link className="btn-back" to="/modo"><span>←</span> Elegir modo</Link>
-        <h1>Los 197 países</h1>
-        <p className="subtitle">Escribe de memoria todos los países del mundo, uno por uno</p>
+        <Link className="btn-back" to="/modo"><span>←</span> Choose mode</Link>
+        <h1>The 197 countries</h1>
+        <p className="subtitle">Type every country in the world from memory, one by one</p>
       </header>
 
       <main>
         <div className="panel">
-          <div className="stat"><span className="num">{encontrados.size} / {TOTAL}</span><span className="lbl">encontrados</span></div>
+          <div className="stat"><span className="num">{encontrados.size} / {TOTAL}</span><span className="lbl">found</span></div>
           <div className="bar-track"><div className="bar-fill" style={{ width: `${(encontrados.size / TOTAL) * 100}%` }} /></div>
         </div>
 
         <form onSubmit={onSubmit}>
-          <label htmlFor="entrada" className="visually-hidden">Escribe el nombre de un país</label>
+          <label htmlFor="entrada" className="visually-hidden">Type the name of a country</label>
           <input
             ref={inputRef}
             type="text"
             id="entrada"
-            placeholder="Escribe un país y pulsa Intro…"
+            placeholder="Type a country and press Enter…"
             autoComplete="off"
             value={entrada}
             onChange={(e) => setEntrada(e.target.value)}
           />
-          <button className="submit" type="submit">Añadir</button>
+          <button className="submit" type="submit">Add</button>
         </form>
         <div className={'feedback' + (feedback.tipo ? ' ' + feedback.tipo : '')} aria-live="polite">{feedback.msg}</div>
 
@@ -136,9 +139,9 @@ export default function WorldQuizPage() {
         </div>
 
         <div className={'win' + (completo ? ' show' : '')}>
-          <h2>Los 197, completos</h2>
-          <p>Has nombrado todos los países del mundo.</p>
-          <button className="btn-again" type="button" onClick={jugarDeNuevo}>Jugar de nuevo</button>
+          <h2>All 197, complete</h2>
+          <p>You have named every country in the world.</p>
+          <button className="btn-again" type="button" onClick={jugarDeNuevo}>Play again</button>
         </div>
       </main>
     </div>

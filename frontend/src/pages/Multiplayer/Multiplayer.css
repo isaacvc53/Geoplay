@@ -1,0 +1,39 @@
+/* Multiplayer page. Reuses the colour variables and the friend/match row styles of the
+   menu (.menu-page), so only the page chrome lives here. */
+
+.menu-page.multiplayer-page .multi-head{
+  max-width:760px; width:100%; margin:0 auto; padding:32px 24px 0;
+}
+.menu-page.multiplayer-page .btn-back{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:7px 14px; margin-bottom:28px;
+  text-decoration:none;
+  transition:border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.menu-page.multiplayer-page .btn-back:hover{ transform:translateX(-2px); }
+.menu-page.multiplayer-page .btn-back span{ font-size:14px; }
+
+.menu-page.multiplayer-page .multi-title{ display:flex; align-items:center; gap:18px; }
+.menu-page.multiplayer-page .multi-title h1{
+  font-family:'Fraunces',Georgia,serif; font-weight:500;
+  font-size:clamp(28px,4vw,40px); letter-spacing:-0.01em; margin-bottom:6px;
+}
+.menu-page.multiplayer-page .multi-sub{ font-size:14px; line-height:1.55; color:var(--parchment-dim); max-width:520px; }
+
+.menu-page.multiplayer-page .multi-main{
+  max-width:760px; width:100%; margin:0 auto; padding:28px 24px 64px;
+  display:flex; flex-direction:column; flex:1;
+}
+.menu-page.multiplayer-page .multi-main .drawer-empty{ padding-bottom:0; margin-top:40px; }
+
+.menu-page.multiplayer-page .multi-empty{
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;
+  padding:28px 16px; border:1px dashed var(--line); border-radius:var(--radius);
+}
+.menu-page.multiplayer-page .multi-empty .drawer-empty-desc{ max-width:320px; }
+
+@media (max-width:640px){
+  .menu-page.multiplayer-page .multi-head{ padding:20px 16px 0; }
+  .menu-page.multiplayer-page .multi-main{ padding:22px 16px 48px; }
+  .menu-page.multiplayer-page .multi-title{ gap:12px; }
+}

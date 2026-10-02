@@ -13,6 +13,8 @@ import ComparePage from './pages/Compare/ComparePage';
 import MatchPage from './pages/Match/MatchPage';
 import WorldRegionsPage from './pages/WorldRegions/WorldRegionsPage';
 import WorldCountriesPage from './pages/WorldCountries/WorldCountriesPage';
+import MultiplayerPage from './pages/Multiplayer/MultiplayerPage';
+import MapsPage from './pages/Maps/MapsPage';
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/" element={<MenuPage />} />
           <Route path="/modo" element={<ModePage />} />
+          <Route path="/mapas" element={<MapsPage />} />
+          <Route path="/multijugador" element={<MultiplayerPage />} />
           <Route path="/paises-del-mundo" element={<WorldQuizPage />} />
           <Route path="/paises" element={<RegionCountriesPage />} />
           <Route path="/mapa-mundial" element={<WorldMapPage />} />

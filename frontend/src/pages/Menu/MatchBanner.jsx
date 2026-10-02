@@ -4,8 +4,8 @@ import { countryLabel, describeMatch, opponentOf } from '../Match/matchText';
 import './Matches.css';
 
 // Strip under the top bar: tells you about a challenge you received, or about the
-// match you have open, without having to open the friends drawer.
-export default function MatchBanner({ matches, lastResult, onOpenFriends }) {
+// match you have open, without having to open the multiplayer page.
+export default function MatchBanner({ matches, lastResult, onOpenMultiplayer }) {
   const { current, invitations, reload } = matches;
   const actions = useMatchActions({ reload });
   const disabled = Boolean(actions.busy);
@@ -70,7 +70,7 @@ export default function MatchBanner({ matches, lastResult, onOpenFriends }) {
           {extra > 0 && (
             <>
               {' '}
-              <button type="button" className="match-banner-link" onClick={onOpenFriends}>
+              <button type="button" className="match-banner-link" onClick={onOpenMultiplayer}>
                 +{extra} more
               </button>
             </>

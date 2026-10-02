@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import UserAvatar from '../../components/UserAvatar';
 import { formatRelative } from '../Profile/profileLogic';
-import CountryPicker from '../Profile/CountryPicker';
-import { useMatchActions } from '../Match/useMatchActions';
-import { DEFAULT_DURATION, DURATIONS, countryLabel, formatDuration, isUntimed, opponentOf } from '../Match/matchText';
 import './Friends.css';
-import './Matches.css';
 
 // The backend answers with a stable `code`; the texts live here.
 const ERROR_MESSAGES = {
@@ -45,51 +41,14 @@ function Avatar({ name }) {
   return <span className="friend-avatar" aria-hidden="true">{name.charAt(0).toUpperCase()}</span>;
 }
 
-const RESULT_LABEL = { win: 'Won', loss: 'Lost', draw: 'Draw' };
-
-// "Won · Spain · 3 min · 12–9 · 2d ago" pieces for one finished match.
-function historyMeta(h) {
-  const parts = [];
-  if (h.country) parts.push(countryLabel(h.country));
-  parts.push(formatDuration(h.duration_seconds));
-  if (h.end_reason === 'forfeit') parts.push(h.result === 'win' ? 'they left' : 'you left');
-  parts.push(formatRelative(h.finished_at));
-  return parts.join(' · ');
-}
-
-export default function FriendsPanel({ loggedIn, friends, matches, history }) {
+// Friends only: add by username, requests, sent requests and the friends list.
+// Challenges, matches and match history live on the multiplayer page (/multijugador).
+export default function FriendsPanel({ loggedIn, friends }) {
   const { data, error, loading, reload } = friends;
-  const { current: currentMatch, invitations } = matches;
-  const actions = useMatchActions({ reload: matches.reload });
-  const [challengeUserId, setChallengeUserId] = useState(null); // friend whose challenge picker is open
-  const [duration, setDuration] = useState(DEFAULT_DURATION);
-  const [countryId, setCountryId] = useState(''); // '' = random country (drawn when they accept)
-  const [countries, setCountries] = useState(null); // playable countries, loaded on first open
-  const [countriesFailed, setCountriesFailed] = useState(false);
-  const [countriesAttempt, setCountriesAttempt] = useState(0); // bumped by "Try again"
   const [username, setUsername] = useState('');
   const [busy, setBusy] = useState(null); // key of the action in flight, or null
   const [message, setMessage] = useState(null); // { kind: 'ok' | 'error', text }
   const [confirmId, setConfirmId] = useState(null); // friendship waiting for "Confirm"
-
-  // The country list is fetched the first time a challenge picker opens. If it fails the
-  // challenge still works: it just stays a random country.
-  useEffect(() => {
-    if (challengeUserId == null || countries) return undefined;
-    let cancelled = false;
-    api.getMatchCountries()
-      .then((list) => { if (!cancelled) { setCountries(list); setCountriesFailed(false); } })
-      .catch(() => { if (!cancelled) setCountriesFailed(true); });
-    return () => { cancelled = true; };
-  }, [challengeUserId, countries, countriesAttempt]);
-
-  const countryOptions = useMemo(
-    () => (countries || [])
-      .map((c) => ({ id: c.id, label: countryLabel(c) }))
-      .sort((a, b) => a.label.localeCompare(b.label, 'es')),
-    [countries]
-  );
-  const pickedCountry = countryOptions.find((o) => o.id === countryId);
 
   // Feedback messages fade after a few seconds so they don't linger forever.
   useEffect(() => {
@@ -151,7 +110,7 @@ export default function FriendsPanel({ loggedIn, friends, matches, history }) {
   const incoming = data ? data.incoming : [];
   const outgoing = data ? data.outgoing : [];
   const isEmpty = data && !friendList.length && !incoming.length && !outgoing.length;
-  const disabled = Boolean(busy) || Boolean(actions.busy);
+  const disabled = Boolean(busy);
 
   return (
     <div className="friends-panel">
@@ -173,9 +132,7 @@ export default function FriendsPanel({ loggedIn, friends, matches, history }) {
       </form>
 
       <div className="friends-msg-slot" aria-live="polite">
-        {message
-          ? <p className={`friends-msg ${message.kind}`}>{message.text}</p>
-          : actions.error && <p className="friends-msg error">{actions.error}</p>}
+        {message && <p className={`friends-msg ${message.kind}`}>{message.text}</p>}
       </div>
 
       {!data && loading && <p className="friends-note">Loading…</p>}
@@ -185,83 +142,6 @@ export default function FriendsPanel({ loggedIn, friends, matches, history }) {
           <p>Couldn&apos;t load your friends.</p>
           <button type="button" className="friend-btn" onClick={reload}>Try again</button>
         </div>
-      )}
-
-      {currentMatch && (
-        <section className="friends-section">
-          <h3>Your match</h3>
-          <ul>
-            <li className="friend-row">
-              <UserAvatar
-                className="friend-avatar"
-                userId={opponentOf(currentMatch).user_id}
-                name={opponentOf(currentMatch).username}
-                version={opponentOf(currentMatch).avatar_updated_at}
-              />
-              <span className="friend-who">
-                <span className="friend-name">vs {opponentOf(currentMatch).username}</span>
-                <span className="friend-meta">
-                  {currentMatch.status === 'invited'
-                    ? 'waiting for a reply'
-                    : currentMatch.status === 'ready' ? 'ready to play' : 'in progress'}
-                  {' · '}{formatDuration(currentMatch.duration_seconds)}
-                  {currentMatch.country && ` · ${countryLabel(currentMatch.country)}`}
-                </span>
-              </span>
-              <span className="friend-actions">
-                <Link className="friend-btn primary" to={`/partida/${currentMatch.id}`}>Open</Link>
-                {(currentMatch.status === 'invited' || currentMatch.status === 'ready') && (
-                  <button
-                    type="button"
-                    className="friend-btn"
-                    disabled={disabled}
-                    onClick={() => actions.cancel(currentMatch.id)}
-                  >
-                    {currentMatch.status === 'invited' ? 'Cancel' : 'Leave'}
-                  </button>
-                )}
-              </span>
-            </li>
-          </ul>
-        </section>
-      )}
-
-      {invitations.length > 0 && (
-        <section className="friends-section">
-          <h3>Challenges <span className="friends-count">{invitations.length}</span></h3>
-          <ul>
-            {invitations.map((m) => (
-              <li className="friend-row" key={m.id}>
-                <UserAvatar className="friend-avatar" userId={m.host.user_id} name={m.host.username} version={m.host.avatar_updated_at} />
-                <span className="friend-who">
-                  <span className="friend-name">{m.host.username}</span>
-                  <span className="friend-meta">
-                    challenged you · {formatDuration(m.duration_seconds)} · {m.country_chosen && m.country ? countryLabel(m.country) : 'random country'}
-                  </span>
-                </span>
-                <span className="friend-actions">
-                  <button
-                    type="button"
-                    className="friend-btn primary"
-                    disabled={disabled || Boolean(currentMatch)}
-                    title={currentMatch ? 'Leave your current match first' : undefined}
-                    onClick={() => actions.accept(m.id)}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    type="button"
-                    className="friend-btn"
-                    disabled={disabled}
-                    onClick={() => actions.decline(m.id)}
-                  >
-                    Decline
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
 
       {incoming.length > 0 && (
@@ -353,21 +233,6 @@ export default function FriendsPanel({ loggedIn, friends, matches, history }) {
                 </span>
                 <span className="friend-actions spread">
                   <span className="friend-actions">
-                    <button
-                      type="button"
-                      className="friend-btn primary"
-                      disabled={disabled || Boolean(currentMatch)}
-                      title={currentMatch ? 'Finish or cancel your current match first' : `Challenge ${f.username} to a 1 vs 1`}
-                      aria-expanded={challengeUserId === f.user_id}
-                      onClick={() => {
-                        setConfirmId(null);
-                        // The picker always opens on "random country" (its input is remounted empty).
-                        setCountryId('');
-                        setChallengeUserId((cur) => (cur === f.user_id ? null : f.user_id));
-                      }}
-                    >
-                      Challenge
-                    </button>
                     <Link
                       className="friend-btn"
                       to={`/comparar?con=${encodeURIComponent(f.username)}`}
@@ -398,116 +263,15 @@ export default function FriendsPanel({ loggedIn, friends, matches, history }) {
                       type="button"
                       className="friend-btn"
                       disabled={disabled}
-                      onClick={() => { setChallengeUserId(null); setConfirmId(f.friendship_id); }}
+                      onClick={() => setConfirmId(f.friendship_id)}
                     >
                       Remove
                     </button>
                   )}
                 </span>
-                {challengeUserId === f.user_id && (
-                  <div className="challenge-picker">
-                    <span className="challenge-picker-label" id={`dur-${f.user_id}`}>Match length</span>
-                    <div className="challenge-durations" role="radiogroup" aria-labelledby={`dur-${f.user_id}`}>
-                      {DURATIONS.map((d) => (
-                        <button
-                          key={d}
-                          type="button"
-                          role="radio"
-                          aria-checked={duration === d}
-                          className="challenge-chip"
-                          disabled={disabled}
-                          onClick={() => setDuration(d)}
-                        >
-                          {formatDuration(d)}
-                        </button>
-                      ))}
-                    </div>
-                    <span className="challenge-picker-label" id={`cty-${f.user_id}`}>Country</span>
-                    {countriesFailed && !countries ? (
-                      <p className="challenge-note">
-                        Couldn&apos;t load the countries, so it will be a random one.{' '}
-                        <button type="button" className="match-banner-link" onClick={() => { setCountriesFailed(false); setCountriesAttempt((n) => n + 1); }}>
-                          Try again
-                        </button>
-                      </p>
-                    ) : (
-                      <div className="challenge-country">
-                        <CountryPicker
-                          key={f.user_id}
-                          options={countryOptions}
-                          allLabel="Random country"
-                          ariaLabel={`Country for your challenge to ${f.username}`}
-                          onSelect={setCountryId}
-                        />
-                      </div>
-                    )}
-                    <p className="challenge-note">
-                      {pickedCountry
-                        ? `${pickedCountry.label} it is. ${f.username} sees it in the invitation. `
-                        : `A random country is drawn when ${f.username} accepts. `}
-                      {isUntimed(duration)
-                        ? 'No clock: the first to find every region wins (it ends after 60 min at most).'
-                        : 'Whoever finds more regions in time wins.'}
-                    </p>
-                    <span className="friend-actions">
-                      <button
-                        type="button"
-                        className="friend-btn primary"
-                        disabled={disabled}
-                        onClick={() => actions.challenge(f.username, duration, countryId === '' ? null : countryId)}
-                      >
-                        {actions.busy === 'challenge' ? 'Sending…' : 'Send challenge'}
-                      </button>
-                      <button type="button" className="friend-btn" onClick={() => setChallengeUserId(null)}>
-                        Close
-                      </button>
-                    </span>
-                  </div>
-                )}
               </li>
             ))}
           </ul>
-        </section>
-      )}
-
-      {history && history.total > 0 && (
-        <section className="friends-section">
-          <h3>Match history <span className="friends-count">{history.total}</span></h3>
-          {history.record && (
-            <p className="history-record" aria-label="Your record">
-              <b className="win">{history.record.wins}</b> won ·{' '}
-              <b className="loss">{history.record.losses}</b> lost ·{' '}
-              <b>{history.record.draws}</b> {history.record.draws === 1 ? 'draw' : 'draws'}
-            </p>
-          )}
-          <ul>
-            {history.items.map((h) => (
-              <li className="friend-row" key={h.id}>
-                <UserAvatar className="friend-avatar" userId={h.opponent.user_id} name={h.opponent.username} version={h.opponent.avatar_updated_at} />
-                <span className="friend-who">
-                  <span className="friend-name">
-                    <span className={`history-result ${h.result}`}>{RESULT_LABEL[h.result]}</span>
-                    {' '}vs {h.opponent.username}
-                  </span>
-                  <span className="friend-meta">
-                    <span className="history-score">{h.my_score}–{h.opponent.score}</span>
-                    {' · '}{historyMeta(h)}
-                  </span>
-                </span>
-                <span className="friend-actions">
-                  <Link className="friend-btn" to={`/partida/${h.id}`}>View</Link>
-                </span>
-              </li>
-            ))}
-          </ul>
-          {history.error && (
-            <p className="challenge-note">Couldn&apos;t load more matches. Check your connection.</p>
-          )}
-          {history.hasMore && (
-            <button type="button" className="friend-btn history-more" disabled={history.loadingMore} onClick={history.loadMore}>
-              {history.loadingMore ? 'Loading…' : 'Show more'}
-            </button>
-          )}
         </section>
       )}
 

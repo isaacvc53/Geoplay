@@ -2,17 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CONTINENTS, TOTAL, buildGame, exactMatch, submitMatch, autoWait, formatTime } from './countriesLogic';
 import { createMapEngine } from './mapEngine';
-import '../WorldRegions/WorldRegions.css';   // misma estructura y diseño móvil que «World subdivisions»
+import '../WorldRegions/WorldRegions.css';   // same layout and mobile design as "World subdivisions"
 import './WorldCountries.css';
 
-const nf = new Intl.NumberFormat('es');
+const nf = new Intl.NumberFormat('en');
 const LABEL = Object.fromEntries(CONTINENTS.map((c) => [c.key, c.label]));
 
 export default function WorldCountriesPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [started, setStarted] = useState(false);
-  const [solved, setSolved] = useState(() => new Set());   // la partida vive solo en memoria
+  const [solved, setSolved] = useState(() => new Set());   // the game only lives in memory
   const [ms, setMs] = useState(0);
   const [paused, setPaused] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
@@ -26,7 +26,7 @@ export default function WorldCountriesPage() {
 
   useEffect(() => {
     let alive = true;
-    fetch('/data/world-topology.json').then((r) => { if (!r.ok) throw new Error('No se pudo cargar el mapa.'); return r.json(); })
+    fetch('/data/world-topology.json').then((r) => { if (!r.ok) throw new Error('Could not load the map.'); return r.json(); })
       .then((topo) => alive && setData(buildGame(topo))).catch((e) => alive && setError(e.message));
     return () => { alive = false; };
   }, []);
@@ -49,7 +49,7 @@ export default function WorldCountriesPage() {
   useEffect(() => { if (running) inputRef.current?.focus(); }, [running]);
   useEffect(() => () => clearTimeout(auto.current), []);
 
-  // Aviso si se cierra o recarga con la partida a medias (no se guarda nada).
+  // Warn if the tab is closed or reloaded mid-game (nothing is saved).
   const inGame = started && !gaveUp && !done;
   useEffect(() => {
     if (!inGame || count === 0) return undefined;
@@ -68,7 +68,7 @@ export default function WorldCountriesPage() {
   }
   function start() { resetState(); setStarted(true); }
   function backToStart() { resetState(); setStarted(false); }
-  const confirmLose = () => !inGame || count === 0 || window.confirm('Esto termina la partida actual y perderás tu progreso. ¿Continuar?');
+  const confirmLose = () => !inGame || count === 0 || window.confirm('This ends the current game and you will lose your progress. Continue?');
   function restart() { if (confirmLose()) start(); }
 
   const accept = useCallback((c) => {
@@ -77,7 +77,7 @@ export default function WorldCountriesPage() {
     solvedRef.current = next;
     setSolved(next);
     engine.current?.add([c], true);
-    setFeedback({ kind: 'ok', text: `✓ ${c.nombre} · ${LABEL[c.continente]} — faltan ${TOTAL - next.size}` });
+    setFeedback({ kind: 'ok', text: `✓ ${c.nombre} · ${LABEL[c.continente]} — ${TOTAL - next.size} to go` });
     setText('');
   }, []);
 
@@ -99,13 +99,13 @@ export default function WorldCountriesPage() {
     if (!running || !text.trim()) return;
     const m = submitMatch(text, solvedRef.current);
     if (m.status === 'hit') accept(m.country);
-    else if (m.status === 'dup') { setFeedback({ kind: 'warn', text: `Ya tenías ${m.country.nombre}.` }); setText(''); }
-    else if (m.status === 'ambiguous') setFeedback({ kind: 'warn', text: `${m.count} países coinciden: escribe el nombre completo.` });
-    else setFeedback({ kind: 'bad', text: `No reconozco "${text.trim()}".` });
+    else if (m.status === 'dup') { setFeedback({ kind: 'warn', text: `You already have ${m.country.nombre}.` }); setText(''); }
+    else if (m.status === 'ambiguous') setFeedback({ kind: 'warn', text: `${m.count} countries match: type the full name.` });
+    else setFeedback({ kind: 'bad', text: `I don't recognise "${text.trim()}".` });
   }
 
   function giveUp() {
-    if (!window.confirm('¿Rendirte? Se mostrarán los países que te faltan.')) return;
+    if (!window.confirm('Give up? The countries you missed will be shown.')) return;
     engine.current?.reveal(data.countries.filter((c) => !solvedRef.current.has(c.id)));
     setGaveUp(true);
   }
@@ -118,10 +118,10 @@ export default function WorldCountriesPage() {
   return (
     <div className="worldregions-page worldcountries-page">
       <header className="wr-top">
-        <Link className="btn-back" to="/modo"><span>←</span> Modos</Link>
+        <Link className="btn-back" to="/modo"><span>←</span> Modes</Link>
         <div className="wr-title">
-          <h1>Países del mundo</h1>
-          <p className="subtitle">Escribe los 197 países de memoria y el mapa se irá rellenando.</p>
+          <h1>World countries</h1>
+          <p className="subtitle">Name all 197 countries from memory and the map fills in.</p>
         </div>
       </header>
 
@@ -137,16 +137,16 @@ export default function WorldCountriesPage() {
             <form className="wr-input" onSubmit={submit}>
               <input
                 ref={inputRef} value={text} onChange={onChange} disabled={!running} className={waiting ? 'waiting' : ''}
-                placeholder={running ? 'Escribe un país…' : 'Pulsa «Empezar»'}
-                autoComplete="off" autoCapitalize="off" autoCorrect="off" enterKeyHint="go" spellCheck={false} aria-label="Nombre del país"
+                placeholder={running ? 'Type a country…' : 'Press "Start"'}
+                autoComplete="off" autoCapitalize="off" autoCorrect="off" enterKeyHint="go" spellCheck={false} aria-label="Country name"
               />
-              <button className="wr-btn primary" type="submit" disabled={!running}>Añadir</button>
+              <button className="wr-btn primary" type="submit" disabled={!running}>Add</button>
             </form>
             <div className="wr-actions">
-              <span className="wr-time" title="Tiempo de juego">⏱ {formatTime(ms)}</span>
-              <button className="wr-btn" type="button" disabled={!started || gaveUp || done} onClick={() => setPaused((p) => !p)}>{paused ? 'Seguir' : 'Pausa'}</button>
-              <button className="wr-btn" type="button" disabled={!started || gaveUp || done} onClick={giveUp}>Rendirme</button>
-              <button className="wr-btn" type="button" disabled={!started} onClick={restart}>Reiniciar</button>
+              <span className="wr-time" title="Time played">⏱ {formatTime(ms)}</span>
+              <button className="wr-btn" type="button" disabled={!started || gaveUp || done} onClick={() => setPaused((p) => !p)}>{paused ? 'Resume' : 'Pause'}</button>
+              <button className="wr-btn" type="button" disabled={!started || gaveUp || done} onClick={giveUp}>Give up</button>
+              <button className="wr-btn" type="button" disabled={!started} onClick={restart}>Restart</button>
             </div>
           </div>
           <div className={`wr-feedback ${feedback.kind}`} role="status">{feedback.text || '\u00a0'}</div>
@@ -154,48 +154,48 @@ export default function WorldCountriesPage() {
 
         <div className="wr-body">
           <div className="wr-map">
-            <svg ref={svgRef} aria-label="Mapa mundial de países" />
+            <svg ref={svgRef} aria-label="World map of countries" />
             <div className="wr-tip" ref={tipRef} />
             <div className="wr-tools">
-              <button type="button" aria-label="Acercar" onClick={() => engine.current?.zoomBy(1.6)}>+</button>
-              <button type="button" aria-label="Alejar" onClick={() => engine.current?.zoomBy(1 / 1.6)}>−</button>
-              <button type="button" aria-label="Vista completa" onClick={() => engine.current?.resetView()}>⤢</button>
+              <button type="button" aria-label="Zoom in" onClick={() => engine.current?.zoomBy(1.6)}>+</button>
+              <button type="button" aria-label="Zoom out" onClick={() => engine.current?.zoomBy(1 / 1.6)}>−</button>
+              <button type="button" aria-label="Reset view" onClick={() => engine.current?.resetView()}>⤢</button>
             </div>
-            <div className="wr-hint">Arrastra para mover · rueda o pellizco para zoom</div>
+            <div className="wr-hint">Drag to pan · scroll or pinch to zoom</div>
 
-            {!data && !error && <div className="wr-overlay"><div className="wr-spinner" /><p>Cargando mapa…</p></div>}
+            {!data && !error && <div className="wr-overlay"><div className="wr-spinner" /><p>Loading map…</p></div>}
 
             {data && !started && (
               <div className="wr-overlay start">
                 <div className="wr-card">
-                  <p className="wr-kicker">Los {TOTAL} países del mundo</p>
-                  <button className="wr-btn primary" type="button" onClick={start}>Empezar partida</button>
-                  <p className="wr-note">Cada partida empieza de cero y no se guarda. Los países diminutos (Mónaco, Malta, Maldivas…) aparecen como un punto en el mapa.</p>
+                  <p className="wr-kicker">The {TOTAL} countries of the world</p>
+                  <button className="wr-btn primary" type="button" onClick={start}>Start game</button>
+                  <p className="wr-note">Every game starts from scratch and is not saved. Tiny countries (Monaco, Malta, Maldives…) show up as a dot on the map.</p>
                 </div>
               </div>
             )}
 
             {paused && !done && !gaveUp && (
-              <div className="wr-overlay"><div className="wr-card"><p className="wr-kicker">En pausa</p>
-                <button className="wr-btn primary" type="button" onClick={() => setPaused(false)}>Seguir</button></div></div>
+              <div className="wr-overlay"><div className="wr-card"><p className="wr-kicker">Paused</p>
+                <button className="wr-btn primary" type="button" onClick={() => setPaused(false)}>Resume</button></div></div>
             )}
 
             {(done || gaveUp) && (
               <div className="wr-result">
-                <b>{done ? '¡Los 197, completos!' : 'Te has rendido'}</b>
-                <span>{nf.format(count)} de {nf.format(TOTAL)} · {formatTime(ms)} de juego</span>
-                <button className="wr-btn primary" type="button" onClick={start}>Jugar de nuevo</button>
-                <button className="wr-btn" type="button" onClick={backToStart}>Salir</button>
+                <b>{done ? 'All 197 complete!' : 'You gave up'}</b>
+                <span>{nf.format(count)} of {nf.format(TOTAL)} · {formatTime(ms)} played</span>
+                <button className="wr-btn primary" type="button" onClick={start}>Play again</button>
+                <button className="wr-btn" type="button" onClick={backToStart}>Exit</button>
               </div>
             )}
           </div>
 
           <aside className="wr-side">
-            <div className="wr-side-head"><div className="wr-zone-now"><span>Continentes</span><b>{count}/{TOTAL}</b></div></div>
+            <div className="wr-side-head"><div className="wr-zone-now"><span>Continents</span><b>{count}/{TOTAL}</b></div></div>
             <ul className="wr-countries">
               {perContinent.map((c) => (
                 <li key={c.key}>
-                  <button type="button" className={c.got === c.total ? 'full' : ''} onClick={() => engine.current?.focus(c.key)} title="Ir al continente">
+                  <button type="button" className={c.got === c.total ? 'full' : ''} onClick={() => engine.current?.focus(c.key)} title="Go to continent">
                     <span>{c.label}</span><em>{c.got}/{c.total}</em>
                   </button>
                 </li>

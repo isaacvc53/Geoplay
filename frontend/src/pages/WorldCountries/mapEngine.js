@@ -1,4 +1,4 @@
-// Motor del mapa de países (D3 imperativo). Capas: mar · territorios · acertados · no acertados · fronteras · puntos (países diminutos).
+// Countries map engine (imperative D3). Layers: sea · territories · solved · missed · borders · dots (tiny countries).
 import * as d3 from 'd3';
 import { mesh } from 'topojson-client';
 
@@ -52,8 +52,10 @@ export function createMapEngine({ svg: svgEl, tip: tipEl, topo, feats, countries
     if (drawn.has(c.id + cls)) return;
     drawn.set(c.id + cls, true);
     const hover = (sel) => sel.on('mousemove', (e) => showTip(e, c)).on('mouseleave', hideTip);
-    if (c.feature) hover(layer.append('path').attr('d', path(c.feature)).attr('class', cls + (flash ? ' flash' : '')));
-    if (c.tiny && c.xy) hover(dotsG.append('circle').attr('cx', c.xy[0]).attr('cy', c.xy[1]).attr('r', 5 / k).attr('class', cls + (flash ? ' flash' : '')));
+    // fill/stroke attributes are a fallback: the CSS (.solved / .missed / .dots) wins when it loads, but the colours never depend on it.
+    const fill = cls === 'ok' ? '#c9a24b' : '#a8504a';
+    if (c.feature) hover(layer.append('path').attr('d', path(c.feature)).attr('fill', fill).attr('stroke', '#0e2233').attr('stroke-width', 0.5).attr('class', cls + (flash ? ' flash' : '')));
+    if (c.tiny && c.xy) hover(dotsG.append('circle').attr('cx', c.xy[0]).attr('cy', c.xy[1]).attr('r', 5 / k).attr('fill', fill).attr('stroke', '#0e2233').attr('class', cls + (flash ? ' flash' : '')));
   }
 
   const fit = (x0, y0, x1, y1, pad) => {

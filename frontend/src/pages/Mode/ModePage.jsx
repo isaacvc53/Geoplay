@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MAP_MODES } from './mapModes';
 import './Mode.css';
 
 // Regions shown under "Play by choosing a region".
@@ -44,30 +45,16 @@ export default function ModePage() {
         <section className="mode-section" aria-labelledby="mapa-heading">
           <h2 id="mapa-heading" className="section-title">Play on the map</h2>
           <div className="grid">
-            <Link className="tile featured" to="/mapa-mundial">
-              <div className="featured-content">
-                <span className="tile-code">MAP</span>
-                <div className="t-title">Interactive map</div>
-                <div className="t-desc">Explore the whole globe, zoom in, and pick a country by tapping directly on the map.</div>
-              </div>
-              <div className="t-arrow">→</div>
-            </Link>
-            <Link className="tile featured" to="/mapa-de-paises">
-              <div className="featured-content">
-                <span className="tile-code">CTY</span>
-                <div className="t-title">World countries</div>
-                <div className="t-desc">Name all 197 countries of the world and watch the world map fill in, from memory.</div>
-              </div>
-              <div className="t-arrow">→</div>
-            </Link>
-            <Link className="tile featured" to="/regiones-del-mundo">
-              <div className="featured-content">
-                <span className="tile-code">ADM</span>
-                <div className="t-title">World subdivisions</div>
-                <div className="t-desc">Name every province, state and region on Earth, and watch the map fill in. Pick the whole world or one continent.</div>
-              </div>
-              <div className="t-arrow">→</div>
-            </Link>
+            {MAP_MODES.map((m) => (
+              <Link key={m.to} className="tile featured" to={m.to}>
+                <div className="featured-content">
+                  <span className="tile-code">{m.code}</span>
+                  <div className="t-title">{m.title}</div>
+                  <div className="t-desc">{m.desc}</div>
+                </div>
+                <div className="t-arrow">→</div>
+              </Link>
+            ))}
           </div>
         </section>
 

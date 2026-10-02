@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
 import FriendsPanel from './FriendsPanel';
-import { useMatchHistory } from './useMatchHistory';
 import { useFriends } from './useFriends';
 import { useMyMatches } from './useMyMatches';
 import MatchBanner from './MatchBanner';
@@ -142,6 +141,7 @@ function useAvailableCount() {
 
 export default function MenuPage() {
   const { loggedIn, user, logout } = useAuth();
+  const navigate = useNavigate();
   // "/?panel=friends" opens the friends drawer straight away (used by the compare page).
   const [openDrawer, setOpenDrawer] = useState(() => (
     new URLSearchParams(window.location.search).get('panel') === 'friends' ? 'friends' : null
@@ -150,11 +150,12 @@ export default function MenuPage() {
   const [worldPaths, setWorldPaths] = useState([]);
   const friends = useFriends(loggedIn);
   const matches = useMyMatches(loggedIn);
-  const history = useMatchHistory(loggedIn);
   const lastResult = useLastResult(loggedIn, Boolean(matches.current));
   const availableCount = useAvailableCount();
-  // Badge on the friends icon: friend requests + challenges waiting for an answer.
-  const pendingRequests = (friends.data ? friends.data.incoming.length : 0) + matches.invitations.length;
+  // Badge on the friends icon: friend requests waiting for an answer.
+  const pendingRequests = friends.data ? friends.data.incoming.length : 0;
+  // Badge on the Multiplayer link: challenges waiting for an answer.
+  const pendingChallenges = matches.invitations.length;
 
   // The decorative map is ~1.2 MB of path data: load it in its own chunk.
   useEffect(() => {
@@ -186,11 +187,9 @@ export default function MenuPage() {
 
   // Refresh friends and requests every time the drawer is opened.
   const reloadFriends = friends.reload;
-  const reloadMatches = matches.reload;
-  const reloadHistory = history.reload;
   useEffect(() => {
-    if (openDrawer === 'friends' && loggedIn) { reloadFriends(); reloadMatches(); reloadHistory(); }
-  }, [openDrawer, loggedIn, reloadFriends, reloadMatches, reloadHistory]);
+    if (openDrawer === 'friends' && loggedIn) reloadFriends();
+  }, [openDrawer, loggedIn, reloadFriends]);
 
   const toggle = (name) => setOpenDrawer((cur) => (cur === name ? null : name));
   const close = () => setOpenDrawer(null);
@@ -206,14 +205,19 @@ export default function MenuPage() {
             <span className="word">Geo<i>taria</i></span>
           </a>
           <nav className="mainnav">
-            <a href="#" onClick={noop} className="disabled" aria-disabled="true" tabIndex={-1}>Roadmap</a>
-            <a href="#" onClick={(e) => { e.preventDefault(); setOpenDrawer('friends'); }}>Multiplayer</a>
+            <Link to="/mapas">Maps</Link>
+            <Link to="/multijugador" className="nav-multiplayer">
+              Multiplayer
+              {pendingChallenges > 0 && (
+                <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges === 1 ? '' : 's'}`}>{pendingChallenges}</span>
+              )}
+            </Link>
             <Link to="/mapa-mundial">World map</Link>
             <Link to="/modo">Regions</Link>
             <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
-            <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests or challenges` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
+            <button type="button" className="icon-btn" title={pendingRequests ? `Friends — ${pendingRequests} pending` : 'Friends'} aria-label={pendingRequests ? `Friends, ${pendingRequests} pending requests` : 'Friends'} aria-haspopup="dialog" aria-controls="friendsDrawer" aria-expanded={openDrawer === 'friends'} onClick={() => toggle('friends')}>
               <IconFriends />
               {pendingRequests > 0 && <span className="icon-badge" aria-hidden="true">{pendingRequests}</span>}
             </button>
@@ -235,11 +239,11 @@ export default function MenuPage() {
           </nav>
         </div>
 
-        <MatchBanner matches={matches} lastResult={lastResult} onOpenFriends={() => setOpenDrawer('friends')} />
+        <MatchBanner matches={matches} lastResult={lastResult} onOpenMultiplayer={() => navigate('/multijugador')} />
 
         {/* Friends */}
         <Drawer id="friendsDrawer" label="Friends" title="Friends" open={openDrawer === 'friends'} onClose={close}>
-          <FriendsPanel loggedIn={loggedIn} friends={friends} matches={matches} history={history} />
+          <FriendsPanel loggedIn={loggedIn} friends={friends} />
         </Drawer>
 
         {/* Achievements */}
@@ -288,24 +292,24 @@ export default function MenuPage() {
         </Drawer>
 
         <main className="layout">
-          {/* 1: roadmap */}
-          <a className="panel roadmap soon-card" href="#" onClick={noop} aria-disabled="true" tabIndex={-1}>
-            <div className="roadmap-head">
-              <h2>Roadmap</h2>
-              <span className="pill soon">Coming soon</span>
+          {/* 1: different maps */}
+          <Link className="panel maps-card" to="/mapas">
+            <div className="maps-head">
+              <h2>Different maps</h2>
+              <span className="pill live">Available</span>
             </div>
-            <p className="desc">More ways to play are on the way.</p>
-            <div className="roadmap-list">
-              {['Challenges', 'Achievements'].map((label) => (
-                <div className="roadmap-row" key={label}>
-                  <span className="bullet" /><span className="label">{label}</span><span className="tag">Soon</span>
+            <p className="desc">Pick the map you want to play on.</p>
+            <div className="maps-list">
+              {['Interactive map', 'World countries', 'World subdivisions'].map((label) => (
+                <div className="maps-row" key={label}>
+                  <span className="bullet" /><span className="label">{label}</span>
                 </div>
               ))}
             </div>
-          </a>
+            <span className="maps-cta">See all maps <span aria-hidden="true">→</span></span>
+          </Link>
 
-          {/* 2: multiplayer. Challenges start from the friends drawer; with a match open
-              the card takes you straight back to it. */}
+          {/* 2: multiplayer. Has its own page; with a match open the card takes you straight back to it. */}
           {matches.current && matches.current.status !== 'invited' ? (
             <Link className="panel side-card regions-card" to={`/partida/${matches.current.id}`}>
               <MultiplayerBody
@@ -315,19 +319,13 @@ export default function MenuPage() {
               />
             </Link>
           ) : (
-            <a
-              className="panel side-card regions-card"
-              href="#"
-              aria-haspopup="dialog"
-              aria-controls="friendsDrawer"
-              onClick={(e) => { e.preventDefault(); setOpenDrawer('friends'); }}
-            >
+            <Link className="panel side-card regions-card" to="/multijugador">
               <MultiplayerBody
                 desc="Challenge a friend to a 1 vs 1 on the same country: against the clock or with no time limit."
                 pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : 'Available'}
-                action={loggedIn ? 'Pick a friend →' : 'Sign in to play →'}
+                action={loggedIn ? 'Open multiplayer →' : 'Sign in to play →'}
               />
-            </a>
+            </Link>
           )}
 
           {/* 3: select a country (hero) */}
