@@ -52,6 +52,14 @@ export default function ModePage() {
               </div>
               <div className="t-arrow">→</div>
             </Link>
+            <Link className="tile featured" to="/regiones-del-mundo">
+              <div className="featured-content">
+                <span className="tile-code">ADM</span>
+                <div className="t-title">World subdivisions</div>
+                <div className="t-desc">Name every province, state and region on Earth, and watch the map fill in. Pick the whole world or one continent.</div>
+              </div>
+              <div className="t-arrow">→</div>
+            </Link>
           </div>
         </section>
 
