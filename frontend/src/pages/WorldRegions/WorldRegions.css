@@ -77,9 +77,63 @@
   .wr-countries button:hover{background:var(--g-panel-hover);}
   .wr-countries em{font-style:normal;color:var(--g-muted);font-variant-numeric:tabular-nums;} .wr-countries .full,.wr-countries .full em{color:var(--g-accent-hover);}
 
+  button{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+  .wr-map{height:68vh;height:min(68dvh,640px);}
+  .wr-side{height:68vh;height:min(68dvh,640px);}
+  .wr-hint{text-shadow:0 1px 3px #000;}
+
+  /* ---------- Tablet y móvil: barra compacta fija arriba, mapa y lista a ancho completo ---------- */
   @media (max-width:900px){
-    &{padding:18px 14px 30px;}
-    .wr-toolbar{grid-template-columns:1fr;} .wr-actions{justify-content:flex-start;}
-    .wr-body{grid-template-columns:1fr;} .wr-side{height:320px;} .wr-map{height:58vh;}
+    &{min-height:100vh;min-height:100dvh;padding:14px 14px 28px;
+      padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right));
+      padding-bottom:max(28px,env(safe-area-inset-bottom));}
+    .wr-top{gap:12px;margin-bottom:12px;}
+    .wr-sticky{position:sticky;top:0;z-index:20;margin:0 -14px 10px;padding:8px 14px 2px;background:var(--g-bg);box-shadow:0 8px 14px -10px rgba(0,0,0,.7);}
+    .wr-toolbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:10px 12px;}
+    .wr-progress{grid-column:1 / 3;grid-row:1;}
+    .wr-actions{display:contents;}
+    .wr-time{grid-column:3;grid-row:1;justify-self:end;align-self:center;padding:0;}
+    .wr-input{grid-column:1 / -1;grid-row:2;}
+    .wr-actions .wr-btn{grid-row:3;width:100%;min-height:42px;}
+    .wr-track{height:6px;}
+    .wr-feedback{min-height:30px;padding:7px 2px 8px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .wr-body{grid-template-columns:1fr;}
+    .wr-map{height:58vh;height:clamp(320px,56dvh,560px);min-height:0;}
+    .wr-side{height:auto;}
+    .wr-countries{max-height:min(46dvh,420px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+  }
+
+  /* ---------- Móvil ---------- */
+  @media (max-width:600px){
+    &{padding-top:10px;}
+    .wr-top{flex-wrap:nowrap;align-items:center;}
+    .btn-back{padding:9px 12px;flex:none;min-height:40px;}
+    h1{font-size:23px;line-height:1.15;}
+    .subtitle{display:none;}
+    .wr-count b{font-size:24px;}
+    .wr-input input{font-size:16px;padding:12px;min-height:46px;}   /* 16px evita el zoom automático de iOS */
+    .wr-input .wr-btn{min-width:78px;min-height:46px;}
+    .wr-map{height:50vh;height:clamp(300px,52dvh,480px);}
+    .wr-tools{right:10px;top:10px;gap:8px;}
+    .wr-tools button{width:42px;height:42px;font-size:20px;}
+    .wr-hint{left:10px;bottom:8px;max-width:calc(100% - 20px);}
+
+    .wr-overlay{justify-content:flex-start;overflow:auto;padding:12px;}
+    .wr-card{margin:auto 0;padding:16px;}
+    .wr-kicker{font-size:18px;margin-bottom:12px;}
+    .wr-zone{min-height:62px;padding:10px 12px;}
+    .wr-zone strong{font-size:15px;}
+    .wr-note{font-size:11px;margin-top:12px;}
+
+    .wr-result{left:10px;right:10px;bottom:10px;transform:none;gap:8px;padding:12px;text-align:center;}
+    .wr-result b,.wr-result span{flex-basis:100%;}
+    .wr-result .wr-btn{flex:1 1 40%;min-height:44px;}
+
+    .wr-side-head{flex-direction:row;align-items:flex-end;gap:14px;}
+    .wr-side-head label:first-child{flex:1;min-width:0;}
+    .wr-side-head select{font-size:16px;min-height:44px;}
+    .wr-check{white-space:nowrap;min-height:44px;font-size:13px;}
+    .wr-check input{width:18px;height:18px;}
+    .wr-countries button{min-height:46px;padding:10px 14px;font-size:14px;}
   }
 }

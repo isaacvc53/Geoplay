@@ -36,8 +36,14 @@ EN_OVR={'Lombardia':'Lombardy','Piemonte':'Piedmont',"Valle d'Aosta":'Aosta Vall
 'CALABARZON (Region IV-A)':'Calabarzon','Bicol (Region V)':'Bicol','National Capital Region':'Metro Manila','Ilocos (Region I)':'Ilocos',
 'Cagayan Valley (Region II)':'Cagayan Valley','Central Visayas (Region VII)':'Central Visayas','Western Visayas (Region VI)':'Western Visayas',
 'Cordillera Administrative Region (CAR)':'Cordillera'}
+# Variantes actuales / cooficiales de las provincias españolas (Natural Earth trae nombres antiguos)
+ES_EXTRA={'Lérida':['Lleida'],'Gerona':['Girona'],'Orense':['Ourense'],'La Coruña':['A Coruña','Coruña'],'Bizkaia':['Vizcaya','Bizcaya'],
+'Gipuzkoa':['Guipúzcoa','Guipuzcoa'],'Álava':['Araba','Alava'],'Castellón':['Castelló','Castellón de la Plana'],'Valencia':['València'],
+'Alicante':['Alacant'],'Baleares':['Illes Balears','Islas Baleares','Baleares'],'Las Palmas':['Gran Canaria'],'Santa Cruz de Tenerife':['Tenerife'],
+'Navarra':['Nafarroa','Comunidad Foral de Navarra'],'Asturias':['Principado de Asturias','Asturies'],'Murcia':['Región de Murcia'],
+'Madrid':['Comunidad de Madrid'],'La Rioja':['Rioja'],'Cantabria':['Cantabria']}
 # Países que Natural Earth trocea en niveles inferiores: se funden por el campo `region` (= primer nivel oficial)
-MERGE={'ITA','ESP','FRA','PHL'}
+MERGE={'ITA','FRA','PHL'}   # ESP ya no se funde: se juega por PROVINCIAS (52)
 import unicodedata
 def nk(t): return ''.join(c for c in unicodedata.normalize('NFD',(t or '').lower()) if unicodedata.category(c)!='Mn').strip()
 NES=json.load(open('Geoplay/backend/nombres_es_regiones.json',encoding='utf-8'))   # slug -> {nombre EN: [variantes ES]}
@@ -64,6 +70,7 @@ for i,x in enumerate(rows):
     for slug in ISO2SLUG.get(a2,[]):
         for key in (name,x['name'],x['name_en']):
             alias.update(NES.get(slug,{}).get(nk(key),[]))
+    if a3=='ESP': alias.update(ES_EXTRA.get(x['name'],[]))
     out.append(dict(i=i,k=(a3+'|'+x['region']) if merge else str(x['ne_id']),n=nes,en=name,c=a3,ce=ce_en,z=cont,t=x['type_en'] or '',a='|'.join(sorted(alias))))
 json.dump(out,open('attrs.json','w',encoding='utf-8'),ensure_ascii=False)
 # 2) simplificar, pegar atributos, fundir y exportar TopoJSON (requiere: npm i mapshaper)

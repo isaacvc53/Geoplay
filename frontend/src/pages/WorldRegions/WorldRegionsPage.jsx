@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ZONES, loadWorldRegions, buildScope, exactMatch, submitMatch, autoWait,
-  loadProgress, saveProgress, formatTime,
+  clearLegacyProgress, formatTime,
 } from '../../lib/worldRegions';
 import { createMapEngine } from './mapEngine';
 import './WorldRegions.css';
@@ -13,13 +13,14 @@ export default function WorldRegionsPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [zone, setZone] = useState(null);           // null = pantalla de inicio
-  const [solved, setSolved] = useState(() => loadProgress().solved);
-  const [ms, setMs] = useState(() => loadProgress().ms);
+  const [solved, setSolved] = useState(() => new Set());   // la partida vive solo en memoria
+  const [ms, setMs] = useState(0);
   const [paused, setPaused] = useState(false);
   const [gaveUp, setGaveUp] = useState(false);
   const [feedback, setFeedback] = useState({ text: '', kind: '' });
   const [text, setText] = useState('');
   const [onlyPending, setOnlyPending] = useState(false);
+  useEffect(() => { clearLegacyProgress(); }, []);        // borra el guardado de versiones anteriores
 
   const svgRef = useRef(null), tipRef = useRef(null), inputRef = useRef(null);
   const engine = useRef(null), timer = useRef(null), solvedRef = useRef(solved);
@@ -54,10 +55,14 @@ export default function WorldRegionsPage() {
     timer.current = setInterval(() => setMs((m) => m + 1000), 1000);
     return () => clearInterval(timer.current);
   }, [running]);
+  // Aviso si se cierra o recarga la pestaña con la partida a medias (no se guarda nada).
+  const inGame = Boolean(scope) && !gaveUp && !done;
   useEffect(() => {
-    const t = setTimeout(() => saveProgress(solved, ms), 400);
-    return () => clearTimeout(t);
-  }, [solved, ms]);
+    if (!inGame || count === 0) return undefined;
+    const warn = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [inGame, count]);
   useEffect(() => { if (running) inputRef.current?.focus(); }, [running, scope]);
 
   const accept = useCallback((regions) => {
@@ -104,12 +109,27 @@ export default function WorldRegionsPage() {
     engine.current?.reveal(scope.list.filter((r) => !solvedRef.current.has(r.id)));
     setGaveUp(true);
   }
-  function resetZone() {
-    if (!scope || !window.confirm(`Reset your progress in "${ZONES.find((z) => z.key === zone).label}"?`)) return;
-    const next = new Set(solvedRef.current);
-    scope.list.forEach((r) => next.delete(r.id));
-    solvedRef.current = next; setSolved(next); setGaveUp(false); setFeedback({ text: '', kind: '' });
-    engine.current?.setScope(scope, next);
+  // Nueva partida: siempre desde cero (progreso y cronómetro).
+  function newGame(key) {
+    clearTimeout(auto.current);
+    const empty = new Set();
+    solvedRef.current = empty;
+    setSolved(empty); setMs(0); setPaused(false); setGaveUp(false);
+    setFeedback({ text: '', kind: '' }); setText('');
+    if (key === zone && scope) engine.current?.setScope(scope, empty);   // misma zona: el scope no cambia, hay que redibujar
+    else setZone(key);
+  }
+  const confirmLose = () => !inGame || count === 0 || window.confirm('This will end the current game and you will lose your progress. Continue?');
+  function restart() { if (scope && confirmLose()) newGame(zone); }
+  function pickZone(key) { if (key && key !== zone && confirmLose()) newGame(key); }
+  function backToStart() {
+    clearTimeout(auto.current);
+    const empty = new Set();
+    solvedRef.current = empty;
+    engine.current?.clear();
+    setSolved(empty); setMs(0); setPaused(false); setGaveUp(false);
+    setFeedback({ text: '', kind: '' }); setText('');
+    setZone(null);
   }
 
   // Progreso por país de la zona (lista lateral).
@@ -123,15 +143,12 @@ export default function WorldRegionsPage() {
     return [...m.values()].sort((a, b) => a.name.localeCompare(b.name, 'en'));
   }, [scope, solved]);
 
-  const zoneStats = useMemo(() => {
+  const zoneTotals = useMemo(() => {
     if (!data) return {};
     const out = {};
-    for (const z of ZONES) {
-      const l = data.regions.filter((r) => z.key === 'mundo' || r.zone === z.key);
-      out[z.key] = { total: l.length, got: l.reduce((n, r) => n + (solved.has(r.id) ? 1 : 0), 0) };
-    }
+    for (const z of ZONES) out[z.key] = data.regions.filter((r) => z.key === 'mundo' || r.zone === z.key).length;
     return out;
-  }, [data, solved]);
+  }, [data]);
 
   const pct = total ? Math.round((count / total) * 100) : 0;
 
@@ -165,7 +182,7 @@ export default function WorldRegionsPage() {
             <span className="wr-time" title="Time played">⏱ {formatTime(ms)}</span>
             <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={() => setPaused((p) => !p)}>{paused ? 'Resume' : 'Pause'}</button>
             <button className="wr-btn" type="button" disabled={!scope || gaveUp || done} onClick={giveUp}>Give up</button>
-            <button className="wr-btn" type="button" disabled={!scope} onClick={resetZone}>Reset zone</button>
+            <button className="wr-btn" type="button" disabled={!scope} onClick={restart}>Restart</button>
           </div>
         </div>
         <div className={`wr-feedback ${feedback.kind}`} role="status">{feedback.text || '\u00a0'}</div>
@@ -186,19 +203,18 @@ export default function WorldRegionsPage() {
             {data && !zone && (
               <div className="wr-overlay start">
                 <div className="wr-card">
-                  <p className="wr-kicker">Choose a zone</p>
+                  <p className="wr-kicker">Choose a zone to start a new game</p>
                   <div className="wr-zones">
                     {ZONES.map((z) => {
-                      const s = zoneStats[z.key] || { total: 0, got: 0 };
                       return (
-                        <button key={z.key} type="button" className="wr-zone" onClick={() => setZone(z.key)}>
+                        <button key={z.key} type="button" className="wr-zone" onClick={() => newGame(z.key)}>
                           <strong>{z.label}</strong>
-                          <span>{nf.format(s.got)} / {nf.format(s.total)}</span>
+                          <span>{nf.format(zoneTotals[z.key] || 0)} regions</span>
                         </button>
                       );
                     })}
                   </div>
-                  <p className="wr-note">Your progress is saved in this browser. If several regions share a name (e.g. "Central"), they all fill in at once.</p>
+                  <p className="wr-note">Each game starts from zero and is not saved: finish it, give up or restart. If several regions share a name (e.g. "Central"), they all fill in at once.</p>
                 </div>
               </div>
             )}
@@ -212,7 +228,8 @@ export default function WorldRegionsPage() {
               <div className="wr-result">
                 <b>{done ? 'Zone complete!' : 'You gave up'}</b>
                 <span>{nf.format(count)} of {nf.format(total)} · {formatTime(ms)} played</span>
-                <button className="wr-btn" type="button" onClick={() => { engine.current?.clearMissed(); setGaveUp(false); setZone(null); }}>Change zone</button>
+                <button className="wr-btn primary" type="button" onClick={() => newGame(zone)}>Play again</button>
+                <button className="wr-btn" type="button" onClick={backToStart}>Change zone</button>
               </div>
             )}
           </div>
@@ -220,7 +237,7 @@ export default function WorldRegionsPage() {
           <aside className="wr-side">
             <div className="wr-side-head">
               <label>Zone
-                <select value={zone || ''} onChange={(e) => e.target.value && setZone(e.target.value)} disabled={!data}>
+                <select value={zone || ''} onChange={(e) => pickZone(e.target.value)} disabled={!data}>
                   {!zone && <option value="">—</option>}
                   {ZONES.map((z) => <option key={z.key} value={z.key}>{z.label}</option>)}
                 </select>

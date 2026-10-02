@@ -89,6 +89,7 @@ export function createMapEngine({ svg: svgEl, tip: tipEl, topo, regions }) {
     },
     reveal(list) { for (const r of list) if (!drawn.has(r.id)) drawRegion(r, missedG, 'miss', false); },
     clearMissed() { missedG.selectAll('*').remove(); },
+    clear() { solvedG.selectAll('*').remove(); missedG.selectAll('*').remove(); drawn.clear(); hideTip(); },
     focus(list) {
       if (!list.length) return;
       const bs = list.map((r) => path.bounds(r.feature));

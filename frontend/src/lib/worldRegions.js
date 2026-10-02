@@ -108,16 +108,9 @@ export function autoWait(scope, raw, solved, wordMs = 900, partMs = 500) {
   return wait;
 }
 
-// ---- Progreso guardado (localStorage) ----
-const KEY = 'geotaria.worldRegions.v1';
-export function loadProgress() {
-  try {
-    const d = JSON.parse(localStorage.getItem(KEY) || 'null');
-    return { solved: new Set(Array.isArray(d?.solved) ? d.solved : []), ms: Number(d?.ms) || 0 };
-  } catch { return { solved: new Set(), ms: 0 }; }
-}
-export function saveProgress(solved, ms) {
-  try { localStorage.setItem(KEY, JSON.stringify({ solved: [...solved], ms })); } catch { /* sin espacio / modo privado */ }
+// La partida ya NO se guarda. Solo se borra el progreso que guardaban versiones anteriores.
+export function clearLegacyProgress() {
+  try { localStorage.removeItem('geotaria.worldRegions.v1'); } catch { /* modo privado */ }
 }
 
 export function formatTime(ms) {
