@@ -15,7 +15,19 @@
     --accent-ink:#1a1405;
     /* El canvas lee estos cuatro colores (ver WorldMapCanvas.jsx). */
     --land:#2d5877;
-    --land-hover:#3b6d90;
+    --land-hover:#5b9bc7;
+    --land-dim:#1c3d55;
+    --land-europa:#3b6b94;
+    --land-asia:#2f6479;
+    --land-africa:#3f6d68;
+    --land-america:#2e5b84;
+    --land-oceania:#4a6f8f;
+    --ocean-in:#14405e;
+    --ocean-out:#0a2236;
+    --grid:rgba(147,164,179,0.13);
+    --halo:rgba(110,175,220,0.14);
+    --sphere-edge:rgba(201,162,75,0.45);
+    --hover-glow:rgba(130,190,235,0.85);
     --land-active:#c9a24b;
     --land-line:#0b1a28;
     --land-outline:#f6f1e4;
@@ -55,6 +67,12 @@
     font-size:clamp(20px,2.4vw,26px);
     color:var(--ink);
   }
+  h1::after{ content:''; display:block; width:28px; height:2px; margin-top:5px; background:var(--accent); }
+  .chip{
+    padding:3px 10px; font-size:12px; color:var(--muted); white-space:nowrap;
+    border:1px solid var(--line); background:rgba(18,48,73,0.8);
+  }
+  .chip b{ color:var(--accent); font-weight:600; }
   .coords{
     margin:0 0 0 auto;
     font-size:12px; color:var(--muted); text-align:right;
@@ -152,6 +170,19 @@
   }
   .zoom-controls button:hover{ border-color:var(--accent); color:var(--accent); }
 
+  /* ---------- Leyenda ---------- */
+  .legend{
+    position:absolute; bottom:20px; right:20px; z-index:20;
+    display:flex; gap:14px; padding:8px 12px;
+    font-size:12px; color:var(--muted);
+    background:rgba(18,48,73,0.92); border:1px solid var(--line);
+    pointer-events:none;
+  }
+  .legend span{ display:flex; align-items:center; gap:7px; }
+  .legend .sw{ width:12px; height:12px; display:inline-block; border:1px solid var(--line); }
+  .legend .sw.on{ background:var(--land-europa); }
+  .legend .sw.off{ background:var(--land-dim); }
+
   /* ---------- Ficha del país ---------- */
   .overlay{
     position:fixed; inset:0; background:rgba(3,10,16,0.6);
@@ -168,6 +199,7 @@
     background:var(--panel);
     color:var(--ink);
     border:1px solid var(--line);
+    border-top-color:var(--accent);
     transform:translate(-50%,-48%);
     opacity:0;
     pointer-events:none;
@@ -276,6 +308,8 @@
     .panel-flag{ width:54px; height:38px; }
     .zoom-controls{ bottom:calc(16px + env(safe-area-inset-bottom,0px)); left:14px; }
     .zoom-controls button{ width:44px; height:44px; font-size:18px; }
+    .legend{ bottom:calc(16px + env(safe-area-inset-bottom,0px)); right:14px; gap:10px; padding:6px 10px; font-size:11px; }
+    .chip{ font-size:11px; padding:2px 8px; }
   }
 
   /* Móvil en horizontal: poca altura, cabecera y controles compactos. */
@@ -284,6 +318,7 @@
     h1{ font-size:18px; }
     .btn-back{ padding:5px 10px; }
     .coords{ display:none; }
+    .legend{ bottom:calc(10px + env(safe-area-inset-bottom,0px)); right:14px; }
     .zoom-controls{ bottom:calc(10px + env(safe-area-inset-bottom,0px)); left:14px; }
     .zoom-controls button{ width:36px; height:36px; }
     .panel{ max-height:92vh; max-height:92dvh; }

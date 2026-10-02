@@ -2,6 +2,7 @@ import { useEffect, useImperativeHandle, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { countrySlug } from '../../lib/worldMapSlugs';
 import { findAvailableCountries } from '../../lib/availability';
+import { CONTINENTS } from '../../data/continents';
 
 // Mapa mundial dibujado en <canvas> (no en SVG) con D3 solo para zoom/paneo. Se monta UNA vez dentro de un useEffect y se
 // limpia al desmontar (StrictMode monta/desmonta dos veces en dev).
@@ -17,8 +18,9 @@ import { findAvailableCountries } from '../../lib/availability';
 //    arrastras, y se limita a ~20 veces por segundo; se recalcula al soltar.
 //  - Resolución del canvas limitada por número de píxeles.
 //
-// Estilo plano, igual que el resto de mapas de la web: tierra de un solo color sobre el
-// fondo de la página, sin océano pintado, cuadrícula, halos ni brillos.
+// Aspecto: océano en esfera con cuadrícula discreta, halo de aguas poco profundas, tierra teñida
+// por continente (los países sin datos van más apagados) y brillo al pasar el ratón / abrir país.
+// Todo cuesta pocos trazos por fotograma: la tierra se agrupa en ~6 Path2D, no uno por país.
 //
 // Props:
 //   selected        país actualmente abierto en el panel (para pintarlo "active")
@@ -47,18 +49,23 @@ const PICK_TOLERANCE_TOUCH = 14;
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
-export default function WorldMapCanvas({ selected, onSelect, ref }) {
+// ISO-2 -> continente (clave de CONTINENTS), para teñir la tierra.
+const ISO_TO_CONT = {};
+Object.entries(CONTINENTS).forEach(([key, c]) => c.countries.forEach((r) => { ISO_TO_CONT[r[2].toUpperCase()] = key; }));
+
+export default function WorldMapCanvas({ selected, onSelect, onStats, ref }) {
   const wrapRef = useRef(null);
   const canvasRef = useRef(null);
   const tooltipRef = useRef(null);
   const toastRef = useRef(null);
   const zoomApiRef = useRef(null);
   const onSelectRef = useRef(onSelect);
+  const onStatsRef = useRef(onStats);
   const selectedRef = useRef(selected);
   const setSelectedRef = useRef(null);
   const [status, setStatus] = useState('loading'); // loading | ready | error
 
-  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+  useEffect(() => { onSelectRef.current = onSelect; onStatsRef.current = onStats; }, [onSelect, onStats]);
 
   useImperativeHandle(ref, () => ({
     zoomIn: () => zoomApiRef.current?.zoomIn(),
@@ -95,6 +102,20 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     const LAND_ACTIVE = cssVar('--land-active', '#c9a24b');
     const LAND_LINE = cssVar('--land-line', '#0b1a28');
     const OUTLINE = cssVar('--land-outline', '#f6f1e4');
+    const OCEAN_IN = cssVar('--ocean-in', '#14405e');
+    const OCEAN_OUT = cssVar('--ocean-out', '#0a2236');
+    const LAND_DIM = cssVar('--land-dim', '#1c3d55');
+    const GRID = cssVar('--grid', 'rgba(147,164,179,0.13)');
+    const HALO = cssVar('--halo', 'rgba(110,175,220,0.14)');
+    const SPHERE_EDGE = cssVar('--sphere-edge', 'rgba(201,162,75,0.45)');
+    const HOVER_GLOW = cssVar('--hover-glow', 'rgba(130,190,235,0.85)');
+    const TINTS = {
+      europa: cssVar('--land-europa', '#3b6b94'),
+      asia: cssVar('--land-asia', '#2f6479'),
+      africa: cssVar('--land-africa', '#3f6d68'),
+      america: cssVar('--land-america', '#2e5b84'),
+      oceania: cssVar('--land-oceania', '#4a6f8f'),
+    };
 
     let cancelled = false;
     let frameId = 0;
@@ -123,6 +144,10 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     // Datos dibujables (se rellenan al cargar world-map.json).
     let features = [];
     let allLand = null;
+    let sphere = null;     // contorno de la esfera (océano)
+    let graticule = null;  // cuadrícula de meridianos y paralelos
+    let oceanGrad = null;
+    let groups = [];       // tierra agrupada por tinte: [{ color, path }]
     let availableSlugs = null; // null = "aún sin comprobar": todos cuentan como disponibles
 
     let pointer = null; // posición del ratón relativa al canvas
@@ -136,9 +161,34 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
     }
 
     // ---------- Dibujo ----------
+    // Agrupa la tierra por continente (y aparte los países sin datos) para pintar con pocos trazos.
+    function buildGroups() {
+      const buckets = new Map();
+      features.forEach((f) => {
+        const dim = isUnavailable(f);
+        const key = dim ? '_dim' : (ISO_TO_CONT[f.id] || '_base');
+        if (!buckets.has(key)) buckets.set(key, { color: dim ? LAND_DIM : (TINTS[key] || LAND), path: new Path2D() });
+        buckets.get(key).path.addPath(f.path);
+      });
+      groups = [...buckets.values()];
+    }
+
     function drawLand(u) {
-      ctx.fillStyle = LAND;
-      ctx.fill(allLand);
+      if (sphere) {
+        ctx.fillStyle = oceanGrad;
+        ctx.fill(sphere);
+        ctx.strokeStyle = GRID;
+        ctx.lineWidth = 0.5 * u;
+        ctx.stroke(graticule);
+        ctx.strokeStyle = SPHERE_EDGE;
+        ctx.lineWidth = 1.2 * u;
+        ctx.stroke(sphere);
+      }
+      // Halo de aguas poco profundas: trazo ancho bajo la tierra (la mitad interior queda tapada).
+      ctx.strokeStyle = HALO;
+      ctx.lineWidth = 6 * u;
+      ctx.stroke(allLand);
+      groups.forEach((g) => { ctx.fillStyle = g.color; ctx.fill(g.path); });
       ctx.strokeStyle = LAND_LINE;
       ctx.lineWidth = 0.6 * u;
       ctx.stroke(allLand);
@@ -147,14 +197,20 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
       if (hoverFx.f && hoverFx.a > 0 && !isUnavailable(hoverFx.f)) {
         ctx.globalAlpha = hoverFx.a;
         ctx.fillStyle = LAND_HOVER;
+        ctx.shadowColor = HOVER_GLOW;
+        ctx.shadowBlur = 12 * dpr;
         ctx.fill(hoverFx.f.path);
+        ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
         ctx.stroke(hoverFx.f.path);
       }
       if (activeFx.f && activeFx.a > 0) {
         ctx.globalAlpha = activeFx.a;
         ctx.fillStyle = LAND_ACTIVE;
+        ctx.shadowColor = LAND_ACTIVE;
+        ctx.shadowBlur = 22 * dpr;
         ctx.fill(activeFx.f.path);
+        ctx.shadowBlur = 0;
         ctx.globalAlpha = 1;
         ctx.stroke(activeFx.f.path);
       }
@@ -514,6 +570,20 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
         allLand = new Path2D();
         features.forEach((f) => allLand.addPath(f.path));
 
+        // Esfera y cuadrícula con la misma proyección que el SVG original (ver build-world-map.py).
+        const pr = worldData.projection || {};
+        const proj = d3.geoEqualEarth()
+          .rotate([-(pr.rotate ?? 12.65), 0])
+          .scale(pr.scale ?? 305.73)
+          .translate(pr.translate ?? [mapW / 2, mapH / 2]);
+        const geoPath = d3.geoPath(proj);
+        sphere = new Path2D(geoPath({ type: 'Sphere' }));
+        graticule = new Path2D(geoPath(d3.geoGraticule10()));
+        oceanGrad = ctx.createRadialGradient(mapW / 2, mapH / 2, 0, mapW / 2, mapH / 2, mapW * 0.55);
+        oceanGrad.addColorStop(0, OCEAN_IN);
+        oceanGrad.addColorStop(1, OCEAN_OUT);
+        buildGroups();
+
         // Caja envolvente de cada país (prefiltro del hit-test), medida con un path
         // temporal fuera de pantalla.
         const NS = 'http://www.w3.org/2000/svg';
@@ -546,6 +616,8 @@ export default function WorldMapCanvas({ selected, onSelect, ref }) {
           .then((slugs) => {
             if (cancelled) return;
             availableSlugs = slugs;
+            buildGroups();
+            onStatsRef.current?.({ available: features.filter((f) => !isUnavailable(f)).length, total: features.length });
             hovered = null; // fuerza a recalcular cursor/tooltip
             needPick = true;
             schedule();

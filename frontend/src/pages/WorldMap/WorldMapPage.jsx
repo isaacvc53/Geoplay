@@ -11,6 +11,7 @@ export default function WorldMapPage() {
   const canvasRef = useRef(null);
   const closeBtnRef = useRef(null);
   const [selected, setSelected] = useState(null);
+  const [stats, setStats] = useState(null);
 
   const closePanel = useCallback(() => setSelected(null), []);
 
@@ -48,15 +49,21 @@ export default function WorldMapPage() {
             <span className="arrow">←</span> Main menu
           </Link>
           <h1>Atlas World</h1>
+          {stats && <span className="chip"><b>{stats.available}</b> / {stats.total} playable</span>}
           <p className="coords">Drag to pan · scroll to zoom · select a country</p>
         </header>
 
-        <WorldMapCanvas ref={canvasRef} selected={selected} onSelect={setSelected} />
+        <WorldMapCanvas ref={canvasRef} selected={selected} onSelect={setSelected} onStats={setStats} />
 
         <div className="zoom-controls">
           <button aria-label="Zoom in" onClick={() => canvasRef.current?.zoomIn()}>+</button>
           <button aria-label="Zoom out" onClick={() => canvasRef.current?.zoomOut()}>–</button>
           <button aria-label="Reset zoom" onClick={() => canvasRef.current?.reset()}>⟲</button>
+        </div>
+
+        <div className="legend" aria-hidden="true">
+          <span><i className="sw on" />Playable</span>
+          <span><i className="sw off" />Coming soon</span>
         </div>
       </div>
 
