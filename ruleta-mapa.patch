@@ -1,6 +1,6 @@
 diff -ruN a/frontend/src/lib/worldMapData.js b/frontend/src/lib/worldMapData.js
 --- a/frontend/src/lib/worldMapData.js	1970-01-01 00:00:00.000000000 +0000
-+++ b/frontend/src/lib/worldMapData.js	2026-10-02 20:19:29.198957843 +0000
++++ b/frontend/src/lib/worldMapData.js	2026-10-02 21:06:25.428885438 +0000
 @@ -0,0 +1,25 @@
 +// Países del mapa mundial (public/data/world-map.json) para dibujarlos como siluetas,
 +// p. ej. en la ruleta del sorteo de país. Se descarga UNA vez por pestaña y se comparte:
@@ -29,7 +29,7 @@ diff -ruN a/frontend/src/lib/worldMapData.js b/frontend/src/lib/worldMapData.js
 +}
 diff -ruN a/frontend/src/pages/Match/CountryRoulette.jsx b/frontend/src/pages/Match/CountryRoulette.jsx
 --- a/frontend/src/pages/Match/CountryRoulette.jsx	2026-10-02 20:19:29.211575901 +0000
-+++ b/frontend/src/pages/Match/CountryRoulette.jsx	2026-10-02 20:19:29.212655685 +0000
++++ b/frontend/src/pages/Match/CountryRoulette.jsx	2026-10-02 21:06:25.453549539 +0000
 @@ -1,17 +1,23 @@
 -import { useEffect, useRef, useState } from 'react';
 -import { COUNTRY_NAMES } from '../../lib/countryNames';
@@ -273,8 +273,25 @@ diff -ruN a/frontend/src/pages/Match/CountryRoulette.jsx b/frontend/src/pages/Ma
  }
 diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.css
 --- a/frontend/src/pages/Match/Match.css	2026-10-02 20:19:29.226072943 +0000
-+++ b/frontend/src/pages/Match/Match.css	2026-10-02 20:19:29.227293873 +0000
-@@ -93,60 +93,56 @@
++++ b/frontend/src/pages/Match/Match.css	2026-10-02 21:06:25.466450303 +0000
+@@ -14,7 +14,7 @@
+ 
+   min-height:100vh;
+   display:flex; align-items:flex-start; justify-content:center;
+-  padding:48px 24px;
++  padding:28px 24px;
+   box-sizing:border-box;
+ }
+ .match-page *{ box-sizing:border-box; }
+@@ -23,6 +23,7 @@
+ 
+ .match-page .mp-card{
+   width:100%; max-width:560px;
++  transition:max-width .35s ease;
+   border:1px solid var(--line);
+   background:#123049;
+   box-shadow:0 20px 48px rgba(3,9,15,.6);
+@@ -93,60 +94,67 @@
    to{ opacity:1; transform:none; }
  }
  
@@ -327,10 +344,18 @@ diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.
 -  position:absolute; left:0; right:0; top:var(--reel-h); height:var(--reel-h);
 -  border-top:1px solid rgba(201,162,75,.55); border-bottom:1px solid rgba(201,162,75,.55);
 -  pointer-events:none; transition:opacity .4s ease;
--}
--.match-page .mp-roulette.settled .mp-reel-sel{ opacity:0; }
 +/* ---- country roulette (the random country being drawn on the world map) ---- */
-+.match-page .mp-roulette{ gap:10px; transition:box-shadow .9s ease-out; }
++/* The card widens while the world map is on screen, so the map is big. */
++.match-page .mp-card:has(.mp-roulette){ max-width:880px; gap:14px; padding-top:22px; padding-bottom:24px; }
++/* players in one compact row while the map is up, to leave the height to the map */
++.match-page .mp-card:has(.mp-roulette) .mp-versus{ padding-bottom:12px; gap:10px; }
++.match-page .mp-card:has(.mp-roulette) .mp-player{ flex-direction:row; justify-content:center; flex-wrap:wrap; gap:2px 10px; }
++.match-page .mp-card:has(.mp-roulette) .mp-avatar{ width:40px; height:40px; font-size:16px; margin-bottom:0; }
++.match-page .mp-card:has(.mp-roulette) .mp-player-name{ font-size:16px; max-width:40%; }
++.match-page .mp-card:has(.mp-roulette) .mp-vs{ font-size:20px; }
++.match-page .mp-card:has(.mp-roulette) .mp-state{ gap:10px; }
++.match-page .mp-card:has(.mp-roulette) .mp-state h2{ font-size:22px; }
++.match-page .mp-roulette{ gap:8px; padding:16px 10px 20px; transition:box-shadow .9s ease-out; }
 +.match-page .mp-roulette.landed,
 +.match-page .mp-roulette.settled{
 +  box-shadow:0 0 0 1px rgba(217,182,97,.5), 0 0 28px rgba(217,182,97,.22);
@@ -338,8 +363,10 @@ diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.
 +.match-page .mp-roulette.landed{ transition-duration:.35s; }
 +.match-page .mp-worldmap{
 +  width:100%; height:auto; display:block; aspect-ratio:1620 / 745;
++  max-height:40vh; /* on short screens it shrinks instead of pushing the buttons off screen */
 +  animation:mpReveal .5s ease both;
-+}
+ }
+-.match-page .mp-roulette.settled .mp-reel-sel{ opacity:0; }
 +.match-page .mp-land{
 +  fill:#27475f; stroke:#123049; stroke-width:.6px; vector-effect:non-scaling-stroke;
 +  transition:fill .22s ease, opacity .22s ease;
@@ -383,8 +410,12 @@ diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.
  .match-page .mp-sr{
    position:absolute; width:1px; height:1px; overflow:hidden;
    clip:rect(0 0 0 0); white-space:nowrap;
-@@ -231,14 +227,15 @@
+@@ -229,16 +237,19 @@
+ @media (max-width:520px){
+   .match-page{ padding:20px 12px; }
    .match-page .mp-card{ padding:22px 18px 26px; }
++  .match-page .mp-card:has(.mp-roulette){ padding:20px 8px 24px; }
++  .match-page .mp-roulette{ padding:14px 4px 18px; }
    .match-page .mp-avatar{ width:52px; height:52px; font-size:20px; }
    .match-page .mp-player-name{ font-size:16px; }
 -  .match-page .mp-roulette{ --reel-h:64px; }
@@ -403,7 +434,7 @@ diff -ruN a/frontend/src/pages/Match/Match.css b/frontend/src/pages/Match/Match.
    .match-page .mp-count.go .mp-count-num{ animation:none; }
 diff -ruN a/frontend/src/pages/Match/MatchPage.jsx b/frontend/src/pages/Match/MatchPage.jsx
 --- a/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 20:19:29.218783316 +0000
-+++ b/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 20:19:29.220280249 +0000
++++ b/frontend/src/pages/Match/MatchPage.jsx	2026-10-02 21:06:25.460118071 +0000
 @@ -9,27 +9,32 @@
  import { createServerClock } from './serverClock';
  import PlayScreen from './PlayScreen';
@@ -518,7 +549,7 @@ diff -ruN a/frontend/src/pages/Match/MatchPage.jsx b/frontend/src/pages/Match/Ma
              </button>
 diff -ruN a/frontend/src/pages/Match/autoStart.js b/frontend/src/pages/Match/autoStart.js
 --- a/frontend/src/pages/Match/autoStart.js	1970-01-01 00:00:00.000000000 +0000
-+++ b/frontend/src/pages/Match/autoStart.js	2026-10-02 20:19:29.205596820 +0000
++++ b/frontend/src/pages/Match/autoStart.js	2026-10-02 21:06:25.438065765 +0000
 @@ -0,0 +1,13 @@
 +// Quick-match rooms start by themselves (no Start button). The room learns it from the
 +// navigation state; this remembers it for the tab, so a reload of the room doesn't bring
@@ -535,7 +566,7 @@ diff -ruN a/frontend/src/pages/Match/autoStart.js b/frontend/src/pages/Match/aut
 +}
 diff -ruN a/frontend/src/pages/Match/matchText.js b/frontend/src/pages/Match/matchText.js
 --- a/frontend/src/pages/Match/matchText.js	2026-10-02 20:19:29.233712024 +0000
-+++ b/frontend/src/pages/Match/matchText.js	2026-10-02 20:19:29.234909595 +0000
++++ b/frontend/src/pages/Match/matchText.js	2026-10-02 21:06:25.473086232 +0000
 @@ -3,6 +3,9 @@
  
  export const DURATIONS = [60, 120, 180, 300, 0]; // 0 = no time limit
@@ -548,7 +579,7 @@ diff -ruN a/frontend/src/pages/Match/matchText.js b/frontend/src/pages/Match/mat
  export const isUntimed = (seconds) => seconds === UNTIMED;
 diff -ruN a/frontend/src/pages/Multiplayer/QuickMatch.jsx b/frontend/src/pages/Multiplayer/QuickMatch.jsx
 --- a/frontend/src/pages/Multiplayer/QuickMatch.jsx	2026-10-02 20:19:29.248847944 +0000
-+++ b/frontend/src/pages/Multiplayer/QuickMatch.jsx	2026-10-02 20:19:29.250065654 +0000
++++ b/frontend/src/pages/Multiplayer/QuickMatch.jsx	2026-10-02 21:06:25.488999117 +0000
 @@ -1,9 +1,10 @@
  import { useState } from 'react';
  import { formatElapsed } from '../Match/matchText';
@@ -575,7 +606,7 @@ diff -ruN a/frontend/src/pages/Multiplayer/QuickMatch.jsx b/frontend/src/pages/M
              {queue.busy ? 'Searching…' : 'Find an opponent'}
 diff -ruN a/frontend/src/pages/Multiplayer/useMatchQueue.js b/frontend/src/pages/Multiplayer/useMatchQueue.js
 --- a/frontend/src/pages/Multiplayer/useMatchQueue.js	2026-10-02 20:19:29.240992897 +0000
-+++ b/frontend/src/pages/Multiplayer/useMatchQueue.js	2026-10-02 20:19:29.242071985 +0000
++++ b/frontend/src/pages/Multiplayer/useMatchQueue.js	2026-10-02 21:06:25.482050718 +0000
 @@ -2,6 +2,7 @@
  import { useNavigate } from 'react-router-dom';
  import { api } from '../../lib/api';

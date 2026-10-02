@@ -14,7 +14,7 @@
 
   min-height:100vh;
   display:flex; align-items:flex-start; justify-content:center;
-  padding:48px 24px;
+  padding:28px 24px;
   box-sizing:border-box;
 }
 .match-page *{ box-sizing:border-box; }
@@ -23,6 +23,7 @@
 
 .match-page .mp-card{
   width:100%; max-width:560px;
+  transition:max-width .35s ease;
   border:1px solid var(--line);
   background:#123049;
   box-shadow:0 20px 48px rgba(3,9,15,.6);
@@ -94,7 +95,17 @@
 }
 
 /* ---- country roulette (the random country being drawn on the world map) ---- */
-.match-page .mp-roulette{ gap:10px; transition:box-shadow .9s ease-out; }
+/* The card widens while the world map is on screen, so the map is big. */
+.match-page .mp-card:has(.mp-roulette){ max-width:880px; gap:14px; padding-top:22px; padding-bottom:24px; }
+/* players in one compact row while the map is up, to leave the height to the map */
+.match-page .mp-card:has(.mp-roulette) .mp-versus{ padding-bottom:12px; gap:10px; }
+.match-page .mp-card:has(.mp-roulette) .mp-player{ flex-direction:row; justify-content:center; flex-wrap:wrap; gap:2px 10px; }
+.match-page .mp-card:has(.mp-roulette) .mp-avatar{ width:40px; height:40px; font-size:16px; margin-bottom:0; }
+.match-page .mp-card:has(.mp-roulette) .mp-player-name{ font-size:16px; max-width:40%; }
+.match-page .mp-card:has(.mp-roulette) .mp-vs{ font-size:20px; }
+.match-page .mp-card:has(.mp-roulette) .mp-state{ gap:10px; }
+.match-page .mp-card:has(.mp-roulette) .mp-state h2{ font-size:22px; }
+.match-page .mp-roulette{ gap:8px; padding:16px 10px 20px; transition:box-shadow .9s ease-out; }
 .match-page .mp-roulette.landed,
 .match-page .mp-roulette.settled{
   box-shadow:0 0 0 1px rgba(217,182,97,.5), 0 0 28px rgba(217,182,97,.22);
@@ -102,6 +113,7 @@
 .match-page .mp-roulette.landed{ transition-duration:.35s; }
 .match-page .mp-worldmap{
   width:100%; height:auto; display:block; aspect-ratio:1620 / 745;
+  max-height:40vh; /* on short screens it shrinks instead of pushing the buttons off screen */
   animation:mpReveal .5s ease both;
 }
 .match-page .mp-land{
@@ -225,6 +237,8 @@
 @media (max-width:520px){
   .match-page{ padding:20px 12px; }
   .match-page .mp-card{ padding:22px 18px 26px; }
+  .match-page .mp-card:has(.mp-roulette){ padding:20px 8px 24px; }
+  .match-page .mp-roulette{ padding:14px 4px 18px; }
   .match-page .mp-avatar{ width:52px; height:52px; font-size:20px; }
   .match-page .mp-player-name{ font-size:16px; }
   .match-page .mp-count{ width:148px; height:148px; }
