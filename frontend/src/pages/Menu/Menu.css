@@ -515,3 +515,6 @@
   }
 
 }
+
+.menu-page .ach-preview{ gap:8px; margin:14px 0 0; }
+.menu-page .ach-preview .badge-slot{ opacity:.7; }
