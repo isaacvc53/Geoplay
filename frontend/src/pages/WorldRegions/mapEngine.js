@@ -14,8 +14,6 @@ const VIEWS = {
   oceania: { rot: -175, box: [[110, -48], [240, 25]] },
 };
 
-const hash = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 360; return h; };
-const colorFor = (r) => `hsl(${hash(r.a3)}, 52%, ${44 + (r.idx % 3) * 6}%)`;
 
 export function createMapEngine({ svg: svgEl, tip: tipEl, topo, regions }) {
   const svg = d3.select(svgEl).attr('viewBox', `0 0 ${W} ${H}`);
@@ -55,7 +53,6 @@ export function createMapEngine({ svg: svgEl, tip: tipEl, topo, regions }) {
   function drawRegion(r, parent, cls, flash) {
     const p = parent.append('path').datum(r).attr('d', path(r.feature)).attr('class', cls + (flash ? ' flash' : ''))
       .on('mousemove', (e, d) => showTip(e, d)).on('mouseleave', hideTip);
-    if (cls === 'ok') p.style('fill', colorFor(r));
     return p;
   }
 

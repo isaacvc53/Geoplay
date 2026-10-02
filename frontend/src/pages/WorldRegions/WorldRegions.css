@@ -41,8 +41,8 @@
   .base path{stroke:#16384f;stroke-width:.4;vector-effect:non-scaling-stroke;}
   .base path.in{fill:#17415f;} .base path.out{fill:#10293b;}
   .inner{fill:none;stroke:#2f6489;stroke-width:.45;vector-effect:non-scaling-stroke;pointer-events:none;}
-  .border{fill:none;stroke:#7fa6c4;stroke-width:.9;vector-effect:non-scaling-stroke;pointer-events:none;}
-  .solved path{stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
+  .border{fill:none;stroke:#4a7a9c;stroke-width:.55;stroke-opacity:.6;vector-effect:non-scaling-stroke;pointer-events:none;}
+  .solved path{fill:#4fae8a;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
   .solved path:hover{filter:brightness(1.25);}
   .missed path{fill:#b4674a;stroke:#0e2233;stroke-width:.5;vector-effect:non-scaling-stroke;}
   .missed path:hover{fill:#d98a69;}
