@@ -447,7 +447,7 @@
            />
          ) : (
 --- a/frontend/src/pages/Match/MatchPlay.css	2026-10-02 08:34:09.000000000 +0000
-+++ b/frontend/src/pages/Match/MatchPlay.css	2026-10-02 19:25:34.609987766 +0000
++++ b/frontend/src/pages/Match/MatchPlay.css	2026-10-02 19:28:25.656912126 +0000
 @@ -90,6 +90,49 @@
  .country-page .mpg-split .sw.rival{ background:var(--rival); }
  .country-page .mpg-split .sw.none{ background:var(--missing); }
@@ -455,10 +455,10 @@
 +/* ---- two maps: mine (interactive) + the rival's (read-only, live), HALF AND HALF ----
 +   Both panels share the free height with `flex:1 1 0` and `min-height:0`: the single-player
 +   .map-area has a min-height of 40dvh that would push two maps past the screen and cut them. */
-+.country-page .mpg .maps{ flex:1 1 0; min-height:0; display:flex; flex-direction:row; }
-+.country-page .mpg .maps .map-area,
-+.country-page .mpg .rival-area{ flex:1 1 0; min-width:0; min-height:0; height:auto; }
-+.country-page .mpg .rival-area{
++.country-page.mpg .maps{ flex:1 1 0; min-height:0; display:flex; flex-direction:row; }
++.country-page.mpg .maps .map-area,
++.country-page.mpg .rival-area{ flex:1 1 0; min-width:0; min-height:0; height:auto; }
++.country-page.mpg .rival-area{
 +  position:relative;
 +  background:radial-gradient(ellipse at 50% 42%, #17415f 0%, #0d2738 58%, #081a28 100%);
 +  border-top:1px solid var(--line); border-left:1px solid var(--line);
@@ -466,33 +466,33 @@
 +}
 +/* Pinned to its panel, so its size is always exactly half the area. Nothing to click or drag:
 +   it only shows what the rival found. */
-+.country-page .mpg .rival-map{
++.country-page.mpg .rival-map{
 +  position:absolute; inset:0; width:100%; height:100%; display:block;
 +  pointer-events:none; user-select:none;
 +}
-+.country-page .mpg .rival-map .country:hover{ fill:var(--map-land); }
-+.country-page .mpg .rival-map .country.rival-found:hover{ fill:var(--rival); filter:none; }
++.country-page.mpg .rival-map .country:hover{ fill:var(--map-land); }
++.country-page.mpg .rival-map .country.rival-found:hover{ fill:var(--rival); filter:none; }
 +
-+.country-page .mpg .map-tag{
++.country-page.mpg .map-tag{
 +  position:absolute; top:10px; right:12px; z-index:2; max-width:calc(100% - 24px);
 +  padding:3px 9px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 +  font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
 +  background:rgba(8,22,34,.72); border:1px solid var(--line); color:var(--muted);
 +  pointer-events:none;
 +}
-+.country-page .mpg .map-tag.me{ color:var(--found); border-color:var(--found); }
-+.country-page .mpg .map-tag.rival{ color:var(--rival); border-color:var(--rival); }
++.country-page.mpg .map-tag.me{ color:var(--found); border-color:var(--found); }
++.country-page.mpg .map-tag.rival{ color:var(--rival); border-color:var(--rival); }
 +
 +@media (max-width:720px){
 +  /* Phone: my map on top, the rival's right below, each one half of the height. */
-+  .country-page .mpg .maps{ flex-direction:column; }
-+  .country-page .mpg .rival-area{ border-left:0; }
-+  .country-page .mpg .map-tag{ top:8px; right:8px; font-size:10px; padding:2px 7px; }
++  .country-page.mpg .maps{ flex-direction:column; }
++  .country-page.mpg .rival-area{ border-left:0; }
++  .country-page.mpg .map-tag{ top:8px; right:8px; font-size:10px; padding:2px 7px; }
 +}
 +@media (max-height:520px) and (orientation:landscape){
 +  /* Phone on its side: back to side by side. */
-+  .country-page .mpg .maps{ flex-direction:row; }
-+  .country-page .mpg .rival-area{ border-left:1px solid var(--line); }
++  .country-page.mpg .maps{ flex-direction:row; }
++  .country-page.mpg .rival-area{ border-left:1px solid var(--line); }
 +}
 +
  @media (max-width:720px){
