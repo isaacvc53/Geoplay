@@ -1,64 +1,54 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import '../Menu/Menu.css';
 import './Maps.css';
 
-// Hub with EVERYTHING that is not the main atlas, all selectable from here:
-//   1. the countries of the world   (map or list)
-//   2. provinces / states / regions (whole world or one continent)
-//   3. the divisions of one country (pick it on the globe or by continent)
-//   4. multiplayer  5. statistics
+// Hub with EVERYTHING that is not the main atlas. No selectors: every line is a direct link.
+// To add a new mode, just add a row to one of the groups below.
 
-const ZONES = [
-  { key: 'mundo', label: 'World' },
-  { key: 'europa', label: 'Europe' },
-  { key: 'asia', label: 'Asia' },
-  { key: 'africa', label: 'Africa' },
-  { key: 'america', label: 'Americas' },
-  { key: 'oceania', label: 'Oceania' },
+const GROUPS = [
+  {
+    title: 'Countries of the world',
+    desc: 'Name all 197 countries.',
+    items: [
+      { label: 'On the map', hint: 'The map fills in as you play', to: '/mapa-de-paises' },
+      { label: 'As a list', hint: 'Type them one by one', to: '/paises-del-mundo' },
+    ],
+  },
+  {
+    title: 'Provinces & regions',
+    desc: 'Every state, province and region.',
+    items: [
+      { label: 'Whole world', to: '/regiones-del-mundo?zona=mundo' },
+      { label: 'Europe', to: '/regiones-del-mundo?zona=europa' },
+      { label: 'Asia', to: '/regiones-del-mundo?zona=asia' },
+      { label: 'Africa', to: '/regiones-del-mundo?zona=africa' },
+      { label: 'Americas', to: '/regiones-del-mundo?zona=america' },
+      { label: 'Oceania', to: '/regiones-del-mundo?zona=oceania' },
+    ],
+  },
+  {
+    title: 'One country',
+    desc: 'The divisions of a single country.',
+    items: [
+      { label: 'Europe', to: '/paises?zona=europa' },
+      { label: 'Asia', to: '/paises?zona=asia' },
+      { label: 'Africa', to: '/paises?zona=africa' },
+      { label: 'Americas', to: '/paises?zona=america' },
+      { label: 'Oceania', to: '/paises?zona=oceania' },
+    ],
+  },
+  {
+    title: 'Friends & progress',
+    desc: 'Play with others and track yourself.',
+    items: [
+      { label: 'Multiplayer', hint: '1 vs 1 against a friend', to: '/multijugador' },
+      { label: 'Statistics', hint: 'Your profile and records', to: '/perfil' },
+      { label: 'Compare with a friend', to: '/comparar' },
+    ],
+  },
 ];
-
-const COUNTRY_VIEWS = [
-  { key: 'map', label: 'Map', to: '/mapa-de-paises', hint: 'The world map fills in as you name each country.' },
-  { key: 'list', label: 'List', to: '/paises-del-mundo', hint: 'Type them one by one and tick off the continent lists.' },
-];
-
-function Rings() {
-  return (
-    <svg className="mx-rings" viewBox="0 0 400 400" aria-hidden="true">
-      <g fill="none" stroke="currentColor" strokeWidth="1">
-        <circle cx="200" cy="200" r="190" />
-        <circle cx="200" cy="200" r="140" />
-        <circle cx="200" cy="200" r="90" />
-        <circle cx="200" cy="200" r="40" />
-        <path d="M200 0v400M0 200h400" />
-        <path d="M60 60l280 280M340 60L60 340" opacity=".5" />
-      </g>
-    </svg>
-  );
-}
-
-// Radio group drawn as chips (native inputs, so the keyboard works).
-function Choice({ name, label, options, value, onChange }) {
-  return (
-    <div className="mx-choice" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
-        <label className="mx-chip" key={o.key}>
-          <input type="radio" name={name} checked={value === o.key} onChange={() => onChange(o.key)} />
-          <span>{o.label}</span>
-        </label>
-      ))}
-    </div>
-  );
-}
 
 export default function MapsPage() {
-  const navigate = useNavigate();
-  const [view, setView] = useState('map');
-  const [zone, setZone] = useState('mundo');
-  const currentView = COUNTRY_VIEWS.find((v) => v.key === view);
-  const continents = ZONES.filter((z) => z.key !== 'mundo');
-
   return (
     <div className="menu-page maps-page">
       <div className="chart-ground" aria-hidden="true" />
@@ -66,89 +56,31 @@ export default function MapsPage() {
         <div className="mx-shell">
           <Link className="btn-back mx-back" to="/"><span>←</span> Main menu</Link>
 
-          <header className="mx-hero">
-            <Rings />
-            <div className="mx-hero-text">
-              <span className="mx-eyebrow">More</span>
-              <h1>More ways to <i>play</i></h1>
-              <p>Every mode in one place: pick what you want to name, challenge a friend or check your progress.</p>
-            </div>
+          <header className="mx-head">
+            <h1>More ways to <i>play</i></h1>
+            <p>Everything except the atlas.</p>
           </header>
 
           <div className="mx-grid">
-            {/* 1 · countries of the world */}
-            <section className="mx-card" aria-labelledby="mx-t1">
-              <span className="mx-num">01</span>
-              <h2 id="mx-t1">Countries of the world</h2>
-              <p className="mx-desc">Name all 197 countries.</p>
-              <div className="mx-controls">
-                <span className="mx-label">View</span>
-                <Choice name="view" label="View" options={COUNTRY_VIEWS} value={view} onChange={setView} />
-                <p className="mx-hint">{currentView.hint}</p>
-              </div>
-              <button type="button" className="mx-btn primary" onClick={() => navigate(currentView.to)}>
-                Start <span aria-hidden="true">→</span>
-              </button>
-            </section>
-
-            {/* 2 · provinces, states and regions */}
-            <section className="mx-card" aria-labelledby="mx-t2">
-              <span className="mx-num">02</span>
-              <h2 id="mx-t2">Provinces &amp; regions</h2>
-              <p className="mx-desc">Every state, province and region on Earth.</p>
-              <div className="mx-controls">
-                <span className="mx-label">Where</span>
-                <Choice name="zone" label="Zone" options={ZONES} value={zone} onChange={setZone} />
-                <p className="mx-hint">Pick the whole world or one continent at a time.</p>
-              </div>
-              <button type="button" className="mx-btn primary" onClick={() => navigate(`/regiones-del-mundo?zona=${zone}`)}>
-                Start <span aria-hidden="true">→</span>
-              </button>
-            </section>
-
-            {/* 3 · one country */}
-            <section className="mx-card" aria-labelledby="mx-t3">
-              <span className="mx-num">03</span>
-              <h2 id="mx-t3">One country</h2>
-              <p className="mx-desc">Name the divisions of a single country.</p>
-              <div className="mx-controls">
-                <span className="mx-label">Find it by continent</span>
-                <div className="mx-choice">
-                  {continents.map((z) => (
-                    <Link key={z.key} className="mx-chip link" to={`/paises?zona=${z.key}`}>{z.label}</Link>
+            {GROUPS.map((g) => (
+              <section className="mx-card" key={g.title} aria-label={g.title}>
+                <h2>{g.title}</h2>
+                <p className="mx-desc">{g.desc}</p>
+                <ul className="mx-list">
+                  {g.items.map((it) => (
+                    <li key={it.to}>
+                      <Link className="mx-row" to={it.to}>
+                        <span className="mx-row-text">
+                          <span className="mx-row-label">{it.label}</span>
+                          {it.hint && <span className="mx-row-hint">{it.hint}</span>}
+                        </span>
+                        <span className="mx-row-arrow" aria-hidden="true">→</span>
+                      </Link>
+                    </li>
                   ))}
-                </div>
-                <p className="mx-hint">Or pick any country straight from the globe.</p>
-              </div>
-              <button type="button" className="mx-btn primary" onClick={() => navigate('/mapa-mundial')}>
-                Pick on the globe <span aria-hidden="true">→</span>
-              </button>
-            </section>
-          </div>
-
-          <div className="mx-grid two">
-            {/* 4 · multiplayer */}
-            <section className="mx-card" aria-labelledby="mx-t4">
-              <span className="mx-num">04</span>
-              <h2 id="mx-t4">Multiplayer</h2>
-              <p className="mx-desc">Challenge a friend to a 1 vs 1 on the same country.</p>
-              <div className="mx-controls"><p className="mx-hint">Against the clock or with no time limit.</p></div>
-              <button type="button" className="mx-btn primary" onClick={() => navigate('/multijugador')}>
-                Open multiplayer <span aria-hidden="true">→</span>
-              </button>
-            </section>
-
-            {/* 5 · statistics */}
-            <section className="mx-card" aria-labelledby="mx-t5">
-              <span className="mx-num">05</span>
-              <h2 id="mx-t5">Statistics</h2>
-              <p className="mx-desc">Your accuracy and best runs across every map.</p>
-              <div className="mx-controls"><p className="mx-hint">See your profile or compare with a friend.</p></div>
-              <div className="mx-two-btns">
-                <button type="button" className="mx-btn primary" onClick={() => navigate('/perfil')}>Profile</button>
-                <button type="button" className="mx-btn" onClick={() => navigate('/comparar')}>Compare</button>
-              </div>
-            </section>
+                </ul>
+              </section>
+            ))}
           </div>
         </div>
       </div>
