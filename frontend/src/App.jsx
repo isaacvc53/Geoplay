@@ -12,6 +12,7 @@ import ProfilePage from './pages/Profile/ProfilePage';
 import ComparePage from './pages/Compare/ComparePage';
 import MatchPage from './pages/Match/MatchPage';
 import WorldRegionsPage from './pages/WorldRegions/WorldRegionsPage';
+import WorldCountriesPage from './pages/WorldCountries/WorldCountriesPage';
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/paises" element={<RegionCountriesPage />} />
           <Route path="/mapa-mundial" element={<WorldMapPage />} />
           <Route path="/regiones-del-mundo" element={<WorldRegionsPage />} />
+          <Route path="/mapa-de-paises" element={<WorldCountriesPage />} />
           <Route path="/pais" element={<CountryGamePage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/comparar" element={<ComparePage />} />

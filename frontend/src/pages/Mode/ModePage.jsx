@@ -52,6 +52,14 @@ export default function ModePage() {
               </div>
               <div className="t-arrow">→</div>
             </Link>
+            <Link className="tile featured" to="/mapa-de-paises">
+              <div className="featured-content">
+                <span className="tile-code">CTY</span>
+                <div className="t-title">World countries</div>
+                <div className="t-desc">Name all 197 countries of the world and watch the world map fill in, from memory.</div>
+              </div>
+              <div className="t-arrow">→</div>
+            </Link>
             <Link className="tile featured" to="/regiones-del-mundo">
               <div className="featured-content">
                 <span className="tile-code">ADM</span>

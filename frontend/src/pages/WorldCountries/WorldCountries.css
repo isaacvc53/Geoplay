@@ -1,0 +1,7 @@
+@keyframes wcFlash{from{filter:brightness(2.4);}to{filter:brightness(1);}}
+.worldcountries-page{
+  .dots circle{stroke:#0e2233;stroke-width:1;vector-effect:non-scaling-stroke;cursor:default;}
+  .dots circle.ok{fill:#c9a24b;} .dots circle.miss{fill:#a8504a;}
+  .dots circle.flash{animation:wcFlash .8s ease-out;}
+  .wr-countries button strong{font-weight:600;}
+}
