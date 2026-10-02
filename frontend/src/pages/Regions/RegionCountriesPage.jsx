@@ -65,13 +65,13 @@ export default function RegionCountriesPage() {
     return (
       <div className="regions-page">
         <header>
-          <Link className="btn-back" to="/modo"><span>←</span> Choose mode</Link>
+          <Link className="btn-back" to="/mapas"><span>←</span> Maps</Link>
           <h1>Unrecognized region</h1>
           <p className="subtitle" />
         </header>
         <main>
           <div className="empty">
-            This region isn&apos;t recognized. Go back to <Link to="/modo">choose mode</Link>.
+            This region isn&apos;t recognized. Go back to <Link to="/mapas">the maps</Link>.
           </div>
         </main>
       </div>
@@ -85,7 +85,7 @@ export default function RegionCountriesPage() {
   return (
     <div className="regions-page">
       <header>
-        <Link className="btn-back" to="/modo"><span>←</span> Choose mode</Link>
+        <Link className="btn-back" to="/mapas"><span>←</span> Maps</Link>
         <h1>{zone.name}</h1>
         <p className="subtitle">{total} countries — choose one to explore</p>
       </header>

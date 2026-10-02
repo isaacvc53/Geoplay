@@ -80,7 +80,7 @@ export default function WorldQuizPage() {
   return (
     <div className="worldquiz-page">
       <header>
-        <Link className="btn-back" to="/modo"><span>←</span> Choose mode</Link>
+        <Link className="btn-back" to="/mapas"><span>←</span> Maps</Link>
         <h1>The 197 countries</h1>
         <p className="subtitle">Type every country in the world from memory, one by one</p>
       </header>

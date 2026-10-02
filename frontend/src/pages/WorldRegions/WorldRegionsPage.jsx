@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   ZONES, loadWorldRegions, buildScope, exactMatch, submitMatch, autoWait,
   clearLegacyProgress, formatTime,
@@ -12,7 +12,9 @@ const nf = new Intl.NumberFormat('en');
 export default function WorldRegionsPage() {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [zone, setZone] = useState(null);           // null = pantalla de inicio
+  // ?zona=europa (etc.) arranca directamente esa zona; sin parámetro, pantalla de inicio.
+  const [params] = useSearchParams();
+  const [zone, setZone] = useState(() => (ZONES.some((z) => z.key === params.get('zona')) ? params.get('zona') : null));           // null = pantalla de inicio
   const [solved, setSolved] = useState(() => new Set());   // la partida vive solo en memoria
   const [ms, setMs] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -155,7 +157,7 @@ export default function WorldRegionsPage() {
   return (
     <div className="worldregions-page">
       <header className="wr-top">
-        <Link className="btn-back" to="/modo"><span>←</span> Modes</Link>
+        <Link className="btn-back" to="/mapas"><span>←</span> Maps</Link>
         <div className="wr-title">
           <h1>World subdivisions</h1>
           <p className="subtitle">Type provinces, states and regions: the map fills in as you go.</p>

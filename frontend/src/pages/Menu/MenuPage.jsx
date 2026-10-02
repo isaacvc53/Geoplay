@@ -215,8 +215,6 @@ export default function MenuPage() {
                 <span className="nav-badge" aria-label={`${pendingChallenges} pending challenge${pendingChallenges === 1 ? '' : 's'}`}>{pendingChallenges}</span>
               )}
             </Link>
-            <Link to="/mapa-mundial">World map</Link>
-            <Link to="/modo">Regions</Link>
             <Link to="/perfil">Statistics</Link>
           </nav>
           <nav className="social-icons" aria-label="More">
@@ -300,9 +298,9 @@ export default function MenuPage() {
             <div className="maps-head">
               <h2>Different maps</h2>
             </div>
-            <p className="desc">Pick the map you want to play on.</p>
+            <p className="desc">Choose what you want to name.</p>
             <div className="maps-list">
-              {['Interactive map', 'World countries', 'World subdivisions'].map((label) => (
+              {['Countries of the world', 'Provinces & regions', 'One country'].map((label) => (
                 <div className="maps-row" key={label}>
                   <span className="bullet" /><span className="label">{label}</span>
                 </div>
@@ -359,8 +357,8 @@ export default function MenuPage() {
             </div>
           </Link>
 
-          {/* 4: play by region (/modo): type the countries of the world or of one continent */}
-          <Link className="panel side-card regions-card" to="/modo">
+          {/* 4: quick start: the 197 countries on the map */}
+          <Link className="panel side-card regions-card" to="/mapa-de-paises">
             <div>
               <div className="head">
                 <div className="icon-circle">
@@ -371,16 +369,11 @@ export default function MenuPage() {
                 </div>
               </div>
               <div className="body">
-                <div className="widget-title">Play by region</div>
-                <p className="widget-desc">Name every country from memory: the whole world or one continent at a time.</p>
-                <div className="chips" aria-label="Available regions">
-                  {['World', 'Europe', 'Asia', 'Africa', 'Americas', 'Oceania'].map((r) => (
-                    <span className="chip" key={r}>{r}</span>
-                  ))}
-                </div>
+                <div className="widget-title">The 197 countries</div>
+                <p className="widget-desc">Name every country in the world from memory and watch the map fill in.</p>
               </div>
             </div>
-            <div className="foot"><span>Choose a region →</span></div>
+            <div className="foot"><span>Start playing →</span></div>
           </Link>
 
           {/* 5: statistics */}

@@ -118,7 +118,7 @@ export default function WorldCountriesPage() {
   return (
     <div className="worldregions-page worldcountries-page">
       <header className="wr-top">
-        <Link className="btn-back" to="/modo"><span>←</span> Modes</Link>
+        <Link className="btn-back" to="/mapas"><span>←</span> Maps</Link>
         <div className="wr-title">
           <h1>World countries</h1>
           <p className="subtitle">Name all 197 countries from memory and the map fills in.</p>
