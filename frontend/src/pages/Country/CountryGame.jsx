@@ -6,14 +6,16 @@ import { createGame } from './gameEngine';
 //   - CountryGamePage (modo individual, sin `online`)
 //   - la partida 1 contra 1 (pages/Match), con `online` y `phase`; ver gameEngine.js.
 
-function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalIds = null, bottom = null }) {
+function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalIds = null, rival = null, rivalLive = null, bottom = null }) {
   const els = useRef({});
   const setEl = (name) => (node) => { els.current[name] = node; };
   const gameRef = useRef(null);
   const phaseRef = useRef(phase);
   const rivalRef = useRef(rivalIds);
+  const rivalLiveRef = useRef(rivalLive);
   const onlineRef = useRef(online);
   const isOnline = Boolean(online);
+  const hasRivalMap = isOnline && Boolean(rival); // online: segundo mapa con lo que acierta el rival
 
   // Siempre se llama a la última versión de los callbacks online sin reiniciar el motor.
   useEffect(() => { onlineRef.current = online; });
@@ -34,13 +36,14 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalI
     gameRef.current = game;
     if (isOnline) {
       game.setPhase(phaseRef.current);
+      if (rivalLiveRef.current) game.showRivalLive(rivalLiveRef.current);
       if (rivalRef.current) game.showRivalAnswers(rivalRef.current);
     }
     return () => {
       gameRef.current = null;
       game.destroy();
     };
-  }, [country, texts, geoUrl, isOnline]);
+  }, [country, texts, geoUrl, isOnline, hasRivalMap]);
 
   // Online: quien monta el juego manda la fase (cuenta atrás -> jugando -> terminado).
   useEffect(() => {
@@ -54,9 +57,51 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalI
     if (gameRef.current && rivalIds) gameRef.current.showRivalAnswers(rivalIds);
   }, [rivalIds]);
 
+  // Online, partida en marcha: pinta en SU mapa lo que el rival lleva acertado.
+  useEffect(() => {
+    rivalLiveRef.current = rivalLive;
+    if (gameRef.current && rivalLive) gameRef.current.showRivalLive(rivalLive);
+  }, [rivalLive]);
+
   // Los elementos cuyo texto/clases controla el motor (contadores, feedback, pista, toast,
   // pantalla de inicio y de resultado) se renderizan SIN hijos dinámicos:
   // React no los vuelve a tocar.
+  const mapAreaEl = (
+    <div className="map-area" ref={setEl('mapArea')}>
+      <svg id="map" ref={setEl('svg')} viewBox="0 0 960 620" aria-label={UI.map}>
+        <g className="regions" />
+      </svg>
+      {hasRivalMap && <span className="map-tag me">You</span>}
+      <div className="map-tools">
+        <button ref={setEl('zoomIn')} type="button" title={UI.zoomIn} aria-label={UI.zoomIn}>+</button>
+        <button ref={setEl('zoomOut')} type="button" title={UI.zoomOut} aria-label={UI.zoomOut}>−</button>
+        <button ref={setEl('resetView')} type="button" title={UI.resetView} aria-label={UI.resetView}>⤢</button>
+      </div>
+      <div className="hint" ref={setEl('hint')} />
+      <div className="toast" ref={setEl('toast')} />
+
+      {/* Pantalla de inicio: la partida no empieza hasta pulsar «Empezar». En una partida online
+        está siempre oculta (el motor no la abre) y los botones de abajo no se ven. */}
+      <div className="overlay intro hidden" ref={setEl('intro')}>
+        <div className="intro-card">
+          <p className="intro-kicker">{texts.place}</p>
+          <p className="intro-count">{texts.total}</p>
+          <p className="intro-label">{texts.introCountLabel}</p>
+          <button ref={setEl('start')} className="btn-primary btn-lg" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" /></svg>
+            {texts.startLabel}
+          </button>
+          <p className="intro-note">{texts.introNote}</p>
+        </div>
+      </div>
+
+      <div className="loading-overlay" ref={setEl('loadingOverlay')}>
+        <div className="spinner" aria-hidden="true" />
+        <span ref={setEl('loadingText')} />
+      </div>
+    </div>
+  );
+
   return (
     <section className="game">
       <div className="toolbar">
@@ -85,38 +130,18 @@ function CountryGame({ country, texts, geoUrl, online, phase = 'waiting', rivalI
 
       <div className="feedback" ref={setEl('feedback')} role="status" aria-live="polite" />
 
-      <div className="map-area" ref={setEl('mapArea')}>
-        <svg id="map" ref={setEl('svg')} viewBox="0 0 960 620" aria-label={UI.map}>
-          <g className="regions" />
-        </svg>
-        <div className="map-tools">
-          <button ref={setEl('zoomIn')} type="button" title={UI.zoomIn} aria-label={UI.zoomIn}>+</button>
-          <button ref={setEl('zoomOut')} type="button" title={UI.zoomOut} aria-label={UI.zoomOut}>−</button>
-          <button ref={setEl('resetView')} type="button" title={UI.resetView} aria-label={UI.resetView}>⤢</button>
+      {hasRivalMap ? (
+        <div className="maps duo">
+          {mapAreaEl}
+          <aside className="rival-area" aria-label={`${rival.name}'s map`}>
+            <span className="map-tag rival">{rival.name}</span>
+            {/* Solo lectura: el motor lo rellena con lo que acierta el rival (sin nombres). */}
+            <svg className="rival-map" ref={setEl('rivalSvg')} viewBox="0 0 960 620" aria-hidden="true">
+              <g className="regions" />
+            </svg>
+          </aside>
         </div>
-        <div className="hint" ref={setEl('hint')} />
-        <div className="toast" ref={setEl('toast')} />
-
-        {/* Pantalla de inicio: la partida no empieza hasta pulsar «Empezar». En una partida online
-          está siempre oculta (el motor no la abre) y los botones de abajo no se ven. */}
-        <div className="overlay intro hidden" ref={setEl('intro')}>
-          <div className="intro-card">
-            <p className="intro-kicker">{texts.place}</p>
-            <p className="intro-count">{texts.total}</p>
-            <p className="intro-label">{texts.introCountLabel}</p>
-            <button ref={setEl('start')} className="btn-primary btn-lg" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" fill="currentColor" /></svg>
-              {texts.startLabel}
-            </button>
-            <p className="intro-note">{texts.introNote}</p>
-          </div>
-        </div>
-
-        <div className="loading-overlay" ref={setEl('loadingOverlay')}>
-          <div className="spinner" aria-hidden="true" />
-          <span ref={setEl('loadingText')} />
-        </div>
-      </div>
+      ) : mapAreaEl}
 
       {/* One box per name to guess: empty until guessed (the engine fills them). */}
       <div className="slots" ref={setEl('slots')} role="list" aria-label={texts.slotsLabel} />

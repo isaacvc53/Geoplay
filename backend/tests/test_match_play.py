@@ -387,6 +387,30 @@ def test_answers_devuelve_los_mios_y_el_rival_solo_al_terminar(client, db_sessio
     assert done_bea == {"mine": [b1], "opponent": [a1, a2]}
 
 
+def test_rival_en_directo_devuelve_solo_ids_del_rival(client, db_session):
+    ana, bea, mid = playing_match(client, db_session)
+    a1 = guess(client, ana, mid, "Alfa").json()["region_id"]
+    a2 = guess(client, ana, mid, "Beta").json()["region_id"]
+    b1 = guess(client, bea, mid, "Gamma").json()["region_id"]
+
+    # Cada uno ve las regiones del OTRO, en el orden en que las acertó, y nada más.
+    assert client.get(f"/matches/{mid}/rival", headers=ana).json() == {"region_ids": [b1]}
+    assert client.get(f"/matches/{mid}/rival", headers=bea).json() == {"region_ids": [a1, a2]}
+    # /answers sigue ocultando al rival mientras la partida corre.
+    assert client.get(f"/matches/{mid}/answers", headers=ana).json()["opponent"] is None
+
+
+def test_rival_en_directo_vacio_antes_de_empezar(client, db_session):
+    ana, bea, mid = ready_match(client, db_session)
+    assert client.get(f"/matches/{mid}/rival", headers=ana).json() == {"region_ids": []}
+
+
+def test_rival_en_directo_no_es_visible_para_un_tercero(client, db_session):
+    ana, bea, mid = playing_match(client, db_session)
+    cai = register(client, "cai")
+    assert client.get(f"/matches/{mid}/rival", headers=cai).status_code == 404
+
+
 def test_answers_no_es_visible_para_un_tercero(client, db_session):
     ana, bea, mid = playing_match(client, db_session)
     cai = register(client, "cai")

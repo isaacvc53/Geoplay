@@ -571,6 +571,24 @@ def get_answers(db: Session, me: User, match_id: int) -> dict:
     }
 
 
+def get_rival_progress(db: Session, me: User, match_id: int) -> dict:
+    """Regiones que el rival lleva acertadas, para pintar su mapa en directo junto al mío.
+    Solo se devuelven los ids de región (los nombres siguen sin revelarse hasta el final)
+    y solo con la partida en marcha o terminada; antes de empezar la lista va vacía."""
+    m = get_match(db, me, match_id)
+    if m.status not in (STATUS_PLAYING, STATUS_FINISHED):
+        return {"region_ids": []}
+
+    rival_id = m.guest_id if m.host_id == me.id else m.host_id
+    rows = (
+        db.query(MatchAnswer.region_id)
+        .filter(MatchAnswer.match_id == m.id, MatchAnswer.user_id == rival_id)
+        .order_by(MatchAnswer.answered_at, MatchAnswer.id)
+        .all()
+    )
+    return {"region_ids": [r for (r,) in rows]}
+
+
 def get_history(db: Session, me: User, limit: int, offset: int) -> dict:
     """Mis partidas terminadas (las canceladas, rechazadas y caducadas no cuentan),
     de la más reciente a la más antigua, más mi balance de victorias/derrotas/empates.

@@ -138,3 +138,9 @@ class MatchAnswers(BaseModel):
     mine: list[int]
     # Las del rival: solo se revelan cuando la partida ha terminado.
     opponent: list[int] | None = None
+
+
+class RivalProgress(BaseModel):
+    # Las regiones que el rival lleva acertadas, para dibujar SU mapa en directo.
+    # Solo ids (nunca nombres) y solo con la partida en marcha o terminada.
+    region_ids: list[int]

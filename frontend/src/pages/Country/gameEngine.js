@@ -29,6 +29,9 @@ import { matchBackendRegions } from './matchRegions';
 //     onReady()     el mapa está pintado y listo para jugar
 //     errorText(err) -> string   texto para un fallo de red / de la partida
 //   }
+// Opcional (solo online): si `els.rivalSvg` existe, el motor mantiene ahí un SEGUNDO mapa de solo
+// lectura con lo que el rival lleva acertado (showRivalLive). Es una copia de las formas del mapa
+// principal, sin ids ni títulos, así que nunca enseña nombres.
 export function createGame({ country, texts, els, geoUrl, online }) {
   const isOnline = Boolean(online);
   // Nodos capturados UNA vez: en StrictMode React suelta los refs antes de ejecutar
@@ -45,6 +48,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     result: resultEl, resultEyebrow, resultTitle, resultMessage, resultHits, resultMissing,
     resultPercent, resultBar, resultRecord, playAgain: playAgainBtn, viewMap: viewMapBtn,
     viewResult: viewResultBtn,
+    rivalSvg: rivalSvgEl,
   } = els;
 
   // Total que se muestra (el del archivo del país; si no, el nº de regiones).
@@ -191,6 +195,64 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       const el = featureByRegion.get(r.id);
       if (el) el.classed('revealed-missing', false).classed('rival-found', true);
       paintSlot(r, 'rival');
+    });
+  }
+
+  // ---------------- ONLINE: the rival's own map (live) ----------------
+  // Segundo mapa, de solo lectura, con las regiones que el rival lleva acertadas. Se construye
+  // clonando las formas del mapa principal (sin id ni título: no se cuela ningún nombre).
+
+  let rivalMapBuilt = false;
+  let rivalLiveSet = null; // Set de region_id que el rival lleva acertadas, o null si aún no se sabe
+  const rivalShapeByRegion = new Map(); // id local de la región -> forma de la copia
+
+  function buildRivalMap() {
+    if (!rivalSvgEl || rivalMapBuilt) return;
+    const group = rivalSvgEl.querySelector('.regions');
+    if (!group) return;
+    group.replaceChildren();
+    rivalShapeByRegion.clear();
+
+    svgEl.querySelectorAll('.regions .country').forEach((shape) => {
+      const copy = shape.cloneNode(true);
+      copy.removeAttribute('id');
+      copy.removeAttribute('title');
+      copy.querySelectorAll('title').forEach((t) => t.remove());
+      copy.classList.remove('found', 'just-found', 'revealed-missing', 'rival-found');
+      group.appendChild(copy);
+      const regionId = copy.getAttribute('data-region-id');
+      if (regionId) rivalShapeByRegion.set(regionId, copy);
+    });
+    rivalSvgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    rivalMapBuilt = true;
+  }
+
+  // Misma silueta que el mapa principal, pero encajada en el tamaño de SU contenedor.
+  function setupRivalView() {
+    if (!rivalSvgEl || !rivalMapBuilt) return;
+    const width = rivalSvgEl.clientWidth;
+    const height = rivalSvgEl.clientHeight;
+    if (!width || !height) return;
+    const fitted = calculateFittedViewBox(getRegionsBounds(), width, height);
+    if (!fitted) return;
+    rivalSvgEl.setAttribute('viewBox', [fitted.x, fitted.y, fitted.width, fitted.height].join(' '));
+  }
+
+  function paintRivalMap() {
+    if (!rivalMapBuilt || !rivalLiveSet) return;
+    // Uno o dos aciertos nuevos = el rival acaba de acertar (con destello). Muchos de golpe =
+    // recarga a mitad de partida o resultado final: se pinta sin animar.
+    const fresh = [];
+    regions.forEach((r) => {
+      const el = rivalShapeByRegion.get(r.id);
+      if (!el) return;
+      const on = r.region_id != null && rivalLiveSet.has(r.region_id);
+      if (on && !el.classList.contains('rival-found')) fresh.push(el);
+      if (!on) el.classList.remove('rival-found');
+    });
+    fresh.forEach((el) => {
+      el.classList.add('rival-found');
+      if (fresh.length <= 2) flash(el, 'just-found');
     });
   }
 
@@ -549,6 +611,8 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     buildFeatureIndex();
     validateRegions();
     setupMapView();
+    buildRivalMap();
+    setupRivalView();
 
     svg
       .selectAll('.country')
@@ -880,6 +944,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
 
     loadingOverlay.classList.add('hidden');
     ready = true;
+    paintRivalMap(); // los ids del rival pueden haber llegado antes de saber el region_id de cada región
     if (online.onReady) online.onReady();
     applyDesired();
   }
@@ -942,6 +1007,14 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       rivalSet = new Set(ids || []);
       if (phase === 'ended') revealMissingOnMap(); // recoloca "fallada" -> "del rival"
       paintRival();
+      rivalLiveSet = new Set(ids || []); // y el mapa del rival queda con la lista completa
+      paintRivalMap();
+    },
+    // Solo online, con la partida en marcha: ids (region_id) que el rival lleva acertados.
+    // Solo pinta SU mapa (el de al lado); el mío no se toca hasta el final.
+    showRivalLive(ids) {
+      rivalLiveSet = new Set(ids || []);
+      paintRivalMap();
     },
     destroy() {
       disposed = true;
@@ -956,6 +1029,8 @@ export function createGame({ country, texts, els, geoUrl, online }) {
       slotsEl.replaceChildren();
       const regionsGroup = svgEl.querySelector('.regions');
       if (regionsGroup) regionsGroup.replaceChildren();
+      const rivalGroup = rivalSvgEl && rivalSvgEl.querySelector('.regions');
+      if (rivalGroup) rivalGroup.replaceChildren();
     },
   };
 }

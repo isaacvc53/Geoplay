@@ -12,6 +12,7 @@ from models.match import (
     MatchOut,
     MyMatches,
     PlayableCountry,
+    RivalProgress,
 )
 from models.user_db import User
 from routes.auth import get_current_user, get_db
@@ -152,6 +153,18 @@ def mis_aciertos(
 ):
     with errores_de_partida():
         return match_service.get_answers(db, usuario_actual, match_id)
+
+
+@matches_router.get("/{match_id}/rival", response_model=RivalProgress)
+def progreso_del_rival(
+    match_id: int,
+    usuario_actual: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Ids de las regiones que el rival lleva acertadas (sin nombres), para ver su mapa
+    en directo. Vacío mientras la partida no ha empezado."""
+    with errores_de_partida():
+        return match_service.get_rival_progress(db, usuario_actual, match_id)
 
 
 @matches_router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)

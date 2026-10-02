@@ -24,6 +24,9 @@ import './MatchPlay.css';
 //     ends_at is only the server's safety cap, so it never drives the clock or the phase.
 //   - The rival's score comes from the match poll that MatchRoom already runs every
 //     second; mine is updated instantly from the confirmed guesses.
+//   - Next to my map there is the RIVAL's map, read-only, painting what they have found so
+//     far. It only asks the server for their region ids (never names) when their score
+//     changes, so it costs nothing extra while nobody scores.
 
 // How long "Go!" stays on screen after the countdown reaches zero.
 const GO_FLASH_MS = 900;
@@ -100,6 +103,7 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   const [myLocal, setMyLocal] = useState(0); // my confirmed hits, painted instantly
   const [dismissed, setDismissed] = useState(false); // "View map" on the final card
   const [answers, setAnswers] = useState(null); // { mine, opponent } once the match is over
+  const [rivalLive, setRivalLive] = useState(null); // region ids the rival has found so far
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [leaveError, setLeaveError] = useState(null);
@@ -147,6 +151,21 @@ export default function PlayScreen({ match, clock, preload, reload }) {
     else clearPending(matchId);
   }, [match.status, matchId]);
 
+  // Playing: whenever the rival's score changes, ask which regions they have (ids only).
+  // Also covers a reload mid-match: their score is already above 0 on the first poll.
+  useEffect(() => {
+    if (match.status !== 'playing' || rivalScore <= 0) return undefined;
+    let cancelled = false;
+    let timer = null;
+    const load = (attempt) => {
+      api.getMatchRival(matchId)
+        .then((res) => { if (!cancelled) setRivalLive(res.region_ids); })
+        .catch(() => { if (!cancelled && attempt < 2) timer = setTimeout(() => load(attempt + 1), 1200 * (attempt + 1)); });
+    };
+    load(0);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [match.status, matchId, rivalScore]);
+
   // Over: ask for both players' regions (the server only reveals the rival's now).
   useEffect(() => {
     if (!over) return undefined;
@@ -191,6 +210,9 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   const summary = over ? summarize(match, mine, rival) : null;
   const split = over ? breakdown(answers, match.country.total_regions) : null;
   const rivalIds = over && answers ? answers.opponent : null;
+  // The rival's mini map: the full list once the match is over, the live one before that.
+  const rivalMapIds = rivalIds || rivalLive;
+  const rivalMeta = useMemo(() => ({ name: rival.username }), [rival.username]);
   const counting = untilStart > 0;
 
   // Bottom bar of the game screen. Memoised: this component re-renders ten times a second
@@ -257,6 +279,8 @@ export default function PlayScreen({ match, clock, preload, reload }) {
             online={online}
             phase={phase}
             rivalIds={rivalIds}
+            rival={rivalMeta}
+            rivalLive={rivalMapIds}
             bottom={bottom}
           />
         ) : (

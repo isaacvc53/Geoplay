@@ -337,4 +337,10 @@ export const api = {
   getMatchAnswers(matchId) {
     return this._get(`/matches/${encodeURIComponent(matchId)}/answers`);
   },
+
+  // -> { region_ids: [region_id] }. The regions the rival has found SO FAR (ids only, never
+  // names), to draw their map live next to mine. Empty until the match starts.
+  getMatchRival(matchId) {
+    return this._get(`/matches/${encodeURIComponent(matchId)}/rival`);
+  },
 };
