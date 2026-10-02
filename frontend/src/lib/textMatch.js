@@ -66,3 +66,27 @@ export function hasLongerCandidate(regionsList, region, raw, solved) {
     })
   );
 }
+
+// Como hasLongerCandidate, pero devuelve CUÁNTO esperar (ms) antes de autoacertar:
+//   0        -> ningún otro nombre empieza por lo escrito: acierto inmediato.
+//   wordMs   -> el otro nombre sigue con OTRA PALABRA ("Sudán" -> "Sudán del Sur"):
+//               el jugador tiene que teclear un espacio y seguir, damos más margen.
+//   partMs   -> el otro nombre solo alarga la palabra ("Sur" -> "Suroeste"): si va a
+//               seguir escribiendo, la siguiente letra llega enseguida, así que basta
+//               una espera corta y el acierto no se siente "colgado".
+export function longerCandidateWait(regionsList, region, raw, solved, wordMs = 900, partMs = 500) {
+  const q = normalizeText(raw);
+  if (!q) return 0;
+  let wait = 0;
+  for (const r of regionsList) {
+    if (r === region || (solved && solved.has(r.id))) continue;
+    for (const n of r.names || []) {
+      const nn = normalizeText(n);
+      if (nn.length > q.length && nn.startsWith(q)) {
+        if (nn[q.length] === ' ') return wordMs;
+        wait = partMs;
+      }
+    }
+  }
+  return wait;
+}

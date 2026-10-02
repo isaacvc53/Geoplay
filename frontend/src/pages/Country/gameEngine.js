@@ -15,7 +15,7 @@
 
 import * as d3 from 'd3';
 import { api } from '../../lib/api';
-import { normalizeText, findLocalGuess, findExactLocalMatch, hasLongerCandidate } from '../../lib/textMatch';
+import { normalizeText, findLocalGuess, findExactLocalMatch, longerCandidateWait } from '../../lib/textMatch';
 import { matchBackendRegions } from './matchRegions';
 
 // MODO ONLINE (partida 1 contra 1, ver pages/Match): si se pasa `online`, el motor no
@@ -787,8 +787,8 @@ export function createGame({ country, texts, els, geoUrl, online }) {
   // (findLocalGuess aceptaría prefijos de 3+ letras y marcaría "Kabul" al teclear "kab").
   // Si ese nombre es el comienzo de otro aún sin acertar ("Mato Grosso" / "Mato Grosso do Sul",
   // "Sudán" / "Sudán del Sur"), se espera un instante por si el jugador sigue escribiendo;
-  // con Enter / Check se acepta al momento.
-  const LIVE_WAIT_MS = 900;
+  // con Enter / Check se acepta al momento. La espera es larga si el otro nombre sigue con otra
+  // palabra ("Sudán" / "Sudán del Sur") y corta si solo alarga la palabra ("Sur" / "Suroeste").
   let liveTimer = null;
   cleanups.push(() => clearTimeout(liveTimer));
 
@@ -805,12 +805,13 @@ export function createGame({ country, texts, els, geoUrl, online }) {
     // Online solo se usa lo local para saber CUÁNDO preguntar; el acierto lo confirma el servidor.
     const accept = () => (isOnline ? submitOnline(raw, true) : addSolved(region));
 
-    if (hasLongerCandidate(regions, region, raw, solved)) {
+    const waitMs = longerCandidateWait(regions, region, raw, solved);
+    if (waitMs > 0) {
       liveTimer = setTimeout(() => {
         if (disposed || phase !== 'playing') return;
         if (guessEl.value.trim() !== raw || solved.has(region.id)) return;
         accept();
-      }, LIVE_WAIT_MS);
+      }, waitMs);
       return;
     }
     accept();
