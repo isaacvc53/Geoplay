@@ -62,7 +62,10 @@ function MultiplayerBody({ desc, pill, action }) {
           <p className="widget-desc">{desc}</p>
         </div>
       </div>
-      <div className="foot"><span className="pill live">{pill}</span><span>{action}</span></div>
+      <div className="foot">
+        {pill && <span className="pill live">{pill}</span>}
+        <span>{action}</span>
+      </div>
     </>
   );
 }
@@ -296,7 +299,6 @@ export default function MenuPage() {
           <Link className="panel maps-card" to="/mapas">
             <div className="maps-head">
               <h2>Different maps</h2>
-              <span className="pill live">Available</span>
             </div>
             <p className="desc">Pick the map you want to play on.</p>
             <div className="maps-list">
@@ -322,7 +324,7 @@ export default function MenuPage() {
             <Link className="panel side-card regions-card" to="/multijugador">
               <MultiplayerBody
                 desc="Challenge a friend to a 1 vs 1 on the same country: against the clock or with no time limit."
-                pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : 'Available'}
+                pill={matches.invitations.length ? `${matches.invitations.length} challenge${matches.invitations.length === 1 ? '' : 's'}` : null}
                 action={loggedIn ? 'Open multiplayer →' : 'Sign in to play →'}
               />
             </Link>
@@ -351,7 +353,6 @@ export default function MenuPage() {
             </div>
             <div className="hero-foot">
               <span className="hero-meta">
-                <span className="pill live">Available</span>
                 {availableCount && <span className="hero-count">{availableCount} countries</span>}
               </span>
               <span className="cta">Open atlas <span className="arrow" aria-hidden="true">→</span></span>
@@ -379,7 +380,7 @@ export default function MenuPage() {
                 </div>
               </div>
             </div>
-            <div className="foot"><span className="pill live">Available</span><span>Choose a region →</span></div>
+            <div className="foot"><span>Choose a region →</span></div>
           </Link>
 
           {/* 5: statistics */}

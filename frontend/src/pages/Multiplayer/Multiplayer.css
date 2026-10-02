@@ -1,39 +1,319 @@
-/* Multiplayer page. Reuses the colour variables and the friend/match row styles of the
-   menu (.menu-page), so only the page chrome lives here. */
+/* Multiplayer page. Uses the colour variables and base styles of Menu.css (.menu-page). */
 
-.menu-page.multiplayer-page .multi-head{
-  max-width:760px; width:100%; margin:0 auto; padding:32px 24px 0;
+.multiplayer-page .mp-shell{
+  width:100%; max-width:1120px; margin:0 auto;
+  padding:32px 32px 72px;
+  display:flex; flex-direction:column; gap:22px;
 }
-.menu-page.multiplayer-page .btn-back{
+
+/* ---------- back button + hero ---------- */
+.multiplayer-page .mp-back{
+  align-self:flex-start;
   display:inline-flex; align-items:center; gap:8px;
-  padding:7px 14px; margin-bottom:28px;
-  text-decoration:none;
+  padding:7px 14px; text-decoration:none;
   transition:border-color .2s ease, color .2s ease, transform .2s ease;
 }
-.menu-page.multiplayer-page .btn-back:hover{ transform:translateX(-2px); }
-.menu-page.multiplayer-page .btn-back span{ font-size:14px; }
+.multiplayer-page .mp-back:hover{ transform:translateX(-2px); }
+.multiplayer-page .mp-back span{ font-size:14px; }
 
-.menu-page.multiplayer-page .multi-title{ display:flex; align-items:center; gap:18px; }
-.menu-page.multiplayer-page .multi-title h1{
-  font-family:'Fraunces',Georgia,serif; font-weight:500;
-  font-size:clamp(28px,4vw,40px); letter-spacing:-0.01em; margin-bottom:6px;
+.multiplayer-page .mp-hero{
+  position:relative; overflow:hidden;
+  display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:24px 32px;
+  padding:34px 34px 30px;
+  border:1px solid var(--brass);
+  background:radial-gradient(ellipse at 22% 0%, var(--ocean-shallow) 0%, var(--ocean-deep) 75%);
+  box-shadow:0 24px 56px var(--shadow), 0 0 100px -40px rgba(201,162,75,.45);
+  animation:riseIn var(--ease-slow) both;
 }
-.menu-page.multiplayer-page .multi-sub{ font-size:14px; line-height:1.55; color:var(--parchment-dim); max-width:520px; }
-
-.menu-page.multiplayer-page .multi-main{
-  max-width:760px; width:100%; margin:0 auto; padding:28px 24px 64px;
-  display:flex; flex-direction:column; flex:1;
+.multiplayer-page .mp-hero::before,
+.multiplayer-page .mp-hero::after{
+  content:''; position:absolute; width:13px; height:13px; pointer-events:none;
 }
-.menu-page.multiplayer-page .multi-main .drawer-empty{ padding-bottom:0; margin-top:40px; }
-
-.menu-page.multiplayer-page .multi-empty{
-  display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px;
-  padding:28px 16px; border:1px dashed var(--line); border-radius:var(--radius);
+.multiplayer-page .mp-hero::before{ top:-1px; left:-1px; border-top:1px solid var(--brass-bright); border-left:1px solid var(--brass-bright); }
+.multiplayer-page .mp-hero::after{ bottom:-1px; right:-1px; border-bottom:1px solid var(--brass-bright); border-right:1px solid var(--brass-bright); }
+.multiplayer-page .mp-rings{
+  position:absolute; right:-70px; top:50%; width:380px; height:380px; transform:translateY(-50%);
+  color:var(--brass); opacity:.1; pointer-events:none;
 }
-.menu-page.multiplayer-page .multi-empty .drawer-empty-desc{ max-width:320px; }
+.multiplayer-page .mp-hero-text{ position:relative; max-width:520px; }
+.multiplayer-page .mp-eyebrow{
+  display:inline-block; margin-bottom:12px;
+  font-size:11px; font-weight:700; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--brass); padding:4px 10px; border:1px solid var(--brass-dim);
+}
+.multiplayer-page .mp-hero h1{
+  font-family:'Fraunces',Georgia,serif; font-weight:600;
+  font-size:clamp(34px,5vw,54px); line-height:1.02; letter-spacing:-.015em; margin-bottom:12px;
+}
+.multiplayer-page .mp-hero h1 i{ font-style:italic; color:var(--brass-bright); }
+.multiplayer-page .mp-hero p{ font-size:14.5px; line-height:1.6; color:#9fb0bf; }
 
+.multiplayer-page .mp-stats{
+  position:relative; display:grid; grid-template-columns:repeat(4, minmax(78px, 1fr));
+  border:1px solid var(--line); background:rgba(14,34,51,.72);
+}
+.multiplayer-page .mp-stat{
+  display:flex; flex-direction:column; gap:4px; padding:14px 18px;
+  border-left:1px solid var(--line-soft);
+}
+.multiplayer-page .mp-stat:first-child{ border-left:0; }
+.multiplayer-page .mp-stat-value{
+  font-family:'Fraunces',Georgia,serif; font-size:28px; line-height:1; font-variant-numeric:tabular-nums;
+}
+.multiplayer-page .mp-stat.win .mp-stat-value{ color:var(--brass-bright); }
+.multiplayer-page .mp-stat.loss .mp-stat-value{ color:var(--rust); }
+.multiplayer-page .mp-stat-label{ font-size:10.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--parchment-dim); }
+
+/* ---------- cards ---------- */
+.multiplayer-page .mp-card{
+  position:relative;
+  padding:24px;
+  border:1px solid var(--line); background:var(--panel-bg);
+  box-shadow:0 18px 40px -22px var(--shadow);
+  animation:riseIn var(--ease-slow) both;
+}
+.multiplayer-page .mp-card::before{
+  content:''; position:absolute; left:0; right:0; top:0; height:1px; pointer-events:none;
+  background:linear-gradient(90deg, transparent, var(--brass-bright), transparent); opacity:.55;
+}
+.multiplayer-page .mp-card-head{ display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.multiplayer-page .mp-card-head h2{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:22px; }
+.multiplayer-page .mp-card-hint{ margin-left:auto; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass-dim); }
+.multiplayer-page .mp-count{
+  font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:999px;
+  background:var(--line-soft); color:var(--brass);
+}
+
+.multiplayer-page .mp-grid{
+  display:grid; grid-template-columns:minmax(0,1.25fr) minmax(0,1fr); gap:22px; align-items:start;
+}
+.multiplayer-page .mp-grid > :nth-child(2){ animation-delay:.08s; }
+
+.multiplayer-page .mp-error{
+  padding:11px 14px; font-size:14px; color:var(--rust);
+  border:1px solid var(--rust); background:var(--rust-bg);
+}
+
+/* ---------- buttons ---------- */
+.multiplayer-page .mp-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  font-family:inherit; font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  padding:10px 16px; min-height:40px; text-decoration:none; cursor:pointer;
+  border:1px solid var(--line); background:none; color:var(--parchment-dim); border-radius:var(--radius);
+  transition:border-color var(--ease), color var(--ease), background var(--ease), transform var(--ease), box-shadow var(--ease);
+}
+.multiplayer-page .mp-btn:hover:not(:disabled){ border-color:var(--brass-bright); color:var(--brass-bright); }
+.multiplayer-page .mp-btn.primary{ background:var(--brass); border-color:var(--brass); color:var(--ocean-deep); font-weight:700; }
+.multiplayer-page .mp-btn.primary:hover:not(:disabled){
+  background:var(--land-hover); border-color:var(--land-hover); color:var(--ocean-deep);
+  transform:translateY(-1px); box-shadow:0 8px 18px -8px rgba(201,162,75,.6);
+}
+.multiplayer-page .mp-btn.wide{ width:100%; min-height:46px; font-size:13px; }
+.multiplayer-page .mp-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.multiplayer-page .mp-link{
+  font:inherit; color:var(--brass-bright); background:none; border:0; padding:0; cursor:pointer; text-decoration:underline;
+}
+
+/* ---------- avatars / rows ---------- */
+.multiplayer-page .mp-avatar{
+  width:40px; height:40px; flex:none; border-radius:50%;
+  border:1px solid var(--brass-dim);
+  display:grid; place-items:center; overflow:hidden;
+  font-family:'Fraunces',Georgia,serif; font-size:16px; color:var(--brass); background:var(--ocean-deep);
+}
+.multiplayer-page .mp-avatar.big{ width:52px; height:52px; font-size:20px; }
+.multiplayer-page .mp-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+.multiplayer-page .mp-who{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.multiplayer-page .mp-name{ font-size:15.5px; color:var(--parchment); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.multiplayer-page .mp-meta{ font-size:12.5px; color:var(--parchment-dim); }
+
+/* ---------- live (open match + challenges) ---------- */
+.multiplayer-page .mp-live{ display:flex; flex-direction:column; gap:12px; }
+.multiplayer-page .mp-match{
+  position:relative; padding:16px 20px 18px;
+  border:1px solid var(--brass-dim); background:var(--panel-bg);
+  animation:riseIn .35s ease both;
+}
+.multiplayer-page .mp-match::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--brass-dim); }
+.multiplayer-page .mp-match.live,
+.multiplayer-page .mp-match.invite{ border-color:var(--brass); box-shadow:0 0 60px -28px rgba(201,162,75,.65); }
+.multiplayer-page .mp-match.live::before,
+.multiplayer-page .mp-match.invite::before{ background:var(--brass-bright); }
+.multiplayer-page .mp-match-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+.multiplayer-page .mp-match-tag{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--brass-dim); }
+.multiplayer-page .mp-match-body{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.multiplayer-page .mp-row-actions{ display:flex; gap:8px; flex:none; }
+
+.multiplayer-page .mp-status{
+  display:inline-flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--brass);
+}
+.multiplayer-page .mp-status i{ width:8px; height:8px; border-radius:50%; background:var(--brass-dim); }
+.multiplayer-page .mp-status.live,
+.multiplayer-page .mp-status.invite{ color:var(--brass-bright); }
+.multiplayer-page .mp-status.live i,
+.multiplayer-page .mp-status.invite i{ background:var(--rust); animation:mpPulse 1.6s ease-out infinite; }
+.multiplayer-page .mp-status.ready i{ background:var(--brass-bright); }
+@keyframes mpPulse{
+  0%{ box-shadow:0 0 0 0 rgba(201,114,63,.6); }
+  100%{ box-shadow:0 0 0 9px rgba(201,114,63,0); }
+}
+
+/* ---------- new challenge: steps ---------- */
+.multiplayer-page .mp-step{ padding-bottom:22px; margin-bottom:22px; border-bottom:1px solid var(--line-soft); }
+.multiplayer-page .mp-step-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+.multiplayer-page .mp-step-n{
+  width:22px; height:22px; flex:none; display:grid; place-items:center;
+  font-size:11.5px; font-weight:700; border:1px solid var(--brass-dim); color:var(--brass); border-radius:50%;
+}
+.multiplayer-page .mp-step-title{ font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--brass-dim); }
+
+.multiplayer-page .mp-filter{
+  width:100%; margin-bottom:10px; font-family:inherit; font-size:14px;
+  padding:10px 12px; background:var(--ocean-deep); color:var(--parchment);
+  border:1px solid var(--line); border-radius:var(--radius);
+}
+.multiplayer-page .mp-filter::placeholder{ color:var(--parchment-dim); }
+.multiplayer-page .mp-filter:focus{ outline:none; border-color:var(--brass); }
+
+.multiplayer-page .mp-friends{
+  display:flex; flex-direction:column; gap:8px; max-height:300px; overflow-y:auto; padding:2px 4px 2px 0;
+  scrollbar-width:thin; scrollbar-color:var(--line) transparent;
+}
+.multiplayer-page .mp-friend{ display:block; cursor:pointer; }
+.multiplayer-page .mp-friend input,
+.multiplayer-page .mp-dur input{
+  position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
+}
+.multiplayer-page .mp-friend-body{
+  display:flex; align-items:center; gap:12px; padding:11px 14px;
+  border:1px solid var(--line); background:var(--ocean-deep);
+  transition:border-color var(--ease), background var(--ease), transform var(--ease);
+}
+.multiplayer-page .mp-friend:hover .mp-friend-body{ border-color:var(--brass-dim); background:rgba(201,162,75,.05); }
+.multiplayer-page .mp-friend input:focus-visible + .mp-friend-body{ outline:1.5px solid var(--brass-bright); outline-offset:2px; }
+.multiplayer-page .mp-friend input:checked + .mp-friend-body{ border-color:var(--brass); background:rgba(201,162,75,.12); }
+.multiplayer-page .mp-friend input:disabled + .mp-friend-body{ opacity:.55; cursor:not-allowed; }
+.multiplayer-page .mp-tick{
+  width:22px; height:22px; flex:none; display:grid; place-items:center; border-radius:50%;
+  border:1px solid var(--line); color:transparent;
+  transition:background var(--ease), border-color var(--ease), color var(--ease);
+}
+.multiplayer-page .mp-tick svg{ width:14px; height:14px; }
+.multiplayer-page .mp-friend input:checked + .mp-friend-body .mp-tick{ background:var(--brass); border-color:var(--brass); color:var(--ocean-deep); }
+
+.multiplayer-page .mp-durations{ display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; }
+.multiplayer-page .mp-dur{ position:relative; display:block; cursor:pointer; }
+.multiplayer-page .mp-dur span{
+  display:flex; align-items:center; justify-content:center; text-align:center;
+  min-height:44px; padding:6px 4px; font-size:13.5px; font-weight:600; color:var(--parchment-dim);
+  border:1px solid var(--line); background:var(--ocean-deep);
+  transition:border-color var(--ease), color var(--ease), background var(--ease);
+}
+.multiplayer-page .mp-dur:hover span{ border-color:var(--brass-dim); color:var(--parchment); }
+.multiplayer-page .mp-dur input:focus-visible + span{ outline:1.5px solid var(--brass-bright); outline-offset:2px; }
+.multiplayer-page .mp-dur input:checked + span{ border-color:var(--brass); background:rgba(201,162,75,.16); color:var(--brass-bright); }
+.multiplayer-page .mp-dur input:disabled + span{ opacity:.55; cursor:not-allowed; }
+
+.multiplayer-page .mp-country .country-picker-input{ background:var(--ocean-deep); min-height:44px; }
+
+.multiplayer-page .mp-summary{
+  margin-bottom:16px; padding:14px 16px; font-size:13.5px; line-height:1.55; color:var(--parchment-dim);
+  border:1px dashed var(--line); background:rgba(14,34,51,.5);
+}
+.multiplayer-page .mp-summary.ready{ border:1px solid var(--brass-dim); border-style:solid; background:rgba(201,162,75,.07); }
+.multiplayer-page .mp-summary-line{ font-size:15px; color:var(--parchment); margin-bottom:4px; }
+.multiplayer-page .mp-summary-line strong{ color:var(--brass-bright); font-weight:600; }
+.multiplayer-page .mp-summary-note{ font-size:12.5px; }
+
+/* ---------- empty / loading / notes ---------- */
+.multiplayer-page .mp-empty{
+  display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;
+  padding:26px 16px; border:1px dashed var(--line); font-size:13.5px; line-height:1.55; color:var(--parchment-dim);
+}
+.multiplayer-page .mp-empty svg{ width:30px; height:30px; color:var(--brass-dim); margin-bottom:2px; }
+.multiplayer-page .mp-empty-title{ font-family:'Fraunces',Georgia,serif; font-size:17px; color:var(--parchment); }
+.multiplayer-page .mp-empty .mp-btn{ margin-top:8px; }
+.multiplayer-page .mp-none{ font-size:13px; line-height:1.55; color:var(--parchment-dim); }
+
+.multiplayer-page .mp-skel{ display:flex; flex-direction:column; gap:8px; }
+.multiplayer-page .mp-skel span{
+  height:64px; border:1px solid var(--line-soft);
+  background:linear-gradient(90deg, var(--ocean-deep) 0%, rgba(23,65,95,.55) 50%, var(--ocean-deep) 100%);
+  background-size:200% 100%; animation:mpShimmer 1.4s linear infinite;
+}
+@keyframes mpShimmer{ from{ background-position:200% 0; } to{ background-position:-200% 0; } }
+
+/* ---------- history ---------- */
+.multiplayer-page .mp-record{ margin-bottom:18px; }
+.multiplayer-page .mp-bar{ display:flex; height:8px; gap:2px; background:var(--ocean-deep); margin-bottom:9px; }
+.multiplayer-page .mp-bar span{ min-width:4px; }
+.multiplayer-page .mp-bar .win{ background:var(--brass-bright); }
+.multiplayer-page .mp-bar .draw{ background:var(--parchment-dim); }
+.multiplayer-page .mp-bar .loss{ background:var(--rust); }
+.multiplayer-page .mp-record-text{ font-size:13px; color:var(--parchment-dim); }
+.multiplayer-page .mp-record-text b{ color:var(--parchment); font-weight:700; }
+.multiplayer-page .mp-record-text b.win{ color:var(--brass-bright); }
+.multiplayer-page .mp-record-text b.loss{ color:var(--rust); }
+
+.multiplayer-page .mp-history-list{ list-style:none; margin:0 0 14px; padding:0; display:flex; flex-direction:column; gap:8px; }
+.multiplayer-page .mp-hrow{
+  position:relative; display:flex; align-items:center; gap:12px; padding:11px 14px 11px 16px;
+  border:1px solid var(--line); background:var(--ocean-deep); text-decoration:none; color:inherit;
+  transition:border-color var(--ease), background var(--ease), transform var(--ease);
+}
+.multiplayer-page .mp-hrow::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--line); }
+.multiplayer-page .mp-hrow.win::before{ background:var(--brass-bright); }
+.multiplayer-page .mp-hrow.loss::before{ background:var(--rust); }
+.multiplayer-page .mp-hrow:hover,
+.multiplayer-page .mp-hrow:focus-visible{ border-color:var(--brass-dim); background:rgba(201,162,75,.05); transform:translateX(2px); }
+.multiplayer-page .mp-result{
+  display:inline-block; padding:1px 7px; font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  border:1px solid var(--line); color:var(--parchment-dim);
+}
+.multiplayer-page .mp-result.win{ border-color:var(--brass); background:rgba(201,162,75,.16); color:var(--brass-bright); }
+.multiplayer-page .mp-result.loss{ border-color:var(--rust); background:var(--rust-bg); color:var(--rust); }
+.multiplayer-page .mp-score{
+  flex:none; font-family:'Fraunces',Georgia,serif; font-size:22px; font-variant-numeric:tabular-nums; color:var(--parchment);
+}
+.multiplayer-page .mp-score em{ font-style:normal; color:var(--brass-dim); margin:0 2px; }
+
+/* ---------- signed-out state ---------- */
+.multiplayer-page .mp-gate{ padding:0; }
+.multiplayer-page .mp-steps-row{ display:grid; grid-template-columns:repeat(3, 1fr); }
+.multiplayer-page .mp-how{
+  display:flex; flex-direction:column; gap:6px; padding:26px 26px 22px;
+  border-left:1px solid var(--line-soft); font-size:13.5px; line-height:1.55; color:var(--parchment-dim);
+}
+.multiplayer-page .mp-how:first-child{ border-left:0; }
+.multiplayer-page .mp-how strong{ font-family:'Fraunces',Georgia,serif; font-weight:500; font-size:18px; color:var(--parchment); }
+.multiplayer-page .mp-how-n{ font-family:'Fraunces',Georgia,serif; font-size:34px; line-height:1; color:var(--brass); opacity:.8; }
+.multiplayer-page .mp-gate-cta{
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;
+  padding:18px 26px; border-top:1px solid var(--line-soft); font-size:14px; color:var(--parchment-dim);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:960px){
+  .multiplayer-page .mp-grid{ grid-template-columns:1fr; }
+}
 @media (max-width:640px){
-  .menu-page.multiplayer-page .multi-head{ padding:20px 16px 0; }
-  .menu-page.multiplayer-page .multi-main{ padding:22px 16px 48px; }
-  .menu-page.multiplayer-page .multi-title{ gap:12px; }
+  .multiplayer-page .mp-shell{ padding:20px 16px 56px; gap:18px; }
+  .multiplayer-page .mp-hero{ padding:24px 20px 22px; }
+  .multiplayer-page .mp-rings{ right:-120px; opacity:.07; }
+  .multiplayer-page .mp-stats{ width:100%; }
+  .multiplayer-page .mp-stat{ padding:12px 12px; }
+  .multiplayer-page .mp-stat-value{ font-size:23px; }
+  .multiplayer-page .mp-card{ padding:18px 16px; }
+  .multiplayer-page .mp-durations{ grid-template-columns:repeat(3, 1fr); }
+  .multiplayer-page .mp-match{ padding:14px 14px 16px 16px; }
+  .multiplayer-page .mp-row-actions{ width:100%; }
+  .multiplayer-page .mp-row-actions .mp-btn{ flex:1; }
+  .multiplayer-page .mp-steps-row{ grid-template-columns:1fr; }
+  .multiplayer-page .mp-how{ border-left:0; border-top:1px solid var(--line-soft); padding:18px 20px; }
+  .multiplayer-page .mp-how:first-child{ border-top:0; }
+  .multiplayer-page .mp-gate-cta{ padding:16px 20px; }
+}
+@media (prefers-reduced-motion:reduce){
+  .multiplayer-page .mp-status i, .multiplayer-page .mp-skel span{ animation:none !important; }
 }
