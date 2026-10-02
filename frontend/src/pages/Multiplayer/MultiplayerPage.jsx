@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
+import SoundToggle from '../../components/SoundToggle';
 import { formatRelative } from '../Profile/profileLogic';
 import CountryPicker from '../Profile/CountryPicker';
 import { useFriends } from '../Menu/useFriends';
@@ -140,6 +141,7 @@ export default function MultiplayerPage() {
       <div className="page">
         <div className="mp-shell">
           <Link className="btn-back mp-back" to="/"><span>←</span> Main menu</Link>
+          <SoundToggle className="mp-sound" />
 
           <header className="mp-hero">
             <Rings />

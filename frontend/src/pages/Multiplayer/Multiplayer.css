@@ -1,6 +1,7 @@
 /* Multiplayer page. Uses the colour variables and base styles of Menu.css (.menu-page). */
 
 .multiplayer-page .mp-shell{
+  position:relative;
   width:100%; max-width:1120px; margin:0 auto;
   padding:32px 32px 72px;
   display:flex; flex-direction:column; gap:22px;
@@ -14,6 +15,7 @@
   transition:border-color .2s ease, color .2s ease, transform .2s ease;
 }
 .multiplayer-page .mp-back:hover{ transform:translateX(-2px); }
+.multiplayer-page .mp-sound{ position:absolute; top:32px; right:32px; z-index:3; }
 .multiplayer-page .mp-back span{ font-size:14px; }
 
 .multiplayer-page .mp-hero{
@@ -329,6 +331,7 @@
 }
 @media (max-width:640px){
   .multiplayer-page .mp-shell{ padding:20px 16px 56px; gap:18px; }
+  .multiplayer-page .mp-sound{ top:20px; right:16px; }
   .multiplayer-page .mp-hero{ padding:24px 20px 22px; }
   .multiplayer-page .mp-rings{ right:-120px; opacity:.07; }
   .multiplayer-page .mp-stats{ width:100%; }

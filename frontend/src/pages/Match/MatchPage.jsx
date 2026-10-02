@@ -4,6 +4,7 @@ import { api } from '../../lib/api';
 import { usePolled } from '../../lib/usePolled';
 import { useAuth } from '../../context/AuthContext';
 import UserAvatar from '../../components/UserAvatar';
+import SoundToggle from '../../components/SoundToggle';
 import { useMatchActions } from './useMatchActions';
 import { useCountryPreload } from './useCountryPreload';
 import { createServerClock } from './serverClock';
@@ -100,7 +101,10 @@ function Card({ children }) {
             <div className="mark">G</div>
             <span className="word">Geo<i>taria</i></span>
           </Link>
-          <span className="mp-brand-tag">1 vs 1</span>
+          <span className="mp-brand-side">
+            <SoundToggle />
+            <span className="mp-brand-tag">1 vs 1</span>
+          </span>
         </div>
         {children}
       </div>

@@ -1,0 +1,14 @@
+/* Botón de sonido. Usa las variables de la página donde se coloque (con valores de reserva). */
+.sound-toggle{
+  flex:none;
+  width:30px; height:30px; padding:0;
+  display:inline-grid; place-items:center;
+  background:transparent; cursor:pointer;
+  color:var(--brass, #c9a24b);
+  border:1px solid var(--line, #1f4666);
+  border-radius:50%;
+  transition:color .2s ease, border-color .2s ease, background .2s ease;
+}
+.sound-toggle:hover{ border-color:var(--brass-bright, #d9b661); color:var(--brass-bright, #d9b661); }
+.sound-toggle.off{ color:var(--parchment-dim, #93a4b3); }
+.sound-toggle:focus-visible{ outline:1.5px solid var(--brass-bright, #d9b661); outline-offset:3px; }

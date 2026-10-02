@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { usePolled } from '../../lib/usePolled';
 import { loadWorldMap } from '../../lib/worldMapData';
+import { play } from '../../lib/sound';
 import { matchErrorText } from '../Match/matchText';
 
 // Quick match: look for a random opponent in the general queue.
@@ -36,7 +37,10 @@ export function useMatchQueue(enabled) {
 
   const goToMatch = useCallback(
     // `auto`: the room starts the match by itself a few seconds after the map is ready.
-    (m) => navigate(`/partida/${m.id}`, { state: { auto: true } }),
+    (m) => {
+      play('match-found');
+      navigate(`/partida/${m.id}`, { state: { auto: true } });
+    },
     [navigate]
   );
 

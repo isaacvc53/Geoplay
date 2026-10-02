@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { api } from '../../lib/api';
 import { buildTexts } from '../../lib/countryText';
 import UserAvatar from '../../components/UserAvatar';
+import SoundToggle from '../../components/SoundToggle';
+import { play } from '../../lib/sound';
 import CountryGame from '../Country/CountryGame';
 import '../Country/Country.css';
 import Countdown from './Countdown';
@@ -132,6 +134,25 @@ export default function PlayScreen({ match, clock, preload, reload }) {
   // Latest `reload` without rebuilding the callbacks the engine holds on to.
   const reloadRef = useRef(reload);
   useEffect(() => { reloadRef.current = reload; });
+
+  // Sonidos: el rival puntúa (no suena por una puntuación que ya traía al cargar la página)...
+  const rivalPrev = useRef(rivalScore);
+  useEffect(() => {
+    if (match.status === 'playing' && rivalScore > rivalPrev.current) play('rival-point');
+    rivalPrev.current = rivalScore;
+  }, [rivalScore, match.status]);
+
+  // ...y el resultado, solo si la partida se acaba MIENTRAS la estoy viendo (abrir una partida
+  // ya terminada no hace ruido).
+  const wasPlaying = useRef(false);
+  useEffect(() => {
+    if (match.status === 'playing') {
+      wasPlaying.current = true;
+    } else if (wasPlaying.current && match.status === 'finished') {
+      wasPlaying.current = false;
+      play(match.winner_id == null ? 'draw' : match.winner_id === mine.user_id ? 'win' : 'lose');
+    }
+  }, [match.status, match.winner_id, mine.user_id]);
 
   const matchId = match.id;
   const online = useMemo(
@@ -273,7 +294,10 @@ export default function PlayScreen({ match, clock, preload, reload }) {
             <span className={'mpg-clock' + (low ? ' low' : '')} aria-label={untimed ? 'Time elapsed' : 'Time left'}>
               {untimed ? formatElapsed(clockMs) : formatClock(clockMs)}
             </span>
-            <span className="mpg-country">{match.country.nombre}</span>
+            <span className="mpg-sub">
+              <span className="mpg-country">{match.country.nombre}</span>
+              <SoundToggle className="mpg-sound" />
+            </span>
           </div>
           <Side player={rival} score={rivalScore} total={totalRegions} isMe={false} leading={rivalScore > myScore} />
         </header>

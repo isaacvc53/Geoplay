@@ -51,6 +51,9 @@
   font:600 30px/1 Fraunces, Georgia, serif; font-variant-numeric:tabular-nums; color:var(--ink);
 }
 .country-page .mpg-clock.low{ color:var(--danger); }
+.country-page .mpg-sub{ display:flex; align-items:center; justify-content:center; gap:8px; max-width:100%; }
+.country-page .mpg-sound{ width:22px; height:22px; }
+.country-page .mpg-sound svg{ width:13px; height:13px; }
 .country-page .mpg-country{
   max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   font-size:11px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--accent);

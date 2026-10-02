@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
 import { loadWorldMap } from '../../lib/worldMapData';
+import { play } from '../../lib/sound';
 import { QUEUE_DURATIONS, formatDuration } from './matchText';
 
 // Reveal of the randomly drawn country, on the world map. The server has already decided
@@ -143,6 +144,8 @@ export default function CountryRoulette({ name, slug, regions, durationSeconds, 
           later(() => {
             remaining.delete(others[i]);
             setLit(new Set(remaining));
+            // tick: cada vez un poco más agudo, como una rueda que se frena con tensión
+            play('tick', { rate: 0.85 + 0.4 * (i / Math.max(1, others.length - 1)) });
             if (drawTime) {
               const options = QUEUE_DURATIONS.filter((s) => s !== lastTime);
               lastTime = options[Math.floor(Math.random() * options.length)];
@@ -156,6 +159,7 @@ export default function CountryRoulette({ name, slug, regions, durationSeconds, 
           showWinner(list);
           setShownTime(durationSeconds);
           setPhase('landed');
+          play('land');
           done();
           later(() => setPhase('settled'), HOLD_MS);
         }, SPIN_MS + 150);

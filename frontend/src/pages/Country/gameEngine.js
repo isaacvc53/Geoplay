@@ -17,6 +17,7 @@ import * as d3 from 'd3';
 import { api } from '../../lib/api';
 import { normalizeText, findLocalGuess, findExactLocalMatch, longerCandidateWait } from '../../lib/textMatch';
 import { matchBackendRegions } from './matchRegions';
+import { play } from '../../lib/sound';
 
 // MODO ONLINE (partida 1 contra 1, ver pages/Match): si se pasa `online`, el motor no
 // decide nada por su cuenta. Cada intento se manda al servidor (`online.guess`) y solo se
@@ -771,6 +772,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
 
       if (data.result === 'wrong') {
         if (!silent && phase === 'playing') {
+          play('wrong'); // solo en intentos enviados a propósito, no al ir tecleando
           setFeedback(texts.notFoundMessage, 'no');
           guessEl.select();
         }
@@ -779,6 +781,7 @@ export function createGame({ country, texts, els, geoUrl, online }) {
 
       const region = regionFromServer(data);
       if (data.result === 'correct') {
+        play('correct');
         if (region) addSolved(region, { clear: !stillTyping });
         else setFeedback(texts.correctPrefix + (data.name || ''), 'ok'); // sin hueco en el mapa
         return;
