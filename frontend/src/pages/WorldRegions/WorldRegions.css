@@ -24,6 +24,7 @@
   .wr-input{display:flex;gap:8px;}
   .wr-input input{flex:1;min-width:0;padding:11px 13px;background:var(--g-water);color:var(--g-ink);border:1px solid var(--g-line);border-radius:0;font-weight:500;}
   .wr-input input::placeholder{color:var(--g-muted);opacity:.8;}
+  .wr-input input.waiting{border-color:var(--g-accent-hover);box-shadow:0 0 0 3px rgba(201,162,75,.45);}
   .wr-input input:focus{outline:none;border-color:var(--g-accent);box-shadow:0 0 0 3px rgba(201,162,75,.28);}
   .wr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end;}
   .wr-time{font-family:'Space Mono',monospace;font-size:13px;color:var(--g-muted);padding-right:4px;}

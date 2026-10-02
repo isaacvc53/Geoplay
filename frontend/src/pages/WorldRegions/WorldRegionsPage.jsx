@@ -20,6 +20,7 @@ export default function WorldRegionsPage() {
   const [feedback, setFeedback] = useState({ text: '', kind: '' });
   const [text, setText] = useState('');
   const [onlyPending, setOnlyPending] = useState(false);
+  const [waiting, setWaiting] = useState(false);          // acierto detectado, esperando por si sigues escribiendo
   useEffect(() => { clearLegacyProgress(); }, []);        // borra el guardado de versiones anteriores
 
   const svgRef = useRef(null), tipRef = useRef(null), inputRef = useRef(null);
@@ -83,19 +84,19 @@ export default function WorldRegionsPage() {
   function onChange(e) {
     const value = e.target.value;
     setText(value);
-    clearTimeout(auto.current);
+    clearTimeout(auto.current); setWaiting(false);
     if (!scope || !running) return;
     const m = exactMatch(scope, value, solvedRef.current);
     if (m.status !== 'hit') return;
     const wait = autoWait(scope, value, solvedRef.current);
     if (wait === 0) accept(m.regions);
-    else auto.current = setTimeout(() => accept(m.regions), wait);
+    else { setWaiting(true); auto.current = setTimeout(() => { setWaiting(false); accept(m.regions); }, wait); }
   }
   useEffect(() => () => clearTimeout(auto.current), []);
 
   function submit(e) {
     e?.preventDefault();
-    clearTimeout(auto.current);
+    clearTimeout(auto.current); setWaiting(false);
     if (!scope || !running || !text.trim()) return;
     const m = submitMatch(scope, text, solvedRef.current);
     if (m.status === 'hit') accept(m.regions);
@@ -165,6 +166,7 @@ export default function WorldRegionsPage() {
       {error && <p className="wr-error">{error}</p>}
 
       <section className="wr-game">
+        <div className="wr-sticky">
         <div className="wr-toolbar">
           <div className="wr-progress" aria-live="polite">
             <div className="wr-count"><b>{nf.format(count)}</b><i>/</i><span>{nf.format(total)}</span><em>{pct}%</em></div>
@@ -172,9 +174,9 @@ export default function WorldRegionsPage() {
           </div>
           <form className="wr-input" onSubmit={submit}>
             <input
-              ref={inputRef} value={text} onChange={onChange} disabled={!running}
-              placeholder={running ? 'Type a province, state or region…' : 'Pick a zone to start'}
-              autoComplete="off" autoCapitalize="off" spellCheck={false} aria-label="Region name"
+              ref={inputRef} value={text} onChange={onChange} disabled={!running} className={waiting ? 'waiting' : ''}
+              placeholder={running ? 'Province, state or region…' : 'Pick a zone to start'}
+              autoComplete="off" autoCapitalize="off" autoCorrect="off" enterKeyHint="go" spellCheck={false} aria-label="Region name"
             />
             <button className="wr-btn primary" type="submit" disabled={!running}>Check</button>
           </form>
@@ -186,6 +188,7 @@ export default function WorldRegionsPage() {
           </div>
         </div>
         <div className={`wr-feedback ${feedback.kind}`} role="status">{feedback.text || '\u00a0'}</div>
+        </div>
 
         <div className="wr-body">
           <div className="wr-map">

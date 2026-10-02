@@ -94,14 +94,16 @@ export function submitMatch(scope, raw, solved) {
   return names.length > 1 ? { status: 'ambiguous', count: names.length } : { status: 'none' };
 }
 
-// ms a esperar antes de autoacertar: 0 si ningún otro nombre pendiente empieza por lo escrito.
+// ms a esperar antes de autoacertar: 0 si ninguna OTRA región pendiente tiene un nombre que empiece por lo escrito.
 // "Guinea" -> "Guinea Bisáu" (espera 900) · "Sur" -> "Suroeste" (espera 500).
+// Los nombres más largos de la MISMA región ("Buenos Aires" -> "Buenos Aires Province of Argentina") no cuentan.
 export function autoWait(scope, raw, solved, wordMs = 900, partMs = 500) {
   const q = normalizeText(raw);
+  const mine = new Set((scope.byName.get(q) || scope.byName.get(stripTypeWords(q)) || []).map((r) => r.id));
   let wait = 0;
   for (const [name, rs] of scope.byName) {
     if (name.length <= q.length || !name.startsWith(q)) continue;
-    if (!pending(rs, solved).length) continue;
+    if (!rs.some((r) => !solved.has(r.id) && !mine.has(r.id))) continue;
     if (name[q.length] === ' ') return wordMs;
     wait = partMs;
   }
