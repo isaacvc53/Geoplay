@@ -114,7 +114,7 @@ names: ["Maalhosmadulu Uthuruburi", "North Maalhosmadulu", "Raa"],
 region_id: null
 },
 {
-id: "MV-17",
+id: "MV-25",
 display: "Miladhunmadulu Dhekunuburi",
 names: ["Miladhunmadulu Dhekunuburi", "South Miladhunmadulu", "Noonu"],
 region_id: null
