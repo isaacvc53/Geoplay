@@ -1,0 +1,23 @@
+LOTE 1 - Panama, Guyana, Barbados, Dominica, Granada, Santa Lucia
+==================================================================
+Copia el contenido de este zip encima de la raiz del repo (Geoplay/), respetando las rutas:
+
+  frontend/public/data/geo/*.svg           -> 6 mapas
+  frontend/public/data/countries/*.js      -> 6 ficheros de juego (region_id: null)
+  backend/seed_lote1.py                    -> seed de regiones
+  frontend/tools/make_country.py, neshp.py, lotes/lote1.py  -> generador (por si quieres regenerar; no hace falta para jugar)
+
+1) Seed (desde backend/):
+     python seed_lote1.py --dry-run     # prueba sin guardar
+     python seed_lote1.py               # guarda en la BD
+
+2) Enlazar cada .js con la BD (rellena region_id), desde backend/:
+     python fill_region_ids.py ../frontend/public/data/countries/panama.js "Panamá"
+     python fill_region_ids.py ../frontend/public/data/countries/guyana.js "Guyana"
+     python fill_region_ids.py ../frontend/public/data/countries/barbados.js "Barbados"
+     python fill_region_ids.py ../frontend/public/data/countries/dominica.js "Dominica"
+     python fill_region_ids.py ../frontend/public/data/countries/grenada.js "Granada"
+     python fill_region_ids.py ../frontend/public/data/countries/saint-lucia.js "Santa Lucía"
+
+3) Regenerar el manifiesto (desde frontend/public/data/):
+     bash generate-manifest.sh

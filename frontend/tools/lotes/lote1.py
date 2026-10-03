@@ -1,0 +1,50 @@
+# Lote 1 — Panamá, Guyana y cuatro países del Caribe oriental. Cada región: (iso_3166_2 de Natural Earth, nombre mostrado, [alias]).
+COUNTRIES = [
+ dict(slug='panama', es='Panamá', iso='PAN', en='Panama', adj='Panamanian', sing='province or comarca', plur='provinces and comarcas',
+      missing='My provinces', lat0=8.5, regions=[
+  ('PA-1', 'Bocas del Toro', []),
+  ('PA-NB', 'Ngäbe-Buglé', ['Ngöbe-Buglé', 'Ngobe-Bugle', 'Ngäbe Buglé', 'Ngobe Bugle', 'Ngäbe-Buglé Comarca']),
+  ('PA-4', 'Chiriquí', ['Chiriqui']),
+  ('PA-KY', 'Guna Yala', ['Kuna Yala', 'San Blas', 'Guna Yala Comarca']),
+  ('PA-EM', 'Emberá-Wounaan', ['Embera-Wounaan', 'Embera Wounaan', 'Emberá', 'Embera']),
+  ('PA-5', 'Darién', ['Darien']),
+  ('PA-8', 'Panamá', ['Panama', 'Panama Province', 'Provincia de Panamá']),
+  ('PA-2', 'Coclé', ['Cocle']),
+  ('PA-9', 'Veraguas', []),
+  ('PA-3', 'Colón', ['Colon']),
+  ('PA-7', 'Los Santos', []),
+  ('PA-6', 'Herrera', []),
+ ]),
+ dict(slug='guyana', es='Guyana', iso='GUY', en='Guyana', adj='Guyanese', sing='region', plur='regions', lat0=5, match='gn_name', regions=[
+  ('GY-BA', 'Barima-Waini', ['Barima Waini', 'Region 1'], 'Barima-Waini Region'),
+  ('GY-PM', 'Pomeroon-Supenaam', ['Pomeroon Supenaam', 'Region 2'], 'Pomeroon-Supenaam Region'),
+  ('GY-ES', 'Essequibo Islands-West Demerara', ['Essequibo Islands West Demerara', 'Essequibo Islands', 'Region 3'], 'Essequibo Islands-West Demerara Region'),
+  ('GY-DE', 'Demerara-Mahaica', ['Demerara Mahaica', 'Region 4'], 'Demerara-Mahaica Region'),
+  ('GY-MA', 'Mahaica-Berbice', ['Mahaica Berbice', 'Region 5'], 'Mahaica-Berbice Region'),
+  ('GY-EB', 'East Berbice-Corentyne', ['East Berbice Corentyne', 'Region 6'], 'East Berbice-Corentyne Region'),
+  ('GY-CU', 'Cuyuni-Mazaruni', ['Cuyuni Mazaruni', 'Region 7'], 'Cuyuni-Mazaruni Region'),
+  ('GY-PT', 'Potaro-Siparuni', ['Potaro Siparuni', 'Region 8'], 'Potaro-Siparuni Region'),
+  ('GY-UT', 'Upper Takutu-Upper Essequibo', ['Upper Takutu Upper Essequibo', 'Upper Takutu', 'Region 9'], 'Upper Takutu-Upper Essequibo Region'),
+  ('GY-UD', 'Upper Demerara-Berbice', ['Upper Demerara Berbice', 'Region 10'], 'Upper Demerara-Berbice Region'),
+ ]),
+ dict(slug='barbados', es='Barbados', iso='BRB', en='Barbados', adj='Barbadian', sing='parish', plur='parishes', suffixes=['Parish'], lat0=13.2, tol=0.05, regions=[
+  ('BB-01', 'Christ Church', []), ('BB-02', 'Saint Andrew', []), ('BB-03', 'Saint George', []), ('BB-04', 'Saint James', []),
+  ('BB-05', 'Saint John', []), ('BB-06', 'Saint Joseph', []), ('BB-07', 'Saint Lucy', []), ('BB-08', 'Saint Michael', []),
+  ('BB-09', 'Saint Peter', []), ('BB-10', 'Saint Philip', []), ('BB-11', 'Saint Thomas', []),
+ ]),
+ dict(slug='dominica', es='Dominica', iso='DMA', en='Dominica', adj='Dominican', sing='parish', plur='parishes', suffixes=['Parish'], lat0=15.4, tol=0.05, regions=[
+  ('DM-02', 'Saint Andrew', []), ('DM-03', 'Saint David', []), ('DM-04', 'Saint George', []), ('DM-05', 'Saint John', []),
+  ('DM-06', 'Saint Joseph', []), ('DM-07', 'Saint Luke', []), ('DM-08', 'Saint Mark', []), ('DM-09', 'Saint Patrick', []),
+  ('DM-10', 'Saint Paul', []), ('DM-11', 'Saint Peter', []),
+ ]),
+ dict(slug='grenada', es='Granada', iso='GRD', en='Grenada', adj='Grenadian', sing='parish', plur='parishes', suffixes=['Parish'], lat0=12.1, tol=0.05, regions=[
+  ('GD-01', 'Saint Andrew', []), ('GD-02', 'Saint David', []), ('GD-03', 'Saint George', []), ('GD-04', 'Saint John', []),
+  ('GD-05', 'Saint Mark', []), ('GD-06', 'Saint Patrick', []),
+  ('GD-10', 'Carriacou and Petite Martinique', ['Carriacou', 'Petite Martinique', 'Carriacou & Petite Martinique']),
+ ]),
+ dict(slug='saint-lucia', es='Santa Lucía', iso='LCA', en='Saint Lucia', adj='Saint Lucian', sing='district', plur='districts', suffixes=['Quarter', 'District'], lat0=13.9, tol=0.05, regions=[
+  ('LC-01', 'Anse la Raye', ['Anse-la-Raye']), ('LC-02', 'Castries', []), ('LC-03', 'Choiseul', []), ('LC-04', 'Dauphin', []),
+  ('LC-05', 'Dennery', []), ('LC-06', 'Gros Islet', ['Gros-Islet']), ('LC-07', 'Laborie', []), ('LC-08', 'Micoud', []),
+  ('LC-09', 'Praslin', []), ('LC-10', 'Soufrière', ['Soufriere']), ('LC-11', 'Vieux Fort', ['Vieux-Fort']),
+ ]),
+]
