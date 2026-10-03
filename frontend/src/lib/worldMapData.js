@@ -1,4 +1,4 @@
-// Países del mapa mundial (public/data/world-map.json) para dibujarlos como siluetas,
+// Países del mapa mundial (public/data/world-map.json, de Natural Earth; ver tools/build-world-map.mjs) para dibujarlos como siluetas,
 // p. ej. en la ruleta del sorteo de país. Se descarga UNA vez por pestaña y se comparte:
 // la cola de "buscar rival" la pide por adelantado para que, al formarse la pareja, ya esté
 // en la caché del navegador.
